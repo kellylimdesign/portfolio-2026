@@ -5748,20 +5748,21 @@
     const body = document.querySelector('.cgpt-body-live');
     if (!body || !targetEl) return;
     closeAllDrawers();
-    const moved = body.parentElement !== targetEl;
-    if (moved) targetEl.appendChild(body);
-    if (!tabName) return;
-    const clickTab = () => {
+    if (body.parentElement !== targetEl) targetEl.appendChild(body);
+    // Confirmed bug: leaving step 3 (Manage Agents) mid-demo drills into a
+    // client's own full-detail view (Go to full client details), and that
+    // drilldown was only ever closed as a side effect of clicking the
+    // mounted tab — reliable on its own, but if this singleton gets
+    // reparented twice back-to-back (e.g. closeHistoryOverlay's own
+    // mountLiveConsole call, immediately followed by reopening the wizard),
+    // the second mount's tab click can land before the first one's has
+    // taken effect, leaving the detail view stuck open. Resetting it
+    // explicitly here removes the dependency on click ordering entirely.
+    if (window.__resetConsoleDetailViews) window.__resetConsoleDetailViews();
+    if (tabName) {
       const tabBtn = body.querySelector('.tw-tab[data-tab="' + tabName + '"]');
       if (tabBtn) tabBtn.click();
-    };
-    // .tw-console-embed's `zoom` scaling occasionally hasn't been applied yet
-    // by the time of the very next paint right after a reparent — clicking
-    // the tab immediately can land on a frame where the embed is still at
-    // native (unzoomed) size/position. A double rAF waits for a full
-    // layout+paint cycle on the moved node before switching tabs.
-    if (moved) requestAnimationFrame(() => requestAnimationFrame(clickTab));
-    else clickTab();
+    }
   }
   function ensureLiveConsoleHome(){
     const home = document.getElementById('liveWindowHome');
@@ -6995,6 +6996,11 @@
         },
       });
     })();
+    // exposed so mountLiveConsole (defined outside this IIFE) can force any
+    // lingering client/identity drilldown closed on every mount, rather than
+    // relying solely on the mounted tab's own click handler to trigger it —
+    // see the comment on mountLiveConsole for the bug this fixes.
+    window.__resetConsoleDetailViews = () => { closeClient(); closeIdentity(); };
   })();
 </script>
 </body>
