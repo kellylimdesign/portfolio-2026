@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driving SDK Adoption — Stytch SDK Integration Builder</title>
+<style>
+  /* self-hosted, not pulled from Google Fonts at render time — a CDN link
+     depends on the viewing browser's network/cache/ad-blocker state, which
+     was silently falling back to system fonts here. These are the same
+     Inter + Space Mono files Trust's deck resolves to, just served locally
+     so the match doesn't depend on anything external. */
+  @font-face{font-family:'Inter'; font-style:normal; font-weight:100 900; font-display:swap; src:url('assets/fonts/Inter-Variable.woff2') format('woff2');}
+  @font-face{font-family:'Space Mono'; font-style:normal; font-weight:400; font-display:swap; src:url('assets/fonts/SpaceMono-Regular.woff2') format('woff2');}
+  @font-face{font-family:'Space Mono'; font-style:normal; font-weight:700; font-display:swap; src:url('assets/fonts/SpaceMono-Bold.woff2') format('woff2');}
+  :root{
+    --ink:#17161B; --ink-70:rgba(23,22,27,.7); --ink-45:rgba(23,22,27,.45);
+    --cream:#FFFFFF; --line:rgba(23,22,27,.14);
+    --sans:'Inter', -apple-system, sans-serif;
+    --mono:'Space Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%; margin:0;}
+  body{
+    background:var(--cream); color:var(--ink); font-family:var(--sans);
+    overflow:hidden; -webkit-font-smoothing:antialiased;
+  }
+  img,video{max-width:100%; display:block;}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    position:fixed; top:0; left:0; right:0; height:56px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 64px; z-index:50;
+  }
+  .brand{font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--ink-45);}
+  .counter{font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--ink-45);}
+
+  .navbtns{position:fixed; bottom:28px; right:64px; z-index:50; display:flex; gap:10px;}
+  .navbtn{
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:transparent;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink);
+  }
+  .navbtn:hover{background:var(--ink); color:var(--cream); border-color:var(--ink);}
+  .navbtn svg{width:16px; height:16px;}
+  .dots{position:fixed; bottom:34px; left:64px; z-index:50; display:flex; gap:7px;}
+  .dot{width:6px; height:6px; border-radius:50%; background:var(--line); transition:background .2s;}
+  .dot.active{background:var(--ink);}
+
+  /* ---------- slides ---------- */
+  .deck{position:relative; width:100%; height:100vh;}
+  /* height set explicitly rather than relying on top+bottom to constrain an
+     auto height — with tall enough content (e.g. the Journey slide's tool
+     panel), auto-height ignored bottom:0 and let the slide grow past the
+     viewport, pushing real content down into the fixed nav buttons */
+  .slide{
+    position:absolute; top:56px; left:0; right:0; height:calc(100vh - 56px); padding:44px 64px;
+    opacity:0; pointer-events:none; transform:translateY(14px);
+    transition:opacity .5s ease, transform .5s ease;
+    display:flex; flex-direction:column; justify-content:center;
+    overflow:hidden;
+  }
+  .slide.active{opacity:1; pointer-events:auto; transform:translateY(0);}
+
+  .kicker{font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-45); margin:0 0 12px;}
+  h1{font-family:var(--mono); font-size:clamp(22px,2.8vw,34px); font-weight:700; line-height:1.15; letter-spacing:-.01em; margin:0 0 12px; text-wrap:balance;}
+  .teaser{font-family:var(--sans); font-size:15px; line-height:1.55; color:var(--ink-70); max-width:46ch; margin:0;}
+  .text-block{max-width:640px;}
+
+  /* dashed technical-note treatment, label breaking through the top edge —
+     copied exactly from Trust's .example-callout (slides-v3.html) */
+  .example-callout{
+    margin:32px auto 0; max-width:560px; text-align:left; position:relative;
+    border:1.5px dashed var(--ink-45); border-radius:4px; padding:24px 26px 22px;
+  }
+  .example-callout .example-kicker{
+    position:absolute; top:-9px; left:20px; background:var(--cream); padding:0 8px; margin:0;
+  }
+  .example-kicker{
+    font-family:var(--mono); font-size:10px; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--ink-45); margin:0 0 10px;
+  }
+  .example-text{font-family:var(--sans); font-size:15px; line-height:1.6; color:var(--ink); margin:0;}
+  .example-callout .example-text{color:var(--ink-70);}
+
+  /* persona — copied exactly from Trust's .layout-persona/.persona-card */
+  /* no height:100% here — this class sits directly on the same <section
+     class="slide"> element, so height:100% would resolve against .slide's
+     OWN containing block (.deck), not against .slide's own box, silently
+     overriding the explicit height .slide already sets (same class of bug
+     as the earlier position:relative specificity tie) */
+  .layout-persona{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;}
+  .layout-persona .text-block{max-width:640px; margin-bottom:44px;}
+  .persona-cols{display:flex; gap:56px;}
+  .persona-card{width:320px; text-align:left; border-top:1px solid var(--line); padding-top:20px;}
+  .persona-card h4{
+    font-family:var(--mono); font-size:11px; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--ink-45); margin:0 0 12px;
+  }
+  .persona-card > p{font-family:var(--sans); font-size:14px; line-height:1.6; color:var(--ink-70); margin:0; min-height:4.8em;}
+  .persona-card .example-callout{margin:24px 0 0; max-width:none; width:100%; box-sizing:border-box; min-height:84px;}
+  /* matches .persona-card > p's 14px instead of .example-text's normal
+     15px — the two callouts sit right next to that body copy, and the 1px
+     difference read as an unintentional mismatch rather than a deliberate
+     scale change */
+  .persona-card .example-text{font-size:14px;}
+
+  /* browser-chrome frame — ported exactly from the Trust deck's .cgpt-window
+     titlebar + urlbar (slides-v3.html), same two-row shell, dot colors,
+     icon set and pill treatment, just renamed under a demo- prefix and with
+     app-specific tab/url text swapped in per card */
+  .demo-row{display:flex; gap:24px; margin-top:32px; max-width:720px;}
+  .demo-card{
+    flex:1; min-width:0; appearance:none; background:none; border:none; padding:0; cursor:pointer;
+    font-family:inherit; text-align:left;
+  }
+  .demo-chrome{
+    border-radius:9px; overflow:hidden; border:1px solid var(--line); background:#fff;
+    box-shadow:0 10px 30px rgba(23,22,27,.08);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .demo-card:hover .demo-chrome{transform:translateY(-3px); box-shadow:0 16px 36px rgba(23,22,27,.14);}
+
+  .demo-chrome-titlebar{
+    display:flex; align-items:flex-end; gap:14px; padding:10px 10px 0 20px; background:#E7E7EA; flex-shrink:0;
+  }
+  .demo-chrome-dots{display:flex; gap:8px; padding-bottom:13px;}
+  .demo-chrome-dots span{width:12px; height:12px; border-radius:50%;}
+  .demo-chrome-dots span:nth-child(1){background:#FF5F57;}
+  .demo-chrome-dots span:nth-child(2){background:#FEBC2E;}
+  .demo-chrome-dots span:nth-child(3){background:#28C840;}
+  .demo-chrome-tab{
+    display:flex; align-items:center; gap:7px; background:#fff;
+    border-radius:8px 8px 0 0; padding:8px 12px; max-width:160px;
+    font-family:var(--sans); font-size:11.5px; font-weight:500; color:var(--ink);
+  }
+  .demo-chrome-tab-fav{
+    width:14px; height:14px; border-radius:4px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .demo-chrome-tab-fav svg{width:9px; height:9px;}
+  .demo-chrome-tab-label{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .demo-chrome-tab-close{width:10px; height:10px; color:var(--ink-45); margin-left:4px; flex-shrink:0;}
+  .demo-chrome-tab-plus{font-family:var(--sans); font-size:14px; color:var(--ink-45); margin-left:2px; align-self:center; display:flex; align-items:center; justify-content:center;}
+
+  .demo-chrome-urlbar{
+    display:flex; align-items:center; gap:14px; padding:9px 14px; background:#fff; border-bottom:1px solid var(--line); flex-shrink:0;
+  }
+  .demo-chrome-nav-icons{display:flex; align-items:center; gap:14px; flex-shrink:0;}
+  .demo-chrome-nav-icons svg{width:15px; height:15px; color:var(--ink-45); flex-shrink:0;}
+  .demo-chrome-nav-icons.left svg:nth-child(1), .demo-chrome-nav-icons.left svg:nth-child(3){color:var(--ink-70);}
+  .demo-chrome-nav-icons.left svg:nth-child(2){color:rgba(23,22,27,.25);}
+  .demo-chrome-url{
+    flex:1; display:flex; align-items:center; gap:8px; font-family:var(--sans); font-size:12px; color:var(--ink-70);
+    background:#F1F1F3; border-radius:20px; padding:5px 8px 5px 5px;
+  }
+  .demo-chrome-url-text{flex:1; text-align:left;}
+  .demo-chrome-url-tune{
+    width:22px; height:22px; border-radius:50%; flex-shrink:0; border:1px solid rgba(23,22,27,.15); background:#fff;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .demo-chrome-url-tune svg{width:13px; height:13px; color:var(--ink-70);}
+  .demo-chrome-url-star{width:14px; height:14px; color:var(--ink-45); flex-shrink:0;}
+  .demo-chrome-url-avatar{width:16px; height:16px; border-radius:50%; background:#4A7CE0; flex-shrink:0;}
+
+  /* aspect-ratio is set inline per card, matching each video's real source
+     dimensions (2456x1650 / 3456x1770 — both wider than 16:9) — object-fit
+     is now contain so the recording is never cropped, whatever its shape */
+  .demo-thumb{position:relative; aspect-ratio:16/9; background:#fff;}
+  .demo-thumb video{width:100%; height:100%; object-fit:contain; display:block;}
+  .demo-expand-icon{
+    position:absolute; right:10px; bottom:10px; width:28px; height:28px; border-radius:50%;
+    background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:var(--ink);
+  }
+  .demo-expand-icon svg{width:14px; height:14px;}
+  .demo-label{font-size:13px; color:var(--ink-70); margin:12px 2px 0; font-family:var(--sans); font-weight:500;}
+
+  .demo-lightbox{
+    position:fixed; inset:0; background:rgba(23,22,27,.9); z-index:100;
+    display:flex; align-items:center; justify-content:center; padding:64px;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .demo-lightbox.active{opacity:1; pointer-events:auto;}
+  .demo-chrome-large{
+    max-width:100%; max-height:100%; width:1040px; box-shadow:0 30px 80px rgba(0,0,0,.4);
+  }
+  .demo-thumb-large{max-height:calc(100vh - 200px);}
+  .demo-lightbox-close{
+    position:absolute; top:28px; right:36px; width:40px; height:40px; border-radius:50%;
+    background:none; border:1px solid rgba(255,255,255,.3); color:#fff; font-size:22px; line-height:1;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .demo-lightbox-close:hover{background:rgba(255,255,255,.1);}
+
+  /* demo selector (slide 6) — reuses .step-nav for the left-side picker and
+     .demo-chrome for the right-side frame, positioned like .journey-panel */
+  .demo-select-nav .step-nav-title{color:var(--ink-45); transition:color .2s ease;}
+  .demo-select-nav .step-nav-item.active .step-nav-title{color:var(--ink); font-weight:600;}
+  .demo-select-nav .step-nav-num{transition:color .2s ease;}
+  .demo-select-nav .step-nav-item.active .step-nav-num{color:var(--ink);}
+  .demo-select-panel{position:absolute; top:0; right:36px; bottom:90px; left:484px; display:flex; align-items:center; justify-content:center;}
+  .demo-select-frame{
+    appearance:none; background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
+    width:100%; max-width:1040px;
+  }
+  .demo-select-frame .demo-chrome{transition:transform .2s ease, box-shadow .2s ease;}
+  .demo-select-frame:hover .demo-chrome{transform:translateY(-3px); box-shadow:0 16px 36px rgba(23,22,27,.14);}
+
+  /* impact — layout-timeline's centered structure, copied from Trust
+     (minus the timeline-track itself, see note on slide 7 in the HTML) */
+  .layout-timeline{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;}
+  .layout-timeline .text-block{max-width:760px; margin-bottom:40px;}
+  .layout-timeline .teaser{margin:0 auto; max-width:760px;}
+  .validation-list{list-style:none; margin:0; padding:0; text-align:left; max-width:760px; display:flex; flex-direction:column; gap:20px;}
+  .validation-list li{padding-left:22px; position:relative;}
+  .validation-list li::before{content:'•'; position:absolute; left:2px; top:0; color:var(--ink-45); font-size:15px;}
+  .validation-title{font-family:var(--sans); font-size:15px; font-weight:700; color:var(--ink); margin:0 0 4px;}
+  .validation-desc{font-family:var(--sans); font-size:14.5px; line-height:1.6; color:var(--ink-70); margin:0;}
+
+  /* step-nav accordion (slide 6) — copied exactly from Trust's
+     .layout-steps-next / .step-nav / .step-nav-item system */
+  /* no position:relative and no height:100% here — .slide already sets its
+     own explicit height and is already position:absolute (which already
+     provides the positioning context .journey-panel/.demo-select-panel
+     need). Either property redeclared on this class ties in specificity
+     with .slide's own rule (both single-class selectors, same element,
+     since this class sits directly on <section class="slide ...">) and,
+     coming later in the stylesheet, silently wins — which is exactly how
+     both the earlier position:relative bug and this height:100% bug
+     happened. Leave this rule empty (kept only for the descendant
+     selectors below) rather than adding anything back to it. */
+  .layout-steps-next .text-block{width:360px; max-width:100%;}
+  .layout-steps-next h1{font-size:22px;}
+  /* the default .teaser max-width:46ch computes wider than this column
+     (360px) at this font/size, so it was overflowing past the text-block
+     into the panel on the right — constrain it to the same column every
+     other element in this layout (step-nav, step-nav-item) already uses */
+  .layout-steps-next .teaser{max-width:100%; margin:0 0 20px;}
+  .step-nav{display:flex; flex-direction:column; width:360px; max-width:100%; margin-top:24px;}
+  .step-nav-item{border-top:1px solid var(--line);}
+  .step-nav-head{
+    appearance:none; -webkit-appearance:none; background:none; border:none; width:100%;
+    text-align:left; cursor:pointer; font-family:inherit;
+    display:flex; align-items:center; gap:14px; padding:18px 0;
+  }
+  .step-nav-num{font-family:var(--mono); font-size:12px; font-weight:700; color:var(--ink-45); flex-shrink:0; width:14px;}
+  .step-nav-title{font-family:var(--sans); font-weight:400; font-size:18px; line-height:1.3; color:var(--ink); margin:0;}
+  .step-nav-body{max-height:0; overflow:hidden; opacity:0; transition:max-height .4s ease, opacity .3s ease;}
+  .step-nav-item.active .step-nav-body{max-height:300px; opacity:1; padding-bottom:24px;}
+  .step-nav-desc{font-family:var(--sans); font-size:14px; line-height:1.6; color:var(--ink-70); margin:0 0 0 28px; max-width:400px;}
+
+  /* right-side panel, positioned the same way Trust's .substep-panel sits —
+     holds a second, independent live instance of the tool (tool.js), with
+     each step focusing a different real piece of it rather than a mock */
+  .journey-panel{position:absolute; top:0; right:36px; bottom:90px; left:484px; display:flex; align-items:center; justify-content:center;}
+  /* no border/shadow/background of its own — .sk-pane already draws that
+     chrome per-pane (matching mocks/Full Customizer.svg's two separate
+     cards), so a wrapper with its own border was doubling up into a visible
+     seam between the two. This is purely a sizing/positioning shell. */
+  .journey-tool-frame{
+    width:100%; height:100%;
+    transition:max-width .35s ease;
+  }
+  /* single-pane steps (1 and 4) narrow the whole card down to the content's
+     natural width instead of stretching a full-width card around it with
+     dead space on either side */
+  .journey-tool-frame.journey-frame-narrow{max-width:560px; margin:0 auto;}
+  .journey-tool-frame #journeyToolMount{width:100%; height:100%;}
+  /* per-step focus: hide whichever pane isn't relevant to the current step
+     and let the other one fill the frame — same live tool, just pointed at
+     a different real piece of it each time */
+  #journeyToolMount.journey-focus-config .sk-pane-preview{display:none;}
+  #journeyToolMount.journey-focus-config .sk-pane-config{flex:1 1 100%;}
+  #journeyToolMount.journey-focus-preview .sk-pane-config{display:none;}
+  #journeyToolMount.journey-focus-preview .sk-pane-preview{flex:1 1 100%;}
+  /* nudge toward the fact this is clickable, not a screenshot — only while
+     this step is actually showing it */
+  #journeyToolMount.journey-focus-preview .sk-primary-btn.ready{animation:journeyBtnPulse 1.8s ease-in-out infinite;}
+  @keyframes journeyBtnPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(29,29,29,.22);}
+    50%{box-shadow:0 0 0 7px rgba(29,29,29,0);}
+  }
+  /* scripted-click cursor indicator — same pattern as Trust's
+     .tw-click-pulse (slides-v3.html): position:fixed + getBoundingClientRect
+     so it lands correctly regardless of the tool's size on the page */
+  .journey-click-pulse{
+    position:fixed; left:0; top:0; width:34px; height:34px; margin:-17px 0 0 -17px;
+    border-radius:50%; background:rgba(230,253,19,.35); border:2px solid rgba(29,29,29,.55);
+    opacity:0; pointer-events:none; z-index:9999; transform:scale(.3);
+  }
+  .journey-click-pulse.fire{animation:journeyClickPulse .65s ease-out;}
+  @keyframes journeyClickPulse{
+    0%{opacity:.9; transform:scale(.3);}
+    55%{opacity:.55; transform:scale(1);}
+    100%{opacity:0; transform:scale(1.35);}
+  }
+  /* step 1 — Products is the focus, Styling stays in the panel but dimmed
+     (same treatment as step 2's Products de-emphasis below), rather than
+     removed outright, so it still reads as one real config panel */
+  #journeyToolMount.journey-dim-styling #skStylingLabel,
+  #journeyToolMount.journey-dim-styling #skStylingLabel ~ *{
+    opacity:.3; filter:grayscale(.5); transition:opacity .3s ease, filter .3s ease;
+  }
+  /* step 2 — de-emphasize Products rather than hiding it, so the config
+     still reads as one real panel, just with Styling as the visual focus */
+  #journeyToolMount.journey-dim-products .sk-config-scroll > .sk-section-label:first-child,
+  #journeyToolMount.journey-dim-products #skProductGrid{
+    opacity:.3; filter:grayscale(.5); transition:opacity .3s ease, filter .3s ease;
+  }
+
+  /* step 3 — a "Try the real flow" demo (Google OAuth + Email/Phone OTP
+     tabs) that temporarily overwrites #skFormArea while this step is
+     active, deliberately independent of whatever products/styling are
+     actually toggled on in steps 1/2 — a canonical demo, not a
+     live-config-driven one. Reuses .sk-oauth-btn/.sk-tabs/.sk-input/
+     .sk-primary-btn/.sk-flow-success as-is (defined in tool.js's injected
+     stylesheet) so it reads as the same tool. 3 screens (options -> OTP ->
+     success), the whole thing auto-playing start to finish — no click
+     required to watch it. Screen 1 auto-types a fake email and advances;
+     screen 2 auto-plays the code entry + verify, matching how the real
+     @stytch/vanilla-js OTP component actually behaves — it auto-submits on
+     the 6th digit with no Verify button at all (see the JS comment on
+     startStep3OtpAnim for the source).
+     Deliberately NOT a sliding single-frame carousel (that was two rounds
+     of real layout bugs — a percentage/transform circular-dependency issue
+     showing all 3 screens overlapping at once, plus a sub-pixel seam even
+     once that was patched). Per Kelly: each screen should be its own
+     self-contained spot, not sharing one sliding stage — so this is now a
+     plain display:none/block swap between 3 independent screen elements,
+     the same robust pattern the deck's own .mock-toggle-item already uses. */
+  .sk3-screen{display:none;}
+  .sk3-screen.active{display:block;}
+  .sk3-back-row{display:flex; align-items:center; margin-bottom:14px;}
+  .sk3-back-btn{appearance:none; background:none; border:none; cursor:pointer; color:var(--sk-ink-45); padding:2px; display:flex;}
+  .sk3-back-btn:hover{color:var(--sk-ink);}
+  .sk3-back-btn svg{width:18px; height:18px;}
+  .sk3-otp-heading{font-size:15.5px; font-weight:600; margin:0 0 6px; color:var(--sk-ink); text-align:left;}
+  .sk3-otp-sub{font-size:12.5px; line-height:1.5; color:var(--sk-ink-70); margin:0 0 18px; text-align:left;}
+  .sk3-otp-row{display:flex; gap:8px; margin-bottom:16px;}
+  .sk3-otp-box{
+    width:100%; aspect-ratio:1; text-align:center; font-size:16px; font-family:inherit;
+    border:1px solid var(--sk-line-strong); border-radius:6px; color:var(--sk-ink); background:#fff;
+  }
+  .sk3-otp-box:focus{outline:none; border-color:var(--sk-ink);}
+  /* disabled just means "not directly typeable" (the code types itself) —
+     kept visually identical to an enabled box, both empty and mid-fill */
+  .sk3-otp-box:disabled{opacity:1; cursor:default;}
+  .sk3-otp-footer{min-height:34px;}
+  .sk3-otp-expiry{font-size:11.5px; color:var(--sk-ink-45); text-align:left; margin:0;}
+  .sk3-otp-expiry a{color:inherit;}
+  .sk3-otp-verifying{font-size:12px; color:var(--sk-ink-70); margin:0 0 8px; text-align:left;}
+  .sk3-loading-bar{height:3px; border-radius:999px; background:var(--sk-line); overflow:hidden;}
+  .sk3-loading-bar-fill{height:100%; width:35%; border-radius:999px; background:var(--sk-ink); animation:sk3LoadingSlide 1s ease-in-out infinite;}
+  @keyframes sk3LoadingSlide{
+    0%{transform:translateX(-100%);}
+    100%{transform:translateX(285%);}
+  }
+  .sk3-success-body{font-size:13px; line-height:1.5; color:var(--sk-ink-70); margin:0 0 14px; text-align:center;}
+
+  /* live callout, matches Trust's slide-9 pattern */
+  .live-callout{
+    display:inline-flex; align-items:center; gap:9px; align-self:flex-start;
+    background:rgba(23,22,27,.03); border:1px solid var(--line); border-radius:999px;
+    padding:8px 16px 8px 12px; font-size:13px; font-weight:500; margin-bottom:18px;
+  }
+  .live-callout svg{width:15px; height:15px; color:var(--ink-45); animation:liveTap 1.8s ease-in-out infinite;}
+  @keyframes liveTap{0%,100%{transform:translateY(0);} 50%{transform:translateY(2px);}}
+  .live-callout-note{font-size:12px; color:var(--ink-45); margin:-10px 0 18px; align-self:flex-start;}
+
+  /* layout-text / layout-hero — copied exactly from Trust's slides 1 & 2.
+     No height:100% — same reasoning as .layout-persona/.layout-timeline
+     above, this class sits directly on the <section class="slide"> element. */
+  .layout-text{
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+  }
+  .layout-text .text-block{max-width:640px;}
+  .layout-text .teaser{margin:0 auto; max-width:600px;}
+
+  .layout-hero{
+    display:flex; flex-direction:column;
+    align-items:center; text-align:center;
+  }
+  .layout-hero .text-block{flex:0 0 auto; max-width:640px; margin-bottom:22px;}
+  .layout-hero .teaser{margin:0 auto; max-width:600px;}
+  .layout-hero .stage{
+    flex:1; min-height:0; width:100%;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* masked laptop frame — same real asset as Trust (assets/macbook-air-frame.png,
+     a generic MacBook Air bezel, not case-study-specific) and the exact same
+     technique, so both decks' hero slides read as one system */
+  .frame-laptop2{position:relative; height:100%; max-width:100%; aspect-ratio:4808/2913;}
+  .frame-laptop2 .screen{
+    position:absolute; overflow:hidden;
+    left:10.19%; top:3.43%; right:10.07%; bottom:11.02%;
+    border-radius:1.3%;
+  }
+  .frame-laptop2 .screen-crop{position:relative; width:100%; aspect-ratio:1440/950; overflow:hidden;}
+  .frame-laptop2 .screen-crop img{display:block; width:100%; height:auto;}
+  .frame-laptop2 .chrome{position:absolute; inset:0; width:100%; height:100%; pointer-events:none;}
+
+  @media (max-width:900px){
+    .persona-cols, .demo-row{flex-direction:column;}
+  }
+
+  /* "how we got here" pause — a single wizard (this deck only has one story
+     to tell, unlike Trust's two independent groups), ported from Trust's
+     slides-v3.html .history-overlay system but simplified: no hotspot/drawer
+     mini-prototypes, no auto-open-on-next — just a manually-opened overlay
+     with 3 numbered steps, each a before/after tab-toggle between two real
+     iteration screenshots (mocks/iterations/*.svg). Lives at the body level,
+     not inside a .slide, for the same reason as Trust's version: .slide has
+     its own transform/opacity, which makes it a containing block for
+     position:fixed descendants, so an overlay nested inside one would only
+     ever cover that slide's own box, not the true viewport. */
+  .history-overlay{
+    position:fixed; inset:0; z-index:100; background:rgba(23,22,27,.55);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .35s ease;
+  }
+  .history-overlay.active{opacity:1; pointer-events:auto;}
+  .history-panel{
+    background:var(--cream); width:min(1240px, 92vw); height:min(760px, 88vh);
+    border-radius:16px; padding:40px 64px 32px; position:relative;
+    box-shadow:0 30px 70px rgba(23,22,27,.28);
+    display:flex; flex-direction:column;
+    transform:translateY(14px) scale(.98); transition:transform .35s ease;
+  }
+  .history-overlay.active .history-panel{transform:translateY(0) scale(1);}
+  .history-close{
+    position:absolute; top:22px; right:22px; appearance:none; background:none; border:none;
+    cursor:pointer; color:var(--ink-45); padding:4px;
+  }
+  .history-close:hover{color:var(--ink);}
+  .history-close svg{width:18px; height:18px;}
+  .history-head{text-align:left; margin-bottom:16px; flex:0 0 auto;}
+  /* overflow-y:auto is a safety net, not the primary fix — content is sized
+     to fit without scrolling under normal conditions (see the fixed-height
+     .history-compare-col .frame below), but a shorter/zoomed viewport
+     should scroll instead of silently clipping the last line of a caption */
+  .history-stage{position:relative; flex:1; min-height:0; overflow-y:auto;}
+  /* two columns — text fixed-width on the left, mock taking the rest of the
+     panel's width on the right, matching Trust's .history-step exactly */
+  .history-step{display:none; height:100%; flex-direction:row; align-items:center; gap:48px; text-align:left;}
+  .history-step.active{display:flex;}
+  /* stacked variant — header spans the full width up top instead of a
+     280px-wide sidebar eating into the mocks' own width, freeing that
+     space for wider side-by-side comparison columns. Each mock carries its
+     own caption instead of the header holding one bullet list for all of
+     them — see .history-compare-caption below. */
+  .history-step.history-step-stacked{flex-direction:column; align-items:stretch; gap:20px;}
+  .history-step-header{flex:0 0 auto;}
+  .history-step-header .frame-cap{margin:0;}
+  .history-step .frame-cap{margin:0;}
+  .history-step-media{flex:1; height:100%; min-width:0; display:flex; align-items:center; justify-content:center;}
+  .history-step-media .frame{height:100%; width:auto; max-width:100%; flex:0 0 auto;}
+  .frame{box-sizing:border-box; height:100%; max-width:100%; overflow:hidden; display:flex; align-items:center; justify-content:center;}
+  .frame img{display:block; width:100%; height:100%; object-fit:contain;}
+  .frame-cap{font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:var(--ink-45); margin:0 0 8px;}
+  /* the old shadow (16px offset, 40px blur) reached past the frame's own
+     bottom edge into the caption sitting right below it — cut the spread
+     down and lean on .history-compare-col's larger gap (see below) to keep
+     it from bleeding into that text at all */
+  .frame-mock-card{
+    position:relative; border:1px solid var(--line); border-radius:14px; background:var(--cream);
+    box-shadow:0 6px 16px rgba(23,22,27,.07), 0 1px 4px rgba(23,22,27,.04);
+  }
+  /* side-by-side comparison — all options shown at once instead of behind
+     toggle buttons (that mock-toggle system got fully retired when this
+     changed — the mocks are portrait now, taller than wide, and there's
+     real vertical room to show every option together). Each column carries
+     its own small caption where a toggle-tab label used to live.
+     .frame gets one fixed height (not 100%/flex:1 of whatever the stage
+     happens to have available) — two reasons: (1) a percentage/flex-based
+     height stretched every column to match the tallest one, so a short mock
+     like the flat-chips screenshot floated in a huge box with its own card
+     border visible nowhere near the outer frame's border — a confusing
+     double-border look; (2) it's a hard guarantee of uniform height across
+     both steps regardless of viewport size, rather than "however much the
+     stage happens to have left," which is also what was overflowing the
+     panel on shorter screens. align-items:flex-start (not center/stretch)
+     top-anchors every column so a live mock's real height changing as it
+     animates (accordion opening, dropdown expanding) doesn't drift the
+     whole column up and down. */
+  .history-compare-row{display:flex; gap:20px; align-items:flex-start; justify-content:center; width:100%;}
+  .history-compare-col{display:flex; flex-direction:column; align-items:stretch; gap:18px; flex:1; min-width:0;}
+  .history-compare-col .frame-cap{flex:0 0 auto; margin:0; text-align:center;}
+  /* vh-capped instead of a flat 440px — on a normal-height viewport this
+     resolves to ~440px same as before, but it shrinks gracefully on short
+     viewports instead of forcing .history-stage's scroll fallback to
+     engage every time */
+  .history-compare-col .frame{height:min(440px, 44vh); width:100%;}
+  /* step 2's two mocks (dropdown, flat chips) need far less vertical room
+     than step 1's — a shorter shared frame height keeps them matched to
+     each other without the leftover dead space a 440px frame left below
+     a handful of chips or a closed select */
+  .history-step[data-step="2"] .history-compare-col .frame{height:min(340px, 34vh);}
+  .history-compare-caption{
+    flex:0 0 auto; margin:0; font-family:var(--sans); font-size:12.5px; line-height:1.55;
+    color:var(--ink-70); text-align:left;
+  }
+  .history-compare-caption strong{color:var(--ink); font-weight:700;}
+  /* small live mocks (not static screenshots) used in "How We Got Here" —
+     real DOM, either scripted to animate while its step is showing (see
+     startAccordionMock/startDropdownMock) or, for the tabs mock, just built
+     with real button chrome so its chips don't float borderless the way
+     the dropped-in tabs.svg wireframe's did. */
+  .hwg-accordion, .hwg-dropdown-mock, .hwg-tabs-mock{width:100%; height:100%; box-sizing:border-box; font-family:var(--sans); padding:18px;}
+  /* "Inline, always open" always shows every field at once (that's the
+     whole point of the option), which is taller than the shared frame
+     height — scrolled through by the animation below instead of clipped
+     or shrunk, since shrinking it would put it out of scale with the
+     other two columns again */
+  .hwg-inline-scroll{overflow-y:auto; scroll-behavior:smooth;}
+  .hwg-tabs-mock{display:flex; flex-direction:column;}
+  .hwg-tabs-bar{display:flex; gap:16px; border-bottom:1px solid var(--line); margin-bottom:16px; flex:0 0 auto;}
+  .hwg-tab{font-family:var(--mono); font-size:11.5px; letter-spacing:.02em; color:var(--ink-45); padding:0 0 10px; transition:color .2s ease;}
+  .hwg-tab.active{color:var(--ink); font-weight:700; border-bottom:2px solid var(--ink); margin-bottom:-1px;}
+  .hwg-tabs-body{flex:0 0 auto;}
+  .hwg-tab-panel{display:none;}
+  .hwg-tab-panel.active{display:block;}
+  .hwg-acc-row{border-bottom:1px solid var(--line);}
+  .hwg-acc-head{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 2px;
+    font-family:var(--mono); font-size:12px; letter-spacing:.03em; color:var(--ink); font-weight:700;
+  }
+  .hwg-acc-chev{width:16px; height:16px; color:var(--ink-45); flex-shrink:0; transition:transform .3s ease;}
+  .hwg-acc-row.open .hwg-acc-chev{transform:rotate(180deg);}
+  .hwg-acc-body{max-height:0; overflow:hidden; transition:max-height .45s ease;}
+  .hwg-acc-row.open .hwg-acc-body{max-height:420px;}
+  .hwg-acc-chips{display:flex; flex-wrap:wrap; gap:6px; padding:2px 2px 16px;}
+  .hwg-chip{font-family:var(--mono); font-size:10.5px; padding:5px 9px; border-radius:5px; border:1px solid var(--line); color:var(--ink-70);}
+  .hwg-chip.sel{background:var(--ink); color:var(--cream); border-color:var(--ink);}
+  .hwg-acc-fields{padding:2px 2px 16px; display:flex; flex-direction:column; gap:9px;}
+  .hwg-acc-field-label{font-size:10.5px; font-weight:700; letter-spacing:.02em; color:var(--ink); margin:6px 0 0; text-transform:uppercase;}
+  .hwg-acc-swatch{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; border:1px solid var(--line);}
+  /* the real "inline, always open" mock underlines only its literal text
+     inputs (the hex color fields) — dropdowns (Border radius) and buttons
+     (Layout, Product logo) get no underline. Matching that distinction here
+     instead of underlining every field row is what made 1 & 2 read as
+     plain label/value text instead of real form fields like option 3. */
+  .hwg-acc-colorval{display:inline-block; border-bottom:1px solid var(--line); padding-bottom:2px;}
+  .hwg-acc-field-row{display:flex; justify-content:space-between; gap:12px; font-size:12px; color:var(--ink-70);}
+  .hwg-dd-label{font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--ink); margin:0 0 10px;}
+  /* modeled on MUI's outlined Select (mui.com/material-ui/react-select) —
+     4px radius (not the 8px we started with, which read rounder/softer
+     than every other control in the mock), 14px horizontal padding, and
+     its actual ArrowDropDown icon (a small filled triangle) instead of a
+     bold stroke chevron borrowed from the accordion */
+  .hwg-dd-select{
+    display:flex; align-items:center; justify-content:space-between; padding:11px 14px;
+    border:1px solid var(--line); border-radius:4px; background:var(--cream); font-size:13px; color:var(--ink);
+  }
+  .hwg-dd-chevron{width:20px; height:20px; color:var(--ink-45); flex-shrink:0; transition:transform .2s ease;}
+  .hwg-dd-select.open .hwg-dd-chevron{transform:rotate(180deg);}
+  /* the list used to merge into the select (shared border, radius only on
+     the outer corners) — read as "no separation between the input and the
+     dropdown," like one control instead of two. A real floating menu (its
+     own full border-radius, a gap, a shadow) reads unambiguously as a
+     separate popover sitting below the input, closer to how an actual
+     select/menu behaves. */
+  .hwg-dd-list{
+    max-height:0; margin-top:0; overflow:hidden; border-radius:4px;
+    box-shadow:0 10px 24px rgba(23,22,27,.10), 0 2px 8px rgba(23,22,27,.06);
+    transition:max-height .4s ease, margin-top .4s ease;
+  }
+  .hwg-dd-list.open{max-height:180px; margin-top:8px; overflow-y:auto; border:1px solid var(--line); scroll-behavior:smooth;}
+  .hwg-dd-item{display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13px; color:var(--ink-70); border-bottom:1px solid var(--line);}
+  .hwg-dd-item:last-child{border-bottom:none;}
+  /* custom checkbox instead of the native OS control — a plain square with
+     a drawn checkmark, matching the deck's own monochrome system instead
+     of looking like a browser default dropped into a designed mock */
+  .hwg-dd-item input[type=checkbox]{
+    appearance:none; -webkit-appearance:none; width:15px; height:15px; margin:0; flex-shrink:0;
+    border:1.5px solid var(--ink-45); border-radius:4px; position:relative; cursor:default;
+  }
+  .hwg-dd-item input[type=checkbox]:checked{background:var(--ink); border-color:var(--ink);}
+  .hwg-dd-item input[type=checkbox]:checked::after{
+    content:''; position:absolute; left:4px; top:1px; width:4px; height:8px;
+    border:solid var(--cream); border-width:0 2px 2px 0; transform:rotate(45deg);
+  }
+  .history-arrow{
+    position:absolute; top:50%; transform:translateY(-50%); appearance:none; background:none; border:none;
+    cursor:pointer; color:var(--ink-45); padding:6px; z-index:2;
+  }
+  .history-arrow:hover{color:var(--ink);}
+  .history-arrow:disabled{opacity:.25; cursor:default; color:var(--ink-45);}
+  .history-arrow svg{width:26px; height:26px;}
+  .history-arrow-prev{left:14px;}
+  .history-arrow-next{right:14px;}
+  /* persistent link into the overlay, sitting beneath the Journey slide's
+     4 steps rather than nested inside any one of them */
+  .history-link{
+    appearance:none; background:none; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+    font-family:var(--sans); font-size:13px; color:var(--ink-70); padding:0; margin-top:20px; align-self:flex-start;
+  }
+  .history-link:hover{color:var(--ink);}
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">Driving SDK Adoption</div>
+    <div class="counter"><span id="counterNow">01</span> / <span id="counterTotal">08</span></div>
+  </div>
+
+  <div class="deck" id="deck">
+
+    <!-- 1. HERO — masked laptop frame, matching Trust's slide 1 exactly (same
+         asset: assets/macbook-air-frame.png, same .frame-laptop2 technique) -->
+    <section class="slide layout-hero active">
+      <div class="text-block">
+        <p class="kicker">Stytch · SDK Integration Builder</p>
+        <h1>Driving SDK Adoption</h1>
+        <p class="teaser">Prebuilt UI was supposed to be the fastest path to auth — no components to build. Adoption said otherwise.</p>
+      </div>
+      <div class="stage">
+        <div class="frame-laptop2">
+          <div class="screen"><div class="screen-crop"><img src="mocks/hero-cropped.svg" alt="authkit.dev — SDK Integration Builder"></div></div>
+          <img class="chrome" src="assets/macbook-air-frame.png" alt="">
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PROBLEM — matches Trust's slide 2 layout-text exactly -->
+    <section class="slide layout-text">
+      <div class="text-block">
+        <p class="kicker">The Problem</p>
+        <h1>Fast Auth, Slow Evaluation</h1>
+        <p class="teaser">The Stytch SDK's whole pitch was fast auth — nothing to build. But evaluating Stytch wasn't fast at all: customers had no way to know if the SDK actually fit their product without integrating it first.</p>
+        <div class="example-callout">
+          <p class="example-kicker">Context</p>
+          <p class="example-text">Our team's first read was a capability gap, so we focused on closing API gaps first. But even after closing them, customers still weren't adopting the SDK like we expected.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PERSONA — matches Trust's slide 4 layout-persona exactly -->
+    <section class="slide layout-persona">
+      <div class="text-block">
+        <p class="kicker">Who This Is For</p>
+        <h1>Two Audiences, One Tool</h1>
+      </div>
+      <div class="persona-cols">
+        <div class="persona-card">
+          <h4>The Evaluator</h4>
+          <p>A developer or team deciding whether Stytch fits their product, before writing any integration code.</p>
+          <div class="example-callout">
+            <p class="example-kicker">For Example</p>
+            <p class="example-text">A customer sizing up Stytch for their own app's auth</p>
+          </div>
+        </div>
+        <div class="persona-card">
+          <h4>The Solutions Engineer</h4>
+          <p>Stytch's own team, who used to build one-off demos by hand to answer exactly the question the Evaluator is asking.</p>
+          <div class="example-callout">
+            <p class="example-kicker">For Example</p>
+            <p class="example-text">An SE on a prospect call</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. TRANSITION / EXAMPLE — text only; the two example apps live on
+         the next slide now. Teaser carries the "we fixed our own config
+         first" rigor beat that used to be its own slide (cut — it was
+         structurally optional and had started overlapping with the
+         Journey slide's Step 2 rationale). -->
+    <section class="slide layout-text" id="demoSlide">
+      <div class="text-block">
+        <p class="kicker">The Ask</p>
+        <h1>Can a Customer See Their Own Product Here?</h1>
+        <p class="teaser">Customers kept asking the same thing: what would this actually look like inside their product? The closest Stytch had were example apps.</p>
+      </div>
+    </section>
+
+    <!-- 5. REFERENCE APPS — format of the Journey slide: a step-nav-style
+         picker on the left, one demo shown at a time in the browser-chrome
+         frame on the right; click the frame to open it large -->
+    <section class="slide layout-steps-next" id="demoSelectSlide">
+      <div class="text-block">
+        <p class="kicker">Reference Apps</p>
+        <h1>Close, But Not Yours</h1>
+        <p class="teaser">Example apps like these help — but they show what the SDK looks like, not what it would look like for a customer's own product, which is the question customers actually kept asking.</p>
+      </div>
+      <div class="step-nav demo-select-nav">
+        <div class="step-nav-item active" data-src="mocks/hellosocks.mov" data-url="hellosocks.com" data-ratio="3456/1650">
+          <button class="step-nav-head"><span class="step-nav-num">1</span><span class="step-nav-title">Hello Socks</span></button>
+        </div>
+        <div class="step-nav-item" data-src="mocks/survey-amp.mov" data-url="surveyamp.com" data-ratio="3456/1770">
+          <button class="step-nav-head"><span class="step-nav-num">2</span><span class="step-nav-title">Survey Amp</span></button>
+        </div>
+      </div>
+      <div class="demo-select-panel">
+        <button class="demo-select-frame" id="demoSelectFrame">
+          <div class="demo-chrome">
+            <div class="demo-chrome-titlebar">
+              <div class="demo-chrome-dots"><span></span><span></span><span></span></div>
+              <div class="demo-chrome-tab">
+                <span class="demo-chrome-tab-fav" id="demoSelectFav" style="background:#F2545B;"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 2v8.2c0 .8-.3 1.6-.9 2.1L4 15.5A4 4 0 0 0 2.5 18.6V20a2 2 0 0 0 2 2h9a5 5 0 0 0 5-5v-1.3c0-1.1-.5-2.1-1.3-2.8L13 9.2V2H8z"/></svg></span>
+                <span class="demo-chrome-tab-label" id="demoSelectTabLabel">Hello Socks</span>
+                <svg class="demo-chrome-tab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+              </div>
+              <span class="demo-chrome-tab-plus">+</span>
+            </div>
+            <div class="demo-chrome-urlbar">
+              <div class="demo-chrome-nav-icons left">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
+              </div>
+              <div class="demo-chrome-url">
+                <span class="demo-chrome-url-tune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8H9.3M13.7 8H20"/><circle cx="11.5" cy="8" r="2.2"/><path d="M4 16H6.8M11.2 16H20"/><circle cx="9" cy="16" r="2.2"/></svg></span>
+                <span class="demo-chrome-url-text" id="demoSelectUrl">hellosocks.com</span>
+                <svg class="demo-chrome-url-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 17.3l-6.2 3.6 1.6-7-5.4-4.7 7.1-.6L12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7z"/></svg>
+              </div>
+              <div class="demo-chrome-nav-icons right">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3.5a1.5 1.5 0 0 1 3 0V5h3.5a1 1 0 0 1 1 1v3.5H18a1.5 1.5 0 0 1 0 3h-1.5V16a1 1 0 0 1-1 1H12v-1.5a1.5 1.5 0 0 0-3 0V17H5.5a1 1 0 0 1-1-1v-3.5H3a1.5 1.5 0 0 1 0-3h1.5V6a1 1 0 0 1 1-1H9V3.5z"/></svg>
+                <span class="demo-chrome-url-avatar"></span>
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+              </div>
+            </div>
+            <div class="demo-thumb" id="demoSelectThumb" style="aspect-ratio:3456/1650;">
+              <video id="demoSelectVideo" src="mocks/hellosocks.mov" autoplay muted loop playsinline></video>
+              <span class="demo-expand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></span>
+            </div>
+          </div>
+        </button>
+      </div>
+      <div class="demo-lightbox" id="demoLightbox">
+        <button class="demo-lightbox-close" id="demoLightboxClose" aria-label="Close">&times;</button>
+        <div class="demo-chrome demo-chrome-large">
+          <div class="demo-chrome-titlebar">
+            <div class="demo-chrome-dots"><span></span><span></span><span></span></div>
+            <div class="demo-chrome-tab">
+              <span class="demo-chrome-tab-fav" id="demoLightboxFav" style="background:#F2545B;"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 2v8.2c0 .8-.3 1.6-.9 2.1L4 15.5A4 4 0 0 0 2.5 18.6V20a2 2 0 0 0 2 2h9a5 5 0 0 0 5-5v-1.3c0-1.1-.5-2.1-1.3-2.8L13 9.2V2H8z"/></svg></span>
+              <span class="demo-chrome-tab-label" id="demoLightboxTabLabel">Hello Socks</span>
+              <svg class="demo-chrome-tab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </div>
+            <span class="demo-chrome-tab-plus">+</span>
+          </div>
+          <div class="demo-chrome-urlbar">
+            <div class="demo-chrome-nav-icons left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
+            </div>
+            <div class="demo-chrome-url">
+              <span class="demo-chrome-url-tune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8H9.3M13.7 8H20"/><circle cx="11.5" cy="8" r="2.2"/><path d="M4 16H6.8M11.2 16H20"/><circle cx="9" cy="16" r="2.2"/></svg></span>
+              <span class="demo-chrome-url-text" id="demoLightboxUrl">hellosocks.com</span>
+              <svg class="demo-chrome-url-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 17.3l-6.2 3.6 1.6-7-5.4-4.7 7.1-.6L12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7z"/></svg>
+            </div>
+            <div class="demo-chrome-nav-icons right">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3.5a1.5 1.5 0 0 1 3 0V5h3.5a1 1 0 0 1 1 1v3.5H18a1.5 1.5 0 0 1 0 3h-1.5V16a1 1 0 0 1-1 1H12v-1.5a1.5 1.5 0 0 0-3 0V17H5.5a1 1 0 0 1-1-1v-3.5H3a1.5 1.5 0 0 1 0-3h1.5V6a1 1 0 0 1 1-1H9V3.5z"/></svg>
+              <span class="demo-chrome-url-avatar"></span>
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+            </div>
+          </div>
+          <div class="demo-thumb demo-thumb-large">
+            <video id="demoLightboxVideo" autoplay muted loop playsinline></video>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. THE IDEA — bridges the reference-app limitation into the
+         Integration Builder concept, matches Trust's slide 2 layout-text -->
+    <section class="slide layout-text">
+      <div class="text-block">
+        <p class="kicker">The Solution</p>
+        <h1>The Answer Wasn't Another Demo — It Was a Tool</h1>
+        <p class="teaser">Reference apps were still just examples — not something built around a customer's own product. What customers actually needed was a way to interact with the SDK directly, without integrating anything first.</p>
+        <div class="example-callout">
+          <p class="example-kicker">The Idea</p>
+          <p class="example-text">The SDK Integration Builder: an interactive playground, live before any code is written.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. THE EVALUATION JOURNEY — matches Trust's slide 6 (step-nav accordion)
+         exactly; right-side panel is a placeholder until slide 8's live
+         builder is solid enough to pull real pieces from, per-step -->
+    <section class="slide layout-steps-next" id="journeySlide">
+      <div class="text-block">
+        <h1>The Customer Evaluation Journey</h1>
+      </div>
+      <div class="step-nav">
+        <div class="step-nav-item active" data-step="1">
+          <button class="step-nav-head"><span class="step-nav-num">1</span><span class="step-nav-title">Explore Stytch's products</span></button>
+          <div class="step-nav-body"><p class="step-nav-desc">Stytch's full product catalog, right there to click through — customers don't need to dig through docs or the marketing site to understand how something works.</p></div>
+        </div>
+        <div class="step-nav-item" data-step="2">
+          <button class="step-nav-head"><span class="step-nav-num">2</span><span class="step-nav-title">Branding</span></button>
+          <div class="step-nav-body"><p class="step-nav-desc">It wasn't easy to see how our SDK's configuration mapped to UI elements. We started by cleaning up the actual API properties (i.e., consolidate styles, simplify the overall config), and from there created an easy way to change properties with a live preview visible.</p></div>
+        </div>
+        <div class="step-nav-item" data-step="3">
+          <button class="step-nav-head"><span class="step-nav-num">3</span><span class="step-nav-title">Try the real flow, not a screenshot</span></button>
+          <div class="step-nav-body"><p class="step-nav-desc">Instead of just a preview of what your customizations would look like, a full working SDK instance. Customers click through the real sign-up/login flow so they can see each phase of the flow.</p></div>
+        </div>
+        <div class="step-nav-item" data-step="4">
+          <button class="step-nav-head"><span class="step-nav-num">4</span><span class="step-nav-title">Shippable code</span></button>
+          <div class="step-nav-body"><p class="step-nav-desc">View Code turns the config into a real integration the moment evaluation ends with production ready code.</p></div>
+        </div>
+      </div>
+      <button class="history-link" id="journeyHistoryLink" onclick="openHistoryOverlay()">See how we got here <span aria-hidden="true">&rarr;</span></button>
+      <div class="journey-panel">
+        <div class="journey-tool-frame">
+          <div id="journeyToolMount"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. IMPACT — matches Trust's slide 8 (layout-timeline) centered
+         structure and bullet-list treatment. No timeline-track: that
+         component is specifically "what we're validating" going forward
+         (pre-beta), which doesn't fit here — this shipped, so it's framed
+         as delivered outcomes instead, same list style (•, not →). -->
+    <section class="slide layout-timeline">
+      <div class="text-block">
+        <p class="kicker">Impact</p>
+        <h1>What This Actually Fixed</h1>
+      </div>
+      <ul class="validation-list">
+        <li>
+          <p class="validation-title">Fast, easy preview</p>
+          <p class="validation-desc">Replaced the SE-built custom demo as the default way a customer evaluates Stytch.</p>
+        </li>
+        <li>
+          <p class="validation-title">Reduced time to value</p>
+          <p class="validation-desc">View Code turns the end of evaluation directly into a working integration.</p>
+        </li>
+        <li>
+          <p class="validation-title">Better decision-making</p>
+          <p class="validation-desc">Customers validate product fit, brand fit, and real UX flows themselves.</p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 9. LIVE PROTOTYPE -->
+    <section class="slide" id="liveSlide" style="padding:24px 48px;">
+      <div class="live-callout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2a2 2 0 0 1 2 2v7l1.3-.6a2.3 2.3 0 0 1 3.1 1.5l1.3 5a2.3 2.3 0 0 1-1.6 2.8l-4.8 1.3a4 4 0 0 1-4.5-1.7L3.4 15A2 2 0 0 1 5 12h1V4a2 2 0 0 1 2-2z"/><path d="M9 9V4"/></svg>
+        <span>Try it yourself — toggle products, restyle it, view the code</span>
+      </div>
+      <p class="live-callout-note">Product and styling changes are fully live — email/SMS delivery isn't connected in this demo, so a real message won't send.</p>
+      <div id="stytchToolMount" style="flex:1; min-height:0;"></div>
+    </section>
+
+  </div>
+
+  <!-- "how we got here" wizard — single overlay shell (see CSS comment
+       above), opened only from the Journey slide's "See how we got here"
+       link, never auto-opened -->
+  <div class="history-overlay" id="historyOverlay">
+    <div class="history-panel">
+      <button class="history-close" id="historyClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button class="history-arrow history-arrow-prev" id="historyPrev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="history-arrow history-arrow-next" id="historyNext" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+      <div class="history-head">
+        <p class="kicker">How We Got Here</p>
+      </div>
+      <div class="history-stage">
+        <div class="history-step history-step-stacked active" data-step="1">
+          <div class="history-step-header">
+            <p class="frame-cap">01 — HOW SHOULD CONFIGURATION BE GROUPED?</p>
+          </div>
+          <div class="history-step-media">
+            <div class="history-compare-row">
+              <div class="history-compare-col">
+                <p class="frame-cap">Tabs per element</p>
+                <div class="frame frame-mock-card">
+                  <div class="hwg-tabs-mock" id="hwgTabsMock">
+                    <div class="hwg-tabs-bar">
+                      <span class="hwg-tab active" data-tab="products">Products</span><span class="hwg-tab" data-tab="buttons">Buttons</span><span class="hwg-tab" data-tab="text">Text</span><span class="hwg-tab" data-tab="container">Container</span>
+                    </div>
+                    <div class="hwg-tabs-body">
+                      <div class="hwg-tab-panel active" data-panel="products">
+                        <div class="hwg-acc-chips">
+                          <span class="hwg-chip">Google</span><span class="hwg-chip">Facebook</span><span class="hwg-chip sel">Magic links</span>
+                          <span class="hwg-chip">Passwords</span><span class="hwg-chip sel">SMS OTP</span><span class="hwg-chip">Email OTP</span>
+                          <span class="hwg-chip">WhatsApp OTP</span><span class="hwg-chip">Web3</span>
+                        </div>
+                      </div>
+                      <div class="hwg-tab-panel" data-panel="buttons">
+                        <div class="hwg-acc-fields">
+                          <p class="hwg-acc-field-label">Primary Button</p>
+                          <div class="hwg-acc-field-row"><span>Background Color</span><span><i class="hwg-acc-swatch" style="background:#24765D"></i><span class="hwg-acc-colorval">#24765D</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Text Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border radius</span><span>Pill</span></div>
+                          <p class="hwg-acc-field-label">Secondary Button</p>
+                          <div class="hwg-acc-field-row"><span>Background Color</span><span><i class="hwg-acc-swatch" style="background:#24765D"></i><span class="hwg-acc-colorval">#24765D</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Text Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border radius</span><span>Pill</span></div>
+                        </div>
+                      </div>
+                      <div class="hwg-tab-panel" data-panel="text">
+                        <div class="hwg-acc-fields">
+                          <p class="hwg-acc-field-label">General</p>
+                          <div class="hwg-acc-field-row"><span>Font</span><span>Arial</span></div>
+                          <div class="hwg-acc-field-row"><span>Product logo</span><span>Replace / Remove</span></div>
+                          <p class="hwg-acc-field-label">Colors</p>
+                          <div class="hwg-acc-field-row"><span>Primary</span><span><i class="hwg-acc-swatch" style="background:#161616"></i><span class="hwg-acc-colorval">#161616</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Secondary</span><span><i class="hwg-acc-swatch" style="background:#696969"></i><span class="hwg-acc-colorval">#696969</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Success</span><span><i class="hwg-acc-swatch" style="background:#009869"></i><span class="hwg-acc-colorval">#009869</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Error</span><span><i class="hwg-acc-swatch" style="background:#E7000B"></i><span class="hwg-acc-colorval">#E7000B</span></span></div>
+                        </div>
+                      </div>
+                      <div class="hwg-tab-panel" data-panel="container">
+                        <div class="hwg-acc-fields">
+                          <p class="hwg-acc-field-label">Container</p>
+                          <div class="hwg-acc-field-row"><span>Width</span><span>400px</span></div>
+                          <div class="hwg-acc-field-row"><span>Background Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border Color</span><span><i class="hwg-acc-swatch" style="background:#E4E4E4"></i><span class="hwg-acc-colorval">#E4E4E4</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border radius</span><span>4px</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p class="history-compare-caption">Tabs per element isolated each concern, but customers lost the live-preview thread every time they switched.</p>
+              </div>
+              <div class="history-compare-col">
+                <p class="frame-cap">Collapsible sections</p>
+                <div class="frame frame-mock-card">
+                  <div class="hwg-accordion" id="hwgAccordion">
+                    <div class="hwg-acc-row" data-row="products">
+                      <div class="hwg-acc-head"><span>PRODUCTS</span><svg class="hwg-acc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+                      <div class="hwg-acc-body">
+                        <div class="hwg-acc-chips">
+                          <span class="hwg-chip">Google</span><span class="hwg-chip">Facebook</span><span class="hwg-chip sel">Magic links</span>
+                          <span class="hwg-chip">Passwords</span><span class="hwg-chip sel">SMS OTP</span><span class="hwg-chip">Email OTP</span>
+                          <span class="hwg-chip">WhatsApp OTP</span><span class="hwg-chip">Web3</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="hwg-acc-row" data-row="styling">
+                      <div class="hwg-acc-head"><span>STYLING</span><svg class="hwg-acc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+                      <div class="hwg-acc-body">
+                        <div class="hwg-acc-fields">
+                          <p class="hwg-acc-field-label">General</p>
+                          <div class="hwg-acc-field-row"><span>Font</span><span>Arial</span></div>
+                          <div class="hwg-acc-field-row"><span>Product logo</span><span>Replace / Remove</span></div>
+                          <p class="hwg-acc-field-label">Primary Button</p>
+                          <div class="hwg-acc-field-row"><span>Background Color</span><span><i class="hwg-acc-swatch" style="background:#24765D"></i><span class="hwg-acc-colorval">#24765D</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Text Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border radius</span><span>Pill</span></div>
+                          <p class="hwg-acc-field-label">Secondary Button</p>
+                          <div class="hwg-acc-field-row"><span>Background Color</span><span><i class="hwg-acc-swatch" style="background:#24765D"></i><span class="hwg-acc-colorval">#24765D</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Text Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                          <div class="hwg-acc-field-row"><span>Border radius</span><span>Pill</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p class="history-compare-caption">Collapsing sections into accordions cut clutter, but hid whether a section had anything worth touching at all.</p>
+              </div>
+              <div class="history-compare-col">
+                <p class="frame-cap">Inline, always open</p>
+                <div class="frame frame-mock-card">
+                  <div class="hwg-dropdown-mock hwg-inline-scroll" id="hwgInlineScroll">
+                    <div class="hwg-acc-head" style="padding-left:2px;"><span>PRODUCTS</span></div>
+                    <div class="hwg-acc-chips">
+                      <span class="hwg-chip">Google</span><span class="hwg-chip">Facebook</span><span class="hwg-chip sel">Magic links</span>
+                      <span class="hwg-chip">Passwords</span><span class="hwg-chip sel">SMS OTP</span><span class="hwg-chip">Email OTP</span>
+                      <span class="hwg-chip">WhatsApp OTP</span><span class="hwg-chip">Web3</span>
+                    </div>
+                    <div class="hwg-acc-head" style="border-top:1px solid var(--line); margin-top:8px; padding-left:2px;"><span>STYLING</span></div>
+                    <div class="hwg-acc-fields">
+                      <p class="hwg-acc-field-label">General</p>
+                      <div class="hwg-acc-field-row"><span>Font</span><span>Arial</span></div>
+                      <div class="hwg-acc-field-row"><span>Product logo</span><span>Replace / Remove</span></div>
+                      <p class="hwg-acc-field-label">Primary Button</p>
+                      <div class="hwg-acc-field-row"><span>Background Color</span><span><i class="hwg-acc-swatch" style="background:#24765D"></i><span class="hwg-acc-colorval">#24765D</span></span></div>
+                      <div class="hwg-acc-field-row"><span>Text Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                      <div class="hwg-acc-field-row"><span>Border Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                      <div class="hwg-acc-field-row"><span>Border radius</span><span>Pill</span></div>
+                      <p class="hwg-acc-field-label">Secondary Button</p>
+                      <div class="hwg-acc-field-row"><span>Background Color</span><span><i class="hwg-acc-swatch" style="background:#24765D"></i><span class="hwg-acc-colorval">#24765D</span></span></div>
+                      <div class="hwg-acc-field-row"><span>Text Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                      <div class="hwg-acc-field-row"><span>Border Color</span><span><i class="hwg-acc-swatch" style="background:#FFFFFF"></i><span class="hwg-acc-colorval">#FFFFFF</span></span></div>
+                      <div class="hwg-acc-field-row"><span>Border radius</span><span>Pill</span></div>
+                    </div>
+                  </div>
+                </div>
+                <p class="history-compare-caption">We kept everything <strong>flat and inline</strong> instead — grouped visually with bold labels, never hidden behind a click.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="history-step history-step-stacked" data-step="2">
+          <div class="history-step-header">
+            <p class="frame-cap">02 — HOW SHOULD PRODUCTS BE PICKED?</p>
+          </div>
+          <div class="history-step-media">
+            <div class="history-compare-row">
+              <div class="history-compare-col">
+                <p class="frame-cap">Dropdown + checklist</p>
+                <div class="frame frame-mock-card">
+                  <div class="hwg-dropdown-mock">
+                    <p class="hwg-dd-label">PRODUCTS</p>
+                    <div class="hwg-dd-select" id="hwgDdSelect"><span>Select products</span><svg class="hwg-dd-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></div>
+                    <div class="hwg-dd-list" id="hwgDdList">
+                      <label class="hwg-dd-item"><input type="checkbox" tabindex="-1"><span>Email magic links</span></label>
+                      <label class="hwg-dd-item"><input type="checkbox" tabindex="-1"><span>Passwords</span></label>
+                      <label class="hwg-dd-item"><input type="checkbox" tabindex="-1" checked><span>WhatsApp OTP</span></label>
+                      <label class="hwg-dd-item"><input type="checkbox" tabindex="-1" checked><span>SMS OTP</span></label>
+                      <label class="hwg-dd-item"><input type="checkbox" tabindex="-1" checked><span>Email OTP</span></label>
+                      <label class="hwg-dd-item"><input type="checkbox" tabindex="-1" checked><span>Google OAuth</span></label>
+                    </div>
+                  </div>
+                </div>
+                <p class="history-compare-caption">A dropdown-and-checklist kept the list tucked out of the way, but hid exactly what customers came to explore.</p>
+              </div>
+              <div class="history-compare-col">
+                <p class="frame-cap">Shipped: flat chips</p>
+                <div class="frame frame-mock-card">
+                  <div class="hwg-dropdown-mock">
+                    <p class="hwg-dd-label">PRODUCTS</p>
+                    <div class="hwg-acc-chips">
+                      <span class="hwg-chip">Google</span><span class="hwg-chip">Facebook</span><span class="hwg-chip sel">Magic links</span>
+                      <span class="hwg-chip">Passwords</span><span class="hwg-chip sel">SMS OTP</span><span class="hwg-chip">Email OTP</span>
+                      <span class="hwg-chip">WhatsApp OTP</span><span class="hwg-chip">Web3</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="history-compare-caption">We shipped <strong>flat text chips</strong> instead — everything visible at once, nothing to open first.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dots" id="dots"></div>
+  <div class="navbtns">
+    <button class="navbtn" onclick="go(-1)" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="navbtn" onclick="go(1)" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+
+<script src="tool.js"></script>
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let idx = 0;
+  // -1 so the very first render() (idx already 0) still counts as a real
+  // "entered slide 0" transition — see the __onActivate check below
+  let prevIdx = -1;
+  // set the first time pressing next from the Journey slide's step 4 opens
+  // "How We Got Here" instead of advancing — see go(dir)
+  let journeyHistoryAutoOpened = false;
+  const dotsEl = document.getElementById('dots');
+  slides.forEach((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => { idx = i; render(); };
+    dotsEl.appendChild(d);
+  });
+  const dots = dotsEl.querySelectorAll('.dot');
+  document.getElementById('counterTotal').textContent = String(total).padStart(2, '0');
+
+  function render(){
+    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    document.getElementById('counterNow').textContent = String(idx + 1).padStart(2, '0');
+    // a slide can expose __onActivate (same convention as __journeyNav
+    // below) to run its own "just became visible" logic — the Journey
+    // slide uses this to (re)start whichever step's demo is current. Fixes
+    // a real bug: initJourneyStepNav's own selectStep(0) call runs at page
+    // load, while slide 1 (not the Journey slide) is still active, so its
+    // first startProductDemo() timer fired while journeySlide.active was
+    // false and quietly stopped itself for good — the demo would only ever
+    // play after re-selecting a step by hand. Only fires on a genuine
+    // index change, not a redundant render() for the slide already showing.
+    if (idx !== prevIdx && slides[idx].__onActivate) slides[idx].__onActivate();
+    prevIdx = idx;
+  }
+  function go(dir){
+    // the "how we got here" wizard, while open, owns the deck's own
+    // next/prev controls (on-screen buttons and arrow keys alike) — same
+    // convention as the __journeyNav interception below, one level up
+    const historyOverlay = document.getElementById('historyOverlay');
+    if (historyOverlay && historyOverlay.classList.contains('active')) { historyGo(dir); return; }
+    // slides that expose __journeyNav (the Journey step-nav) get first crack
+    // at a next/prev press — step through 1-4 before actually changing slides
+    const activeSlide = slides[idx];
+    const nav = activeSlide && activeSlide.__journeyNav;
+    if (nav) {
+      const cur = nav.getCurrentIndex();
+      if (dir === 1 && cur < nav.stepCount - 1) { nav.goToIndex(cur + 1); return; }
+      if (dir === -1 && cur > 0) { nav.goToIndex(cur - 1); return; }
+      // pressing next from the last step (4) opens "How We Got Here"
+      // instead of leaving the slide, the first time only — closing it (or
+      // pressing next again once it's already been seen) lets this same
+      // press-next continue on to the next slide normally
+      if (dir === 1 && cur === nav.stepCount - 1 && !journeyHistoryAutoOpened) {
+        journeyHistoryAutoOpened = true;
+        openHistoryOverlay();
+        return;
+      }
+    }
+    idx = Math.max(0, Math.min(total - 1, idx + dir));
+    render();
+  }
+  window.addEventListener('keydown', (e) => {
+    const historyOverlay = document.getElementById('historyOverlay');
+    if (historyOverlay && historyOverlay.classList.contains('active')) {
+      if (e.key === 'Escape') closeHistoryOverlay();
+      if (e.key === 'ArrowRight') go(1);
+      if (e.key === 'ArrowLeft') go(-1);
+      return;
+    }
+    if (e.key === 'ArrowRight') go(1);
+    if (e.key === 'ArrowLeft') go(-1);
+  });
+
+  // "how we got here" wizard — single-wizard version of Trust's
+  // slides-v3.html .history-overlay controller: no multi-group switching, no
+  // hotspot/drawer mini-prototypes, no auto-open-on-next. Opened only via the
+  // Journey slide's "See how we got here" link (see openHistoryOverlay, bound
+  // inline in the HTML), and its 3 steps are just before/after tab-toggles.
+  let historyStep = 1;
+  function historyStepCount(){
+    return document.querySelectorAll('#historyOverlay .history-step').length;
+  }
+  // step 1's three mocks used to animate all at once — hard to focus on
+  // any one of them. They now run one at a time in a fixed order (tabs ->
+  // accordion -> inline scroll -> loop), each exposing a "play one full
+  // cycle, then call onDone" function instead of self-looping forever, so
+  // a sequencer (runStep1Sequence, below) can chain them.
+  function historyOverlayActiveOnStep(step){
+    const overlay = document.getElementById('historyOverlay');
+    return !!overlay && overlay.classList.contains('active') && historyStep === step;
+  }
+  // "Tabs per element" — cycles Products -> Buttons -> Text -> Container
+  let tabsMockTimer = null;
+  function stopTabsMock(){
+    if (tabsMockTimer) { clearTimeout(tabsMockTimer); tabsMockTimer = null; }
+  }
+  function playTabsCycle(onDone){
+    stopTabsMock();
+    const mock = document.getElementById('hwgTabsMock');
+    const tabs = mock ? Array.from(mock.querySelectorAll('.hwg-tab')) : [];
+    const panels = mock ? Array.from(mock.querySelectorAll('.hwg-tab-panel')) : [];
+    if (!tabs.length) { onDone(); return; }
+    function show(idx){
+      const name = tabs[idx].dataset.tab;
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+      panels.forEach(p => p.classList.toggle('active', p.dataset.panel === name));
+    }
+    function step(idx){
+      if (!historyOverlayActiveOnStep(1)) { stopTabsMock(); return; }
+      show(idx);
+      if (idx === tabs.length - 1) { tabsMockTimer = setTimeout(onDone, 2000); return; }
+      tabsMockTimer = setTimeout(() => step(idx + 1), 2000);
+    }
+    step(0);
+  }
+  // "Collapsible sections" — PRODUCTS open -> STYLING open -> both closed
+  let accordionMockTimer = null;
+  function stopAccordionMock(){
+    if (accordionMockTimer) { clearTimeout(accordionMockTimer); accordionMockTimer = null; }
+  }
+  function playAccordionCycle(onDone){
+    stopAccordionMock();
+    const rows = Array.from(document.querySelectorAll('#hwgAccordion .hwg-acc-row'));
+    if (!rows.length) { onDone(); return; }
+    function openRow(idx){ rows.forEach((r, i) => r.classList.toggle('open', i === idx)); }
+    function step(n){
+      if (!historyOverlayActiveOnStep(1)) { stopAccordionMock(); return; }
+      if (n === 2) { openRow(-1); accordionMockTimer = setTimeout(onDone, 900); return; }
+      openRow(n);
+      accordionMockTimer = setTimeout(() => step(n + 1), 2200);
+    }
+    step(0);
+  }
+  // "Inline, always open" — every field is shown at once, which is taller
+  // than the frame, so it scrolls down to reveal Secondary Button and back
+  // up, the same way the dropdown mock scrolls through its list
+  let inlineScrollTimer = null;
+  let inlineScrollTimeouts = [];
+  function stopInlineScroll(){
+    if (inlineScrollTimer) { clearTimeout(inlineScrollTimer); inlineScrollTimer = null; }
+    inlineScrollTimeouts.forEach(t => clearTimeout(t));
+    inlineScrollTimeouts = [];
+  }
+  function playInlineScrollCycle(onDone){
+    stopInlineScroll();
+    const el = document.getElementById('hwgInlineScroll');
+    if (!el || el.scrollHeight <= el.clientHeight) { onDone(); return; }
+    el.scrollTop = 0;
+    inlineScrollTimeouts.push(setTimeout(() => {
+      if (!historyOverlayActiveOnStep(1)) { stopInlineScroll(); return; }
+      el.scrollTo({ top: el.scrollHeight - el.clientHeight, behavior: 'smooth' });
+      inlineScrollTimeouts.push(setTimeout(() => {
+        if (!historyOverlayActiveOnStep(1)) { stopInlineScroll(); return; }
+        el.scrollTo({ top: 0, behavior: 'smooth' });
+        inlineScrollTimeouts.push(setTimeout(onDone, 900));
+      }, 1800));
+    }, 900));
+  }
+  // sequencer — chains the three above, one at a time, looping forever
+  // while step 1 is showing
+  let step1SeqTimer = null;
+  function stopStep1Sequence(){
+    if (step1SeqTimer) { clearTimeout(step1SeqTimer); step1SeqTimer = null; }
+    stopTabsMock();
+    stopAccordionMock();
+    stopInlineScroll();
+  }
+  function runStep1Sequence(){
+    if (!historyOverlayActiveOnStep(1)) { stopStep1Sequence(); return; }
+    playTabsCycle(() => {
+      if (!historyOverlayActiveOnStep(1)) return;
+      step1SeqTimer = setTimeout(() => {
+        playAccordionCycle(() => {
+          if (!historyOverlayActiveOnStep(1)) return;
+          step1SeqTimer = setTimeout(() => {
+            playInlineScrollCycle(() => {
+              if (!historyOverlayActiveOnStep(1)) return;
+              step1SeqTimer = setTimeout(runStep1Sequence, 500);
+            });
+          }, 500);
+        });
+      }, 500);
+    });
+  }
+  // step 2's "Dropdown + checklist" mock — opens the dropdown, scrolls down
+  // through the list to show it's real (not just the first few items),
+  // scrolls back, closes, loops
+  let dropdownMockTimer = null;
+  let dropdownMockTimeouts = [];
+  function stopDropdownMock(){
+    if (dropdownMockTimer) { clearTimeout(dropdownMockTimer); dropdownMockTimer = null; }
+    dropdownMockTimeouts.forEach(t => clearTimeout(t));
+    dropdownMockTimeouts = [];
+  }
+  function startDropdownMock(){
+    stopDropdownMock();
+    const select = document.getElementById('hwgDdSelect');
+    const list = document.getElementById('hwgDdList');
+    if (!select || !list) return;
+    function loop(){
+      if (!document.getElementById('historyOverlay').classList.contains('active') || historyStep !== 2) { stopDropdownMock(); return; }
+      select.classList.remove('open');
+      list.classList.remove('open');
+      list.scrollTop = 0;
+      dropdownMockTimeouts.push(setTimeout(() => {
+        select.classList.add('open');
+        list.classList.add('open');
+        dropdownMockTimeouts.push(setTimeout(() => {
+          list.scrollTo({ top: list.scrollHeight - list.clientHeight, behavior: 'smooth' });
+          dropdownMockTimeouts.push(setTimeout(() => {
+            list.scrollTo({ top: 0, behavior: 'smooth' });
+            dropdownMockTimeouts.push(setTimeout(() => {
+              select.classList.remove('open');
+              list.classList.remove('open');
+              dropdownMockTimer = setTimeout(loop, 900);
+            }, 900));
+          }, 1600));
+        }, 700));
+      }, 700));
+    }
+    loop();
+  }
+  function updateHistoryStep(){
+    document.querySelectorAll('#historyOverlay .history-step').forEach(s => s.classList.toggle('active', Number(s.dataset.step) === historyStep));
+    const prev = document.getElementById('historyPrev');
+    if (prev) prev.disabled = historyStep === 1;
+    // next stays enabled on the last step — historyGo(1) closes the wizard
+    // and drops back to the Journey slide instead of being a dead button
+    stopStep1Sequence();
+    stopDropdownMock();
+    if (historyStep === 1) runStep1Sequence();
+    if (historyStep === 2) startDropdownMock();
+  }
+  function historyGo(dir){
+    const nextStep = historyStep + dir;
+    // pressing next past the last step closes the wizard and drops back to
+    // the Journey slide underneath, rather than just sitting disabled
+    if (dir === 1 && nextStep > historyStepCount()) { closeHistoryOverlay(); return; }
+    if (nextStep < 1 || nextStep > historyStepCount()) return;
+    historyStep = nextStep;
+    updateHistoryStep();
+  }
+  function openHistoryOverlay(){
+    const overlay = document.getElementById('historyOverlay');
+    if (!overlay) return;
+    historyStep = 1;
+    // .active has to be set BEFORE updateHistoryStep() runs, not after —
+    // updateHistoryStep() is what kicks off runStep1Sequence/
+    // startDropdownMock, and their very first "is the overlay actually
+    // open" check was reading .active before this line ever set it,
+    // so the mocks stopped themselves immediately and never animated
+    overlay.classList.add('active');
+    updateHistoryStep();
+  }
+  function closeHistoryOverlay(){
+    const overlay = document.getElementById('historyOverlay');
+    if (overlay) overlay.classList.remove('active');
+    stopStep1Sequence();
+    stopDropdownMock();
+  }
+  (function initHistoryOverlay(){
+    const overlay = document.getElementById('historyOverlay');
+    if (!overlay) return;
+    document.getElementById('historyClose').onclick = closeHistoryOverlay;
+    document.getElementById('historyPrev').onclick = () => historyGo(-1);
+    document.getElementById('historyNext').onclick = () => historyGo(1);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeHistoryOverlay(); });
+  })();
+
+  // mount the live SDK Integration Builder tool into slide 8
+  if (window.mountStytchTool) {
+    window.mountStytchTool(document.getElementById('stytchToolMount'));
+  }
+
+  // slide 6 — left picker swaps which demo plays in the right-side frame;
+  // clicking the frame opens it large in a lightbox
+  (function initDemoSelectSlide(){
+    const slide = document.getElementById('demoSelectSlide');
+    if (!slide) return;
+    // fake favicons — a colored chip + simple glyph per app, same convention
+    // as a real browser tab favicon, standing in since neither app has a
+    // real one to pull from
+    const FAVICONS = {
+      'hellosocks.com': { bg:'#F2545B', svg:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M8 2v8.2c0 .8-.3 1.6-.9 2.1L4 15.5A4 4 0 0 0 2.5 18.6V20a2 2 0 0 0 2 2h9a5 5 0 0 0 5-5v-1.3c0-1.1-.5-2.1-1.3-2.8L13 9.2V2H8z"/></svg>' },
+      'surveyamp.com': { bg:'#5B6EF5', svg:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 20V10h4v10H4zm7 0V4h4v16h-4zm7 0v-7h4v7h-4z"/></svg>' },
+    };
+    const items = slide.querySelectorAll('.step-nav-item');
+    const panelVideo = document.getElementById('demoSelectVideo');
+    const panelThumb = document.getElementById('demoSelectThumb');
+    const panelUrl = document.getElementById('demoSelectUrl');
+    const panelTabLabel = document.getElementById('demoSelectTabLabel');
+    const panelFav = document.getElementById('demoSelectFav');
+    const frame = document.getElementById('demoSelectFrame');
+
+    const lightbox = document.getElementById('demoLightbox');
+    const lightboxVideo = document.getElementById('demoLightboxVideo');
+    const lightboxThumb = lightbox.querySelector('.demo-thumb-large');
+    const lightboxUrl = document.getElementById('demoLightboxUrl');
+    const lightboxTabLabel = document.getElementById('demoLightboxTabLabel');
+    const lightboxFav = document.getElementById('demoLightboxFav');
+    const closeBtn = document.getElementById('demoLightboxClose');
+
+    let current = items[0];
+
+    const select = (item) => {
+      current = item;
+      items.forEach(i => i.classList.toggle('active', i === item));
+      const { src, url, ratio } = item.dataset;
+      const label = item.querySelector('.step-nav-title').textContent;
+      const fav = FAVICONS[url];
+      panelVideo.src = src;
+      panelThumb.style.aspectRatio = ratio;
+      panelUrl.textContent = url;
+      panelTabLabel.textContent = label;
+      panelFav.style.background = fav.bg;
+      panelFav.innerHTML = fav.svg;
+    };
+    items.forEach(item => {
+      item.querySelector('.step-nav-head').onclick = () => select(item);
+    });
+
+    const openLightbox = () => {
+      const { src, url, ratio } = current.dataset;
+      const label = current.querySelector('.step-nav-title').textContent;
+      const fav = FAVICONS[url];
+      lightboxVideo.src = src;
+      lightboxUrl.textContent = url;
+      lightboxTabLabel.textContent = label;
+      lightboxFav.style.background = fav.bg;
+      lightboxFav.innerHTML = fav.svg;
+      lightboxThumb.style.aspectRatio = ratio;
+      lightbox.classList.add('active');
+      lightboxVideo.play();
+    };
+    const closeLightbox = () => {
+      lightbox.classList.remove('active');
+      lightboxVideo.pause();
+    };
+    frame.onclick = openLightbox;
+    closeBtn.onclick = closeLightbox;
+    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+  })();
+
+  // slide 7 — step-nav accordion (single step open at a time), driving a
+  // second, independent live instance of the tool (tool.js) mounted into
+  // this slide's own panel — each step focuses a different real piece of
+  // it (Products, Styling, live preview, View Code) instead of a mock
+  (function initJourneyStepNav(){
+    const journeySlide = document.getElementById('journeySlide');
+    if (!journeySlide) return;
+    const items = journeySlide.querySelectorAll('.step-nav-item');
+    const journeyToolMount = document.getElementById('journeyToolMount');
+    if (window.mountStytchTool && journeyToolMount) {
+      window.mountStytchTool(journeyToolMount);
+    }
+
+    const journeyToolFrame = journeyToolMount ? journeyToolMount.closest('.journey-tool-frame') : null;
+
+    // scripted-click cursor, same pattern as Trust's live-console autoplay
+    // (slides-v3.html): show the pulse landing on the real element first,
+    // then actually fire its click a beat later, so the viewer sees "cursor
+    // lands" before "screen reacts" instead of both at once
+    let journeyClickPulseEl = null;
+    function showClickPulseOnEl(el){
+      if (!el) return;
+      if (!journeyClickPulseEl) {
+        journeyClickPulseEl = document.createElement('div');
+        journeyClickPulseEl.className = 'journey-click-pulse';
+        document.body.appendChild(journeyClickPulseEl);
+      }
+      const r = el.getBoundingClientRect();
+      journeyClickPulseEl.style.left = (r.left + r.width / 2) + 'px';
+      journeyClickPulseEl.style.top = (r.top + r.height / 2) + 'px';
+      journeyClickPulseEl.classList.remove('fire');
+      void journeyClickPulseEl.offsetWidth;
+      journeyClickPulseEl.classList.add('fire');
+    }
+    function clickWithPulse(el, delay){
+      if (!el) return;
+      showClickPulseOnEl(el);
+      setTimeout(() => el.click(), delay == null ? 260 : delay);
+    }
+
+    // step 1 — auto-toggles one product at a time (never a whole set at
+    // once) so the viewer can actually see each click land and the live
+    // preview react to it. Sequence is hand-built so it returns to the
+    // default selection at the end and loops cleanly. Drives the tool
+    // purely through its own real .sk-chip click handlers (no internal API
+    // needed) so it can never drift out of sync with actual tool state.
+    const PRODUCT_DEMO_SEQUENCE = [
+      'google', 'magicLinks', 'facebook', 'smsOtp', 'passwords', 'google',
+      'emailOtp', 'facebook', 'whatsappOtp', 'passwords', 'web3', 'emailOtp',
+      'magicLinks', 'whatsappOtp', 'smsOtp', 'web3',
+    ];
+    let productDemoTimer = null;
+    let productDemoIdx = 0;
+    function stopProductDemo(){
+      if (productDemoTimer) { clearTimeout(productDemoTimer); productDemoTimer = null; }
+    }
+    function toggleNextProduct(){
+      if (!journeySlide.classList.contains('active')) { stopProductDemo(); return; }
+      const id = PRODUCT_DEMO_SEQUENCE[productDemoIdx % PRODUCT_DEMO_SEQUENCE.length];
+      productDemoIdx++;
+      const chip = journeyToolMount.querySelector('.sk-chip[data-id="' + id + '"]');
+      clickWithPulse(chip, 300);
+      productDemoTimer = setTimeout(toggleNextProduct, 1300);
+    }
+    function startProductDemo(){
+      stopProductDemo();
+      productDemoIdx = 0;
+      productDemoTimer = setTimeout(toggleNextProduct, 900);
+    }
+    // silently (no click-pulse — this is a sync-up, not a demoed
+    // interaction) drives real chip clicks until state.selected matches
+    // targetIds exactly, same no-internal-API rule as everything else here.
+    // Each chip's on/off decision is based on the grid's state at the start
+    // of the loop (captured once via the initial querySelectorAll), so it
+    // still converges correctly even though every click internally
+    // rebuilds the whole grid.
+    function setSelectedProducts(targetIds){
+      const grid = journeyToolMount.querySelector('#skProductGrid');
+      if (!grid) return;
+      const target = new Set(targetIds);
+      Array.from(grid.querySelectorAll('.sk-chip')).forEach(chip => {
+        const isSelected = chip.classList.contains('selected');
+        const shouldSelect = target.has(chip.dataset.id);
+        if (isSelected !== shouldSelect) chip.click();
+      });
+    }
+
+    // step 2 — same philosophy as step 1's product cycling: change one real
+    // styling field at a time (never several at once), driven through the
+    // tool's own real input elements (hex/number inputs, the font select),
+    // never an internal API — so it can't drift out of sync with actual
+    // tool state. 4 different capabilities on purpose (font, container
+    // background, container shape, primary button color), each landed on
+    // then reverted, so the sequence is a clean palindrome that returns to
+    // the real default theme and loops seamlessly — same reasoning as
+    // PRODUCT_DEMO_SEQUENCE above.
+    function setStyleHex(idPrefix, hex){
+      const el = journeyToolMount.querySelector('#' + idPrefix + 'Input');
+      if (el) { el.value = hex; el.dispatchEvent(new Event('input')); }
+    }
+    function setStyleNumber(idPrefix, value){
+      const el = journeyToolMount.querySelector('#' + idPrefix + 'Input');
+      if (el) { el.value = String(value); el.dispatchEvent(new Event('input')); }
+    }
+    function setStyleSelect(selector, value){
+      const el = journeyToolMount.querySelector(selector);
+      if (el) { el.value = value; el.dispatchEvent(new Event('change')); }
+    }
+    function setStyleText(idPrefix, value){
+      const el = journeyToolMount.querySelector('#' + idPrefix + 'Input');
+      if (el) { el.value = value; el.dispatchEvent(new Event('input')); }
+    }
+    // steps share one live tool instance (and one real state object inside
+    // it), so styling left on from step 2's demo — or from someone poking
+    // at the panel directly — would otherwise bleed into steps 1/3/4. Per
+    // Kelly, each step should read as its own separate instance: force the
+    // real default theme back (the same values tool.js itself boots with,
+    // driven through the same real inputs, not an internal reset) whenever
+    // a step that isn't step 2 becomes active.
+    function resetStyleDefaults(){
+      setStyleSelect('#skFontSelect', 'system-ui');
+      setStyleText('skLogo', '');
+      setStyleNumber('skWidth', 400);
+      setStyleHex('skBg', 'FFFFFF');
+      setStyleHex('skBorder', 'E4E4E4');
+      setStyleNumber('skRadius', 4);
+      setStyleHex('skColorPrimary', '161616');
+      setStyleHex('skColorSecondary', '696969');
+      setStyleHex('skColorSuccess', '009869');
+      setStyleHex('skColorError', 'E7000B');
+      setStyleHex('skPBtnBg', '161616');
+      setStyleHex('skPBtnText', 'FCFCFC');
+      setStyleHex('skPBtnBorder', '161616');
+      setStyleNumber('skPBtnRadius', 4);
+      setStyleHex('skSBtnBg', 'F5F5F5');
+      setStyleHex('skSBtnText', '161616');
+      setStyleHex('skSBtnBorder', 'E4E4E4');
+      setStyleNumber('skSBtnRadius', 4);
+    }
+    const STYLE_DEMO_STEPS = [
+      { pulseSel: '#skFontSelect', run: () => setStyleSelect('#skFontSelect', 'Georgia') },
+      { pulseSel: '#skBgInput', run: () => setStyleHex('skBg', 'EEF2FF') },
+      { pulseSel: '#skRadiusInput', run: () => setStyleNumber('skRadius', 22) },
+      { pulseSel: '#skPBtnBgInput', run: () => { setStyleHex('skPBtnBg', '2563EB'); setStyleHex('skPBtnBorder', '2563EB'); } },
+      { pulseSel: '#skPBtnBgInput', run: () => { setStyleHex('skPBtnBg', '161616'); setStyleHex('skPBtnBorder', '161616'); } },
+      { pulseSel: '#skRadiusInput', run: () => setStyleNumber('skRadius', 4) },
+      { pulseSel: '#skBgInput', run: () => setStyleHex('skBg', 'FFFFFF') },
+      { pulseSel: '#skFontSelect', run: () => setStyleSelect('#skFontSelect', 'system-ui') },
+    ];
+    let styleDemoTimer = null;
+    let styleDemoIdx = 0;
+    // every setTimeout this demo schedules (not just the chain-continuation
+    // one) has to be tracked and cleared on stop — an untracked "apply the
+    // value" timeout left running after the viewer has already navigated
+    // away was landing late and silently overwriting resetStyleDefaults()
+    // on whatever step they'd moved to
+    let styleDemoPendingTimeouts = [];
+    function stopStyleDemo(){
+      if (styleDemoTimer) { clearTimeout(styleDemoTimer); styleDemoTimer = null; }
+      styleDemoPendingTimeouts.forEach(t => clearTimeout(t));
+      styleDemoPendingTimeouts = [];
+    }
+    function playNextStyleStep(){
+      if (!journeySlide.classList.contains('active')) { stopStyleDemo(); return; }
+      const step = STYLE_DEMO_STEPS[styleDemoIdx % STYLE_DEMO_STEPS.length];
+      styleDemoIdx++;
+      const el = journeyToolMount.querySelector(step.pulseSel);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      styleDemoPendingTimeouts.push(setTimeout(() => {
+        showClickPulseOnEl(el);
+        styleDemoPendingTimeouts.push(setTimeout(() => step.run(), 260));
+      }, 300));
+      styleDemoTimer = setTimeout(playNextStyleStep, 1700);
+    }
+    function startStyleDemo(){
+      stopStyleDemo();
+      styleDemoIdx = 0;
+      styleDemoTimer = setTimeout(playNextStyleStep, 900);
+    }
+
+    // step 4 — default to the configuration view (matching every other
+    // step), then play a scripted click on View Code so the viewer sees the
+    // actual interaction happen instead of landing straight on the result
+    let step4DemoTimer = null;
+    function stopStep4Demo(){
+      if (step4DemoTimer) { clearTimeout(step4DemoTimer); step4DemoTimer = null; }
+    }
+    function startStep4Demo(){
+      stopStep4Demo();
+      step4DemoTimer = setTimeout(() => {
+        if (!journeySlide.classList.contains('active')) return;
+        const viewCodeBtn = journeyToolMount.querySelector('#skViewCodeBtn');
+        clickWithPulse(viewCodeBtn, 350);
+      }, 1100);
+    }
+
+    // step 3 — a real, hand-driven "Try the real flow" carousel (Google
+    // OAuth + Email/Phone OTP tabs, matching mocks/authkit.gif's distinct
+    // screen states), deliberately independent of whatever products/styling
+    // steps 1-2 actually have toggled on — a canonical demo, not a
+    // live-config one. Overwrites #skFormArea directly; leaving step 3
+    // hands control back to the real tool via mount.__skRenderForm (exposed
+    // in tool.js) so steps 1/2's own live product-cycling demo still drives
+    // the real form.
+    // The whole step now plays itself start to finish — no click-through
+    // required. Screen 1 auto-types a fake email and auto-advances (per
+    // Kelly: "animate the enter an email, so it's not user click
+    // through"); screen 2 (OTP) auto-plays per her earlier ask to animate a
+    // real OTP flow: the real @stytch/vanilla-js OTP component
+    // (packages/web/src/ui/components/molecules/OTPEntry.mjs +
+    // OtpInput.mjs) has no manual "Verify" button at all — it's a 6-digit
+    // input that calls onComplete the instant the last digit lands, shows
+    // "Verifying passcode..." + a loading bar (formField.passcode.status.
+    // verifying), then succeeds. Copy below (title/sentConfirmation/
+    // verifying/expirationCountdown/success) is pulled directly from that
+    // package's messages/en.json.mjs, not invented. Each screen is its own
+    // independent element (no shared sliding stage) — see the CSS comment
+    // above for why. One shared timer/timeout pair (stopStep3Anim) covers
+    // both phases, since only one is ever running at a time.
+    const STEP3_FALLBACK_EMAIL = 'kelly@stytch.com';
+    let step3Timer = null;
+    let step3Timeouts = [];
+    function stopStep3Anim(){
+      if (step3Timer) { clearInterval(step3Timer); step3Timer = null; }
+      step3Timeouts.forEach(t => clearTimeout(t));
+      step3Timeouts = [];
+    }
+    // auto-types the fake email into the input a character at a time, then
+    // (once the "Continue with email" button reads as ready) calls the
+    // exact same advance() the button's own click handler uses
+    function startStep3EmailAnim(formArea, emailInput, advance){
+      stopStep3Anim();
+      const text = STEP3_FALLBACK_EMAIL;
+      let i = 0;
+      step3Timeouts.push(setTimeout(() => {
+        step3Timer = setInterval(() => {
+          if (i >= text.length) { clearInterval(step3Timer); step3Timer = null; return; }
+          i++;
+          emailInput.value = text.slice(0, i);
+          emailInput.dispatchEvent(new Event('input'));
+          if (i === text.length) {
+            clearInterval(step3Timer);
+            step3Timer = null;
+            step3Timeouts.push(setTimeout(advance, 400));
+          }
+        }, 65);
+      }, 550));
+    }
+    // auto-types a random 6-digit code into the boxes one at a time, then
+    // (matching the real component's onComplete behavior) locks the boxes,
+    // swaps the footer to "Verifying passcode..." + a loading bar, and
+    // advances to the success screen — nothing here waits on a click
+    function startStep3OtpAnim(formArea){
+      stopStep3Anim();
+      const otpBoxes = Array.from(formArea.querySelectorAll('.sk3-otp-box'));
+      const otpFooter = formArea.querySelector('#sk3OtpFooter');
+      let i = 0;
+      step3Timer = setInterval(() => {
+        if (i >= otpBoxes.length) { clearInterval(step3Timer); step3Timer = null; return; }
+        otpBoxes[i].value = String(Math.floor(Math.random() * 10));
+        i++;
+        if (i === otpBoxes.length) {
+          clearInterval(step3Timer);
+          step3Timer = null;
+          step3Timeouts.push(setTimeout(() => {
+            otpBoxes.forEach(box => { box.disabled = true; });
+            if (otpFooter) {
+              otpFooter.innerHTML = `
+                <p class="sk3-otp-verifying">Verifying passcode&hellip;</p>
+                <div class="sk3-loading-bar"><div class="sk3-loading-bar-fill"></div></div>`;
+            }
+            step3Timeouts.push(setTimeout(() => goToStep3Screen(formArea, 2), 950));
+          }, 300));
+        }
+      }, 140);
+    }
+    // sequential crossfade — fade the current screen out, THEN (only once
+    // it's fully hidden) fade the next one in. Deliberately never has two
+    // screens visible at once, even mid-transition — the sliding single-
+    // frame carousel this replaced caused two separate overlap bugs, so
+    // this animates without ever touching width/transform math at all.
+    function goToStep3Screen(formArea, index){
+      const screens = Array.from(formArea.querySelectorAll('.sk3-screen'));
+      const next = screens[index];
+      if (!next) return;
+      const current = screens.find(s => s.classList.contains('active'));
+      const cardHeading = journeyToolMount.querySelector('.sk-card-heading');
+      if (cardHeading) cardHeading.style.display = index === 0 ? '' : 'none';
+      const showNext = () => {
+        next.classList.add('active');
+        next.style.opacity = '0';
+        void next.offsetWidth;
+        next.style.transition = 'opacity .22s ease';
+        next.style.opacity = '1';
+      };
+      if (!current || current === next) { showNext(); return; }
+      current.style.transition = 'opacity .16s ease';
+      current.style.opacity = '0';
+      setTimeout(() => {
+        current.classList.remove('active');
+        current.style.opacity = '';
+        current.style.transition = '';
+        showNext();
+      }, 160);
+    }
+    function renderStep3(){
+      const formArea = journeyToolMount.querySelector('#skFormArea');
+      if (!formArea) return;
+      // step 3 (and step 4, which reuses this same instance in its left
+      // pane) always shows the real default theme, never whatever step 2's
+      // branding demo left behind — see resetStyleDefaults
+      resetStyleDefaults();
+      const cardHeading = journeyToolMount.querySelector('.sk-card-heading');
+      if (cardHeading) cardHeading.style.display = '';
+      formArea.innerHTML = `
+        <div class="sk3-screen active">
+          <div class="sk-oauth-list">
+            <button class="sk-oauth-btn" type="button">
+              <svg class="sk-oauth-icon" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M18.82 10.2q0-.95-.16-1.84h-8.48v3.49h4.84a4.2 4.2 0 0 1-1.8 2.7v2.27h2.92a8.8 8.8 0 0 0 2.68-6.62"/><path fill="#34A853" d="M10.18 19c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86a5.4 5.4 0 0 1-5.04-3.7h-3v2.32A9 9 0 0 0 10.19 19"/><path fill="#FBBC05" d="M5.14 11.71a5.4 5.4 0 0 1 0-3.42V5.97h-3a8.9 8.9 0 0 0 0 8.06l2.34-1.81z"/><path fill="#EA4335" d="M10.18 4.58q2.01 0 3.44 1.35l2.58-2.58A8.98 8.98 0 0 0 2.14 5.97l3 2.32a5.4 5.4 0 0 1 5.04-3.7"/></svg>
+              Continue with Google
+            </button>
+          </div>
+          <div class="sk-divider"><span>or</span></div>
+          <div class="sk-tabs">
+            <button class="sk-tab active" type="button">Email</button>
+            <button class="sk-tab" type="button">Phone</button>
+          </div>
+          <input class="sk-input" id="sk3EmailInput" type="email" placeholder="example@email.com">
+          <button class="sk-primary-btn" id="sk3ContinueBtn" type="button">Continue with email</button>
+        </div>
+        <div class="sk3-screen">
+          <div class="sk3-back-row">
+            <button class="sk3-back-btn" id="sk3BackBtn" type="button" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+          </div>
+          <p class="sk3-otp-heading">Enter passcode</p>
+          <p class="sk3-otp-sub">A 6-digit passcode was sent to you at <strong id="sk3OtpDest">${STEP3_FALLBACK_EMAIL}</strong>.</p>
+          <div class="sk3-otp-row">
+            ${Array.from({ length: 6 }).map(() => `<input class="sk3-otp-box" type="text" inputmode="numeric" maxlength="1" disabled>`).join('')}
+          </div>
+          <div class="sk3-otp-footer" id="sk3OtpFooter">
+            <p class="sk3-otp-expiry">Your code expires in 4:58. <a href="#" onclick="return false;">Resend code</a></p>
+          </div>
+        </div>
+        <div class="sk3-screen">
+          <div class="sk-flow-success">
+            <span class="sk-flow-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12l5 5L20 6"/></svg></span>
+            <p class="sk-flow-success-text">Success!</p>
+            <p class="sk3-success-body">Your passcode has been successfully verified.</p>
+            <button class="sk-flow-reset" id="sk3ResetBtn" type="button">Start over</button>
+          </div>
+        </div>`;
+
+      const emailInput = formArea.querySelector('#sk3EmailInput');
+      const continueBtn = formArea.querySelector('#sk3ContinueBtn');
+      const backBtn = formArea.querySelector('#sk3BackBtn');
+      const resetBtn = formArea.querySelector('#sk3ResetBtn');
+      const otpDest = formArea.querySelector('#sk3OtpDest');
+      const otpFooter = formArea.querySelector('#sk3OtpFooter');
+      const otpFooterDefaultHTML = otpFooter.innerHTML;
+      const otpBoxes = Array.from(formArea.querySelectorAll('.sk3-otp-box'));
+
+      formArea.querySelectorAll('.sk-tab').forEach(tab => {
+        tab.onclick = () => {
+          formArea.querySelectorAll('.sk-tab').forEach(t => t.classList.toggle('active', t === tab));
+          const isEmail = tab.textContent.trim() === 'Email';
+          emailInput.type = isEmail ? 'email' : 'tel';
+          emailInput.placeholder = isEmail ? 'example@email.com' : '+1 (555) 000-0000';
+        };
+      });
+      emailInput.addEventListener('input', () => {
+        continueBtn.classList.toggle('ready', emailInput.value.trim().length > 0);
+      });
+      // shared by the (still-clickable, if someone jumps in manually) button
+      // and by startStep3EmailAnim once the fake email finishes typing
+      const advanceFromScreen1 = () => {
+        otpDest.textContent = emailInput.value.trim() || STEP3_FALLBACK_EMAIL;
+        goToStep3Screen(formArea, 1);
+        step3Timeouts.push(setTimeout(() => startStep3OtpAnim(formArea), 550));
+      };
+      continueBtn.onclick = advanceFromScreen1;
+      backBtn.onclick = () => {
+        stopStep3Anim();
+        goToStep3Screen(formArea, 0);
+      };
+      resetBtn.onclick = () => {
+        stopStep3Anim();
+        emailInput.value = '';
+        continueBtn.classList.remove('ready');
+        otpBoxes.forEach(box => { box.value = ''; box.disabled = true; });
+        otpFooter.innerHTML = otpFooterDefaultHTML;
+        goToStep3Screen(formArea, 0);
+        startStep3EmailAnim(formArea, emailInput, advanceFromScreen1);
+      };
+      startStep3EmailAnim(formArea, emailInput, advanceFromScreen1);
+    }
+
+    function focusStep(step){
+      if (!journeyToolMount) return;
+      stopProductDemo();
+      stopStyleDemo();
+      stopStep4Demo();
+      stopStep3Anim();
+      journeyToolMount.classList.remove('journey-focus-config', 'journey-focus-preview', 'journey-dim-styling', 'journey-dim-products');
+      if (journeyToolFrame) journeyToolFrame.classList.remove('journey-frame-narrow');
+      const configScroll = journeyToolMount.querySelector('.sk-config-scroll');
+      if (journeyToolMount.__skSetCodeMode) journeyToolMount.__skSetCodeMode(false);
+      // steps 3 and 4 both own #skFormArea themselves while active (see
+      // renderStep3) — every other step hands it back to the real,
+      // live-state-driven form
+      if (step !== '3' && step !== '4' && journeyToolMount.__skRenderForm) journeyToolMount.__skRenderForm();
+      if (step === '1') {
+        // both panes visible, Styling dimmed (not removed) below Products,
+        // same treatment as step 2's Products de-emphasis — Products cycles
+        // on its own. Always the real default theme here too, not whatever
+        // step 2's branding demo left behind — see resetStyleDefaults
+        resetStyleDefaults();
+        journeyToolMount.classList.add('journey-dim-styling');
+        if (configScroll) configScroll.scrollTo({ top: 0 });
+        startProductDemo();
+      } else if (step === '2') {
+        // both panes visible (the live preview belongs next to styling, not
+        // hidden), Products dimmed so Styling reads as the focus. No static
+        // scroll-into-view here anymore — startStyleDemo's first step
+        // (Font) scrolls there itself, then keeps scrolling to whichever
+        // field it's changing next
+        journeyToolMount.classList.add('journey-dim-products');
+        startStyleDemo();
+      } else if (step === '3') {
+        journeyToolMount.classList.add('journey-focus-preview');
+        renderStep3();
+      } else if (step === '4') {
+        // side by side: left pane replays the same real, scripted instance
+        // from step 3 (renderStep3 — Google/Email options -> OTP -> success,
+        // auto-playing) so the "shippable" claim is visibly the same
+        // instance being configured, not a fresh unrelated mock; right pane
+        // keeps its existing View Code interaction — starts on the
+        // configuration view, then plays a scripted click on View Code a
+        // beat later, same as before. Products are forced to match what
+        // step 3's instance actually shows (Google button, Email/Phone OTP
+        // tabs) so the code snippet and the highlighted chips on the right
+        // agree with what's playing on the left, instead of showing
+        // whatever step 1's cycling demo happened to leave selected.
+        setSelectedProducts(['google', 'emailOtp', 'smsOtp']);
+        renderStep3();
+        if (configScroll) configScroll.scrollTo({ top: 0 });
+        startStep4Demo();
+      }
+    }
+
+    let currentStepIdx = 0;
+    function selectStep(idx){
+      const item = items[idx];
+      if (!item) return;
+      currentStepIdx = idx;
+      items.forEach(i => i.classList.toggle('active', i === item));
+      focusStep(item.dataset.step);
+    }
+    items.forEach((item, idx) => {
+      item.querySelector('.step-nav-head').onclick = () => selectStep(idx);
+    });
+    selectStep(0);
+
+    // lets the deck's own next/prev arrows step through 1-4 first, only
+    // advancing to the next/previous slide once already on the last/first
+    // step — see go(dir) below
+    journeySlide.__journeyNav = {
+      stepCount: items.length,
+      getCurrentIndex: () => currentStepIdx,
+      goToIndex: selectStep,
+    };
+    // re-run the currently selected step's focusStep every time this slide
+    // actually becomes visible (see render()'s __onActivate check) — not
+    // just once at page load, which is what let step 1's demo silently die
+    // before the viewer ever reached this slide
+    journeySlide.__onActivate = () => {
+      focusStep(items[currentStepIdx].dataset.step);
+    };
+  })();
+</script>
+</body>
+</html>

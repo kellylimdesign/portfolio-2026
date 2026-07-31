@@ -12,7 +12,14 @@ A case study for **Identity for AI Agents** — Twilio's product for letting AI 
 
 Live: https://kellylimdesign.github.io/portfolio-2026/agent-identity/
 
+### Driving SDK Adoption (`/stytch-sdk-integration-builder/`)
+
+A case study for the **Stytch SDK Integration Builder** — closing the gap between a prebuilt auth SDK's promise of fast integration and a customer's actual confidence in it, with a tool that lets customers preview the SDK live against their own product before writing any code.
+
+Live: https://kellylimdesign.github.io/portfolio-2026/stytch-sdk-integration-builder/
+
 ## Structure
 
 - `index.html` — landing page linking to each case study
 - `agent-identity/` — the "Building Trust in the Age of AI" deck and its assets
+- `stytch-sdk-integration-builder/` — the "Driving SDK Adoption" deck and its assets
