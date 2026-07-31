@@ -13,13 +13,16 @@
     margin:0; background:var(--cream); color:var(--ink);
     font-family:-apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
   }
-  .wrap{max-width:760px; margin:0 auto; padding:96px 24px;}
+  .wrap{max-width:920px; margin:0 auto; padding:96px 24px;}
   .kicker{
     font-family:"SF Mono", "JetBrains Mono", ui-monospace, monospace;
     font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-45); margin:0 0 12px;
   }
   h1{font-size:clamp(28px,4vw,38px); font-weight:700; margin:0 0 40px; letter-spacing:-.01em;}
-  .list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:28px;}
+  .list{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+  @media (max-width:640px){
+    .list{grid-template-columns:1fr;}
+  }
   .card{
     border:1px solid var(--line); border-radius:14px; overflow:hidden;
     background:#fff; transition:border-color .2s ease, box-shadow .2s ease;
@@ -27,8 +30,8 @@
   .card:hover{border-color:var(--ink-45); box-shadow:0 12px 28px rgba(23,22,27,.08);}
   .card a{display:block; text-decoration:none; color:inherit;}
   .card-thumb{
-    display:block; width:100%; aspect-ratio:1000/550; object-fit:cover;
-    object-position:top; border-bottom:1px solid var(--line);
+    display:block; width:100%; aspect-ratio:1130/714; object-fit:cover;
+    object-position:center; border-bottom:1px solid var(--line);
     background:var(--cream);
   }
   .card-body{padding:22px 24px 24px;}
