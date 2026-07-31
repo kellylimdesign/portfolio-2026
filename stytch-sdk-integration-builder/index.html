@@ -599,10 +599,15 @@
   /* persistent link into the overlay, sitting beneath the Journey slide's
      4 steps rather than nested inside any one of them */
   .history-link{
-    appearance:none; background:none; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:5px;
-    font-family:var(--sans); font-size:13px; color:var(--ink-70); padding:0; margin-top:20px; align-self:flex-start;
+    appearance:none; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+    font-family:var(--sans); font-size:13px; font-weight:600; color:var(--ink);
+    background:rgba(23,22,27,.04); border:1px solid var(--line); border-radius:20px;
+    padding:9px 16px; margin-top:20px; align-self:flex-start;
+    transition:background .2s ease, border-color .2s ease;
   }
-  .history-link:hover{color:var(--ink);}
+  .history-link:hover{background:rgba(23,22,27,.08); border-color:var(--ink-45);}
+  .history-link span{transition:transform .2s ease;}
+  .history-link:hover span{transform:translateX(2px);}
 </style>
 </head>
 <body>
