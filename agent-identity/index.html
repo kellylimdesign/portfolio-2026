@@ -5748,11 +5748,20 @@
     const body = document.querySelector('.cgpt-body-live');
     if (!body || !targetEl) return;
     closeAllDrawers();
-    if (body.parentElement !== targetEl) targetEl.appendChild(body);
-    if (tabName) {
+    const moved = body.parentElement !== targetEl;
+    if (moved) targetEl.appendChild(body);
+    if (!tabName) return;
+    const clickTab = () => {
       const tabBtn = body.querySelector('.tw-tab[data-tab="' + tabName + '"]');
       if (tabBtn) tabBtn.click();
-    }
+    };
+    // .tw-console-embed's `zoom` scaling occasionally hasn't been applied yet
+    // by the time of the very next paint right after a reparent — clicking
+    // the tab immediately can land on a frame where the embed is still at
+    // native (unzoomed) size/position. A double rAF waits for a full
+    // layout+paint cycle on the moved node before switching tabs.
+    if (moved) requestAnimationFrame(() => requestAnimationFrame(clickTab));
+    else clickTab();
   }
   function ensureLiveConsoleHome(){
     const home = document.getElementById('liveWindowHome');
