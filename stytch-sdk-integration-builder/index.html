@@ -28,28 +28,35 @@
   img,video{max-width:100%; display:block;}
 
   /* ---------- topbar ---------- */
+  /* three-column grid (not flex + space-between) so the dot tracker sits at
+     the true center of the bar regardless of how wide the brand link vs.
+     the counter+arrows cluster are — matches Trust's slides-v3.html */
   .topbar{
     position:fixed; top:0; left:0; right:0; height:56px;
-    display:flex; align-items:center; justify-content:space-between;
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
     padding:0 64px; z-index:50;
   }
-  .brand{font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--ink-45);}
+  .brand{font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--ink-45); justify-self:start;}
   .brand-home{
     display:inline-flex; align-items:center; gap:6px; color:inherit; text-decoration:none;
     transition:color .15s ease;
   }
   .brand-home:hover{color:var(--ink);}
   .brand-home svg{width:12px; height:12px; flex-shrink:0;}
-  .counter{font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--ink-45);}
+  .counter{font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--ink-45);}
 
-  .navbtns{position:fixed; bottom:28px; right:64px; z-index:50; display:flex; gap:10px;}
+  /* counter + prev/next arrows, flanking the count like "< 08 / 10 >" —
+     replaces the old floating bottom-right circular buttons */
+  .counter-nav{justify-self:end; display:flex; align-items:center; gap:14px;}
   .navbtn{
-    width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:transparent;
-    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink);
+    width:26px; height:26px; border-radius:50%; border:1px solid var(--line); background:transparent;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink); flex-shrink:0;
   }
   .navbtn:hover{background:var(--ink); color:var(--cream); border-color:var(--ink);}
-  .navbtn svg{width:16px; height:16px;}
-  .dots{position:fixed; bottom:34px; left:64px; z-index:50; display:flex; gap:7px;}
+  .navbtn svg{width:13px; height:13px;}
+  /* slide-position dot tracker — now centered in the topbar, was previously
+     floating fixed at bottom-left */
+  .dots{justify-self:center; display:flex; gap:7px;}
   .dot{width:6px; height:6px; border-radius:50%; background:var(--line); transition:background .2s;}
   .dot.active{background:var(--ink);}
 
@@ -60,7 +67,7 @@
      panel), auto-height ignored bottom:0 and let the slide grow past the
      viewport, pushing real content down into the fixed nav buttons */
   .slide{
-    position:absolute; top:56px; left:0; right:0; height:calc(100vh - 56px); padding:44px 64px;
+    position:absolute; top:56px; left:0; right:0; height:calc(100vh - 56px); padding:64px 64px 44px;
     opacity:0; pointer-events:none; transform:translateY(14px);
     transition:opacity .5s ease, transform .5s ease;
     display:flex; flex-direction:column; justify-content:center;
@@ -69,21 +76,19 @@
   .slide.active{opacity:1; pointer-events:auto; transform:translateY(0);}
 
   .kicker{font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-45); margin:0 0 12px;}
-  h1{font-family:var(--mono); font-size:clamp(22px,2.8vw,34px); font-weight:700; line-height:1.15; letter-spacing:-.01em; margin:0 0 12px; text-wrap:balance;}
+  h1{font-family:var(--sans); font-size:clamp(22px,2.8vw,34px); font-weight:700; color:var(--ink); line-height:1.15; letter-spacing:-.01em; margin:0 0 12px; text-wrap:balance;}
   .teaser{font-family:var(--sans); font-size:15px; line-height:1.55; color:var(--ink-70); max-width:46ch; margin:0;}
   .text-block{max-width:640px;}
 
-  /* dashed technical-note treatment, label breaking through the top edge —
-     copied exactly from Trust's .example-callout (slides-v3.html) */
+  /* flat light-grey/hairline treatment, matching Trust's consolidated
+     .example-callout (slides-v3.html) — no more dashed border/breaking-
+     through label, kept as a normal in-flow box instead */
   .example-callout{
     margin:32px auto 0; max-width:560px; text-align:left; position:relative;
-    border:1.5px dashed var(--ink-45); border-radius:4px; padding:24px 26px 22px;
-  }
-  .example-callout .example-kicker{
-    position:absolute; top:-9px; left:20px; background:var(--cream); padding:0 8px; margin:0;
+    background:rgba(23,22,27,.035); border:1px solid var(--line); border-radius:12px; padding:20px 24px;
   }
   .example-kicker{
-    font-family:var(--mono); font-size:10px; letter-spacing:.05em;
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em;
     text-transform:uppercase; color:var(--ink-45); margin:0 0 10px;
   }
   .example-text{font-family:var(--sans); font-size:15px; line-height:1.6; color:var(--ink); margin:0;}
@@ -100,7 +105,7 @@
   .persona-cols{display:flex; gap:56px;}
   .persona-card{width:320px; text-align:left; border-top:1px solid var(--line); padding-top:20px;}
   .persona-card h4{
-    font-family:var(--mono); font-size:11px; letter-spacing:.05em;
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em;
     text-transform:uppercase; color:var(--ink-45); margin:0 0 12px;
   }
   .persona-card > p{font-family:var(--sans); font-size:14px; line-height:1.6; color:var(--ink-70); margin:0; min-height:4.8em;}
@@ -204,7 +209,11 @@
   .demo-select-nav .step-nav-item.active .step-nav-title{color:var(--ink); font-weight:600;}
   .demo-select-nav .step-nav-num{transition:color .2s ease;}
   .demo-select-nav .step-nav-item.active .step-nav-num{color:var(--ink);}
-  .demo-select-panel{position:absolute; top:0; right:36px; bottom:90px; left:484px; display:flex; align-items:center; justify-content:center;}
+  /* top:20px (not 0) — absolutely positioned children are placed relative
+     to .slide's padding edge, which completely ignores .slide's own
+     padding-top value, so this needs its own explicit offset to track the
+     +20px top-padding increase (44px -> 64px) rather than inheriting it */
+  .demo-select-panel{position:absolute; top:20px; right:36px; bottom:90px; left:484px; display:flex; align-items:center; justify-content:center;}
   .demo-select-frame{
     appearance:none; background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
     width:100%; max-width:1040px;
@@ -249,7 +258,7 @@
     text-align:left; cursor:pointer; font-family:inherit;
     display:flex; align-items:center; gap:14px; padding:18px 0;
   }
-  .step-nav-num{font-family:var(--mono); font-size:12px; font-weight:700; color:var(--ink-45); flex-shrink:0; width:14px;}
+  .step-nav-num{font-family:var(--mono); font-size:12px; color:var(--ink-45); flex-shrink:0; width:14px;}
   .step-nav-title{font-family:var(--sans); font-weight:400; font-size:18px; line-height:1.3; color:var(--ink); margin:0;}
   .step-nav-body{max-height:0; overflow:hidden; opacity:0; transition:max-height .4s ease, opacity .3s ease;}
   .step-nav-item.active .step-nav-body{max-height:300px; opacity:1; padding-bottom:24px;}
@@ -258,7 +267,18 @@
   /* right-side panel, positioned the same way Trust's .substep-panel sits —
      holds a second, independent live instance of the tool (tool.js), with
      each step focusing a different real piece of it rather than a mock */
-  .journey-panel{position:absolute; top:0; right:36px; bottom:90px; left:484px; display:flex; align-items:center; justify-content:center;}
+  /* this slide's text column (bare h1 + step-nav, no kicker/teaser) is much
+     shorter than the mock panel beside it — .slide's default
+     justify-content:center technically centers it correctly, but against
+     the much taller mock it reads as a big gap up top with the "how we got
+     here" link crammed near the bottom. Top-align instead so the header
+     starts at the same height as the mock does. #journeySlide (an ID) beats
+     .slide's specificity outright, so it can't fall into the same silent
+     source-order tie the comment above warns about. */
+  #journeySlide{justify-content:flex-start;}
+  /* top:20px (not 0) — same padding-doesn't-apply-to-absolute-children gotcha
+     as .demo-select-panel above, tracking the same +20px top-padding increase */
+  .journey-panel{position:absolute; top:20px; right:36px; bottom:90px; left:484px; display:flex; align-items:center; justify-content:center;}
   /* no border/shadow/background of its own — .sk-pane already draws that
      chrome per-pane (matching mocks/Full Customizer.svg's two separate
      cards), so a wrapper with its own border was doubling up into a visible
@@ -457,14 +477,12 @@
      own caption instead of the header holding one bullet list for all of
      them — see .history-compare-caption below. */
   .history-step.history-step-stacked{flex-direction:column; align-items:stretch; gap:20px;}
-  .history-step-header{flex:0 0 auto;}
-  .history-step-header .frame-cap{margin:0;}
   .history-step .frame-cap{margin:0;}
   .history-step-media{flex:1; height:100%; min-width:0; display:flex; align-items:center; justify-content:center;}
   .history-step-media .frame{height:100%; width:auto; max-width:100%; flex:0 0 auto;}
   .frame{box-sizing:border-box; height:100%; max-width:100%; overflow:hidden; display:flex; align-items:center; justify-content:center;}
   .frame img{display:block; width:100%; height:100%; object-fit:contain;}
-  .frame-cap{font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:var(--ink-45); margin:0 0 8px;}
+  .frame-cap{font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--ink-45); margin:0 0 8px;}
   /* the old shadow (16px offset, 40px blur) reached past the frame's own
      bottom edge into the caption sitting right below it — cut the spread
      down and lean on .history-compare-col's larger gap (see below) to keep
@@ -492,7 +510,13 @@
      whole column up and down. */
   .history-compare-row{display:flex; gap:20px; align-items:flex-start; justify-content:center; width:100%;}
   .history-compare-col{display:flex; flex-direction:column; align-items:stretch; gap:18px; flex:1; min-width:0;}
-  .history-compare-col .frame-cap{flex:0 0 auto; margin:0; text-align:center;}
+  /* bold black sans, not mono/grey — matches Trust's "SIMPLE"/"GROUPED"
+     filmstrip caption treatment (slides-v3.html .history-evolution-text-item
+     .frame-cap) instead of the small accent-label look used for kickers */
+  .history-compare-col .frame-cap{
+    flex:0 0 auto; margin:0 0 6px; text-align:center;
+    font-family:var(--sans); font-weight:700; letter-spacing:normal; color:var(--ink);
+  }
   /* vh-capped instead of a flat 440px — on a normal-height viewport this
      resolves to ~440px same as before, but it shrinks gracefully on short
      viewports instead of forcing .history-stage's scroll fallback to
@@ -614,7 +638,16 @@
 
   <div class="topbar">
     <div class="brand"><a class="brand-home" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back to landing page</a></div>
-    <div class="counter"><span id="counterNow">01</span> / <span id="counterTotal">08</span></div>
+    <div class="dots" id="dots"></div>
+    <div class="counter-nav">
+      <button class="navbtn" onclick="go(-1)" aria-label="Previous">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="counter"><span id="counterNow">01</span> / <span id="counterTotal">08</span></div>
+      <button class="navbtn" onclick="go(1)" aria-label="Next">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
   </div>
 
   <div class="deck" id="deck">
@@ -870,13 +903,10 @@
       <button class="history-arrow history-arrow-prev" id="historyPrev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
       <button class="history-arrow history-arrow-next" id="historyNext" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
       <div class="history-head">
-        <p class="kicker">How We Got Here</p>
+        <p class="kicker" id="historyKicker">How We Got Here</p>
       </div>
       <div class="history-stage">
         <div class="history-step history-step-stacked active" data-step="1">
-          <div class="history-step-header">
-            <p class="frame-cap">01 — HOW SHOULD CONFIGURATION BE GROUPED?</p>
-          </div>
           <div class="history-step-media">
             <div class="history-compare-row">
               <div class="history-compare-col">
@@ -1006,9 +1036,6 @@
           </div>
         </div>
         <div class="history-step history-step-stacked" data-step="2">
-          <div class="history-step-header">
-            <p class="frame-cap">02 — HOW SHOULD PRODUCTS BE PICKED?</p>
-          </div>
           <div class="history-step-media">
             <div class="history-compare-row">
               <div class="history-compare-col">
@@ -1050,12 +1077,6 @@
     </div>
   </div>
 
-  <div class="dots" id="dots"></div>
-  <div class="navbtns">
-    <button class="navbtn" onclick="go(-1)" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <button class="navbtn" onclick="go(1)" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
-  </div>
-
 <script src="tool.js"></script>
 <script>
   const slides = document.querySelectorAll('.slide');
@@ -1078,10 +1099,15 @@
   document.getElementById('counterTotal').textContent = String(total).padStart(2, '0');
 
   function render(){
+    // symmetric to __onActivate below — stop whatever the slide being LEFT
+    // was running before switching .active off it, so its timers can't keep
+    // firing in the background (see the __onDeactivate comment for the bug
+    // this fixes)
+    if (idx !== prevIdx && prevIdx !== -1 && slides[prevIdx].__onDeactivate) slides[prevIdx].__onDeactivate();
     slides.forEach((s, i) => s.classList.toggle('active', i === idx));
     dots.forEach((d, i) => d.classList.toggle('active', i === idx));
     document.getElementById('counterNow').textContent = String(idx + 1).padStart(2, '0');
-    // a slide can expose __onActivate (same convention as __journeyNav
+    // a slide can expose __onActivate (same convention as __stepNav
     // below) to run its own "just became visible" logic — the Journey
     // slide uses this to (re)start whichever step's demo is current. Fixes
     // a real bug: initJourneyStepNav's own selectStep(0) call runs at page
@@ -1096,26 +1122,22 @@
   function go(dir){
     // the "how we got here" wizard, while open, owns the deck's own
     // next/prev controls (on-screen buttons and arrow keys alike) — same
-    // convention as the __journeyNav interception below, one level up
+    // convention as the __stepNav interception below, one level up
     const historyOverlay = document.getElementById('historyOverlay');
     if (historyOverlay && historyOverlay.classList.contains('active')) { historyGo(dir); return; }
-    // slides that expose __journeyNav (the Journey step-nav) get first crack
-    // at a next/prev press — step through 1-4 before actually changing slides
+    // slides that expose __stepNav (Journey's step-nav, the reference-apps
+    // picker) get first crack at a next/prev press — step through their own
+    // items before actually changing slides
     const activeSlide = slides[idx];
-    const nav = activeSlide && activeSlide.__journeyNav;
+    const nav = activeSlide && activeSlide.__stepNav;
     if (nav) {
       const cur = nav.getCurrentIndex();
       if (dir === 1 && cur < nav.stepCount - 1) { nav.goToIndex(cur + 1); return; }
       if (dir === -1 && cur > 0) { nav.goToIndex(cur - 1); return; }
-      // pressing next from the last step (4) opens "How We Got Here"
-      // instead of leaving the slide, the first time only — closing it (or
-      // pressing next again once it's already been seen) lets this same
-      // press-next continue on to the next slide normally
-      if (dir === 1 && cur === nav.stepCount - 1 && !journeyHistoryAutoOpened) {
-        journeyHistoryAutoOpened = true;
-        openHistoryOverlay();
-        return;
-      }
+      // a nav can optionally intercept "next" pressed from its last step
+      // (e.g. Journey opens "How We Got Here" instead of leaving the slide,
+      // the first time only) — returning true means it handled the press
+      if (dir === 1 && cur === nav.stepCount - 1 && nav.onLastNext && nav.onLastNext()) return;
     }
     idx = Math.max(0, Math.min(total - 1, idx + dir));
     render();
@@ -1281,8 +1303,16 @@
     }
     loop();
   }
+  // per-step question folded into the shared "How We Got Here" kicker
+  // instead of its own floating "01 — ..." title above each mock
+  const historyKickerText = {
+    1: 'How We Got Here — How should configuration be grouped?',
+    2: 'How We Got Here — How should products be picked?',
+  };
   function updateHistoryStep(){
     document.querySelectorAll('#historyOverlay .history-step').forEach(s => s.classList.toggle('active', Number(s.dataset.step) === historyStep));
+    const kicker = document.getElementById('historyKicker');
+    if (kicker) kicker.textContent = historyKickerText[historyStep] || 'How We Got Here';
     const prev = document.getElementById('historyPrev');
     if (prev) prev.disabled = historyStep === 1;
     // next stays enabled on the last step — historyGo(1) closes the wizard
@@ -1362,9 +1392,11 @@
     const closeBtn = document.getElementById('demoLightboxClose');
 
     let current = items[0];
+    let currentDemoIdx = 0;
 
     const select = (item) => {
       current = item;
+      currentDemoIdx = Array.prototype.indexOf.call(items, item);
       items.forEach(i => i.classList.toggle('active', i === item));
       const { src, url, ratio } = item.dataset;
       const label = item.querySelector('.step-nav-title').textContent;
@@ -1379,6 +1411,14 @@
     items.forEach(item => {
       item.querySelector('.step-nav-head').onclick = () => select(item);
     });
+    // same "step through before changing slides" convention as the Journey
+    // slide's __stepNav (see go(dir)) — no onLastNext, so pressing next
+    // from the last item just falls through to advancing the slide
+    slide.__stepNav = {
+      stepCount: items.length,
+      getCurrentIndex: () => currentDemoIdx,
+      goToIndex: (i) => select(items[i]),
+    };
 
     const openLightbox = () => {
       const { src, url, ratio } = current.dataset;
@@ -1868,10 +1908,16 @@
     // lets the deck's own next/prev arrows step through 1-4 first, only
     // advancing to the next/previous slide once already on the last/first
     // step — see go(dir) below
-    journeySlide.__journeyNav = {
+    journeySlide.__stepNav = {
       stepCount: items.length,
       getCurrentIndex: () => currentStepIdx,
       goToIndex: selectStep,
+      onLastNext: () => {
+        if (journeyHistoryAutoOpened) return false;
+        journeyHistoryAutoOpened = true;
+        openHistoryOverlay();
+        return true;
+      },
     };
     // re-run the currently selected step's focusStep every time this slide
     // actually becomes visible (see render()'s __onActivate check) — not
@@ -1879,6 +1925,18 @@
     // before the viewer ever reached this slide
     journeySlide.__onActivate = () => {
       focusStep(items[currentStepIdx].dataset.step);
+    };
+    // stop whichever step's demo is currently running the instant this
+    // slide is left — without this, jumping to another slide mid-demo (e.g.
+    // via a dot click) leaves its setTimeout chain alive in the background,
+    // and it later fires a "ghost" click-pulse against elements on this
+    // now-hidden slide with nothing actually there to click (see render()'s
+    // __onDeactivate check)
+    journeySlide.__onDeactivate = () => {
+      stopProductDemo();
+      stopStyleDemo();
+      stopStep4Demo();
+      stopStep3Anim();
     };
   })();
 </script>
