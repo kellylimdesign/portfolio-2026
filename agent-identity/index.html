@@ -49,37 +49,39 @@
   }
 
   /* ---------- chrome ---------- */
+  /* three-column grid (not flex + space-between) so the dot tracker sits at
+     the true center of the bar regardless of how wide the brand link vs.
+     the counter+arrows cluster are — space-between would only center it in
+     the leftover gap between them, not the bar itself. */
   .topbar{
     position:fixed; top:0; left:0; right:0; height:56px;
-    display:flex; align-items:center; justify-content:space-between;
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
     padding:0 64px; z-index:50;
   }
-  .brand{font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--ink-45);}
+  .brand{font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--ink-45); justify-self:start;}
   .brand-home{
     display:inline-flex; align-items:center; gap:6px; color:inherit; text-decoration:none;
     transition:color .15s ease;
   }
   .brand-home:hover{color:var(--ink);}
   .brand-home svg{width:12px; height:12px; flex-shrink:0;}
-  .counter{font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--ink-45);}
+  .counter{font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--ink-45);}
 
-  .navbtns{
-    position:fixed; bottom:28px; right:64px; z-index:50;
-    display:flex; gap:10px;
-  }
+  /* counter + prev/next arrows, flanking the count like "< 08 / 10 >" —
+     replaces the old floating bottom-right circular buttons */
+  .counter-nav{justify-self:end; display:flex; align-items:center; gap:14px;}
   .navbtn{
-    width:38px; height:38px; border-radius:50%;
+    width:26px; height:26px; border-radius:50%;
     border:1px solid var(--line); background:transparent;
     display:flex; align-items:center; justify-content:center;
-    cursor:pointer; color:var(--ink);
+    cursor:pointer; color:var(--ink); flex-shrink:0;
   }
   .navbtn:hover{background:var(--ink); color:var(--cream); border-color:var(--ink);}
-  .navbtn svg{width:16px; height:16px;}
+  .navbtn svg{width:13px; height:13px;}
 
-  .dots{
-    position:fixed; bottom:34px; left:64px; z-index:50;
-    display:flex; gap:7px;
-  }
+  /* slide-position dot tracker — now centered in the topbar, was previously
+     floating fixed at bottom-left */
+  .dots{justify-self:center; display:flex; gap:7px;}
   .dot{width:6px; height:6px; border-radius:50%; background:var(--line); transition:background .2s;}
   .dot.active{background:var(--ink);}
 
@@ -102,7 +104,7 @@
     text-transform:uppercase; color:var(--ink-45); margin:0 0 12px;
   }
   h1{
-    font-family:var(--mono); font-weight:700;
+    font-family:var(--sans); font-weight:700; color:var(--ink);
     font-size:clamp(22px,2.8vw,34px); line-height:1.15;
     letter-spacing:-.01em; margin:0 0 12px;
   }
@@ -179,7 +181,7 @@
   /* split layout's frame column is width-driven, not height-driven */
   .layout-split .frame{width:auto; height:auto; max-width:100%; max-height:100%;}
   .frame-cap{
-    font-family:var(--mono); font-size:11px; letter-spacing:.03em;
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em;
     color:var(--ink-45); margin:0 0 8px;
   }
 
@@ -320,7 +322,10 @@
      icons/text and read as oversized and broken against them. Reuses
      .frame-cap (the small mono caption style already used elsewhere in
      this file) rather than a new one-off label style. */
-  .tw-mock-future-caption{text-align:center; margin:0; flex:0 0 auto;}
+  .tw-mock-future-caption{
+    font-family:var(--sans); font-weight:600; font-size:12.5px; color:var(--ink-45);
+    text-align:center; margin:0; flex:0 0 auto;
+  }
   /* stacks the mock + caption vertically instead of .history-step-media's
      normal row layout (mock alone, single flex child, centered) — and
      gives the mock max-height:calc(100% - N) so the pair together still
@@ -547,7 +552,7 @@
   .layout-info .teaser{margin:0 auto; max-width:600px;}
   .layout-info .cols{display:flex; gap:88px; text-align:left;}
   .layout-info .col h4{
-    font-family:var(--mono); font-size:11px; letter-spacing:.05em;
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em;
     text-transform:uppercase; color:var(--ink-45); margin:0 0 14px;
   }
   .layout-info .col ul{list-style:none; margin:0; padding:0;}
@@ -579,16 +584,14 @@
   .pause-icon svg{width:100%; height:100%;}
 
   /* callout box introducing the concrete Owl Trade example beneath the abstract problem statement —
-     dashed technical-note treatment, label breaks through the top edge like a spec annotation */
+     same flat light-grey/hairline treatment as .mock-callout/.hce-callout/.live-callout,
+     so every "aside" box in the deck reads as one consistent style */
   .example-callout{
     margin:32px auto 0; max-width:560px; text-align:left; position:relative;
-    border:1.5px dashed var(--ink-45); border-radius:4px; padding:24px 26px 22px;
-  }
-  .example-callout .example-kicker{
-    position:absolute; top:-9px; left:20px; background:var(--cream); padding:0 8px; margin:0;
+    background:rgba(23,22,27,.035); border:1px solid var(--line); border-radius:12px; padding:20px 24px;
   }
   .example-kicker{
-    font-family:var(--mono); font-size:10px; letter-spacing:.05em;
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em;
     text-transform:uppercase; color:var(--ink-45); margin:0 0 10px;
   }
   .example-text{font-family:var(--sans); font-size:15px; line-height:1.6; color:var(--ink); margin:0;}
@@ -681,7 +684,7 @@
     font-family:var(--sans); font-weight:700; font-size:14.5px; line-height:1.4; color:var(--ink-45);
     margin-bottom:0; transition:color .3s ease, margin .3s ease;
   }
-  .substep-item.active .substep-item-title{color:var(--ink-70); margin-bottom:6px;}
+  .substep-item.active .substep-item-title{color:var(--ink); margin-bottom:6px;}
   /* inactive items collapse to just their title; the description reveals on activate */
   .substep-item-desc{
     font-family:var(--sans); font-size:14px; line-height:1.6; color:var(--ink-70);
@@ -703,7 +706,7 @@
      center. it's just a small overlay in the top corner now, independent
      of how the stage/frame centers within the full panel height. */
   .substep-progress{position:absolute; top:0; left:0; display:flex; align-items:center; gap:10px;}
-  .substep-progress-label{font-family:var(--mono); font-size:11px; letter-spacing:.05em; color:var(--ink-45);}
+  .substep-progress-label{font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--ink-45);}
   .substep-dots{display:flex; gap:6px;}
   .substep-dot{width:6px; height:6px; border-radius:50%; background:var(--line); transition:background .2s ease;}
   .substep-dot.active{background:var(--ink);}
@@ -743,17 +746,24 @@
      against the same inset:0 box .step-frame uses). */
   .mock-callout{
     position:absolute; bottom:16%; left:0; z-index:20; width:64%; max-width:520px;
-    background:linear-gradient(120deg, #E3E0DA 0%, #EBE9E4 55%, #F4F3F0 100%);
+    /* opaque, not the translucent wash the other callouts use — this one
+       floats over arbitrary mock/screenshot content (not the flat cream page
+       background), so a translucent tint is invisible or unpredictable
+       depending what's underneath. #F7F6F5 is rgba(23,22,27,.035) (the other
+       callouts' actual fill) pre-flattened against white, so it matches
+       exactly instead of introducing a different, warmer grey. A small
+       shadow lifts it off the mock. */
+    background:#F7F6F5;
     border:1px solid rgba(23,22,27,.14);
-    border-radius:0 10px 10px 0;
-    box-shadow:0 14px 30px rgba(23,22,27,.16), 0 2px 8px rgba(23,22,27,.06);
+    border-radius:0 12px 12px 0;
+    box-shadow:0 10px 24px rgba(23,22,27,.14);
     padding:14px 22px; display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;
     opacity:0; transform:translateX(-100%); pointer-events:none;
     transition:opacity .4s ease, transform .5s cubic-bezier(.22,1,.36,1);
   }
   .mock-callout.show{opacity:1; transform:translateX(0);}
   .mock-callout-kicker{
-    font-family:var(--mono); font-size:10px; letter-spacing:.05em; text-transform:uppercase;
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
     color:var(--ink-45); flex:0 0 auto; margin:0;
   }
   .mock-callout p{font-family:var(--sans); font-size:12.5px; line-height:1.5; color:var(--ink-70); margin:0; flex:1 1 260px;}
@@ -807,6 +817,13 @@
     font-family:var(--sans); font-size:13.5px; line-height:1.6; color:var(--ink-70); margin:0;
   }
   .history-step-media{flex:1; height:100%; min-width:0; display:flex; align-items:center; justify-content:center;}
+  /* step 2's mock is a small phone card, not a full-width console — letting
+     media stay flex:1 either centered it far from the text or (pinned
+     flex-start) left a huge dead zone on the right of the 1500px-wide panel.
+     Instead, shrink media to its own content width and center the whole
+     text+media row as one compact block in the panel. */
+  .history-stage[data-history-group="grant-access"] .history-step[data-step="2"]{justify-content:center;}
+  .history-stage[data-history-group="grant-access"] .history-step[data-step="2"] .history-step-media{flex:0 0 auto;}
   .history-step-media .frame{height:100%; width:auto; max-width:100%; flex:0 0 auto;}
   /* stacked variant — title/kicker + lead text as a full-width header, mocks
      filling the space below, pulled from the SDK-deck wizard layout. Scoped
@@ -932,13 +949,6 @@
   /* static (always-shown) sibling of .mock-callout — same dusty-rose "this
      needs a designer's eye" visual, just living inline in the field list
      instead of animating in over a mock */
-  .hce-callout{
-    background:linear-gradient(120deg, #E3E0DA 0%, #EBE9E4 55%, #F4F3F0 100%);
-    border:1px solid rgba(23,22,27,.14);
-    border-radius:10px; box-shadow:0 8px 20px rgba(23,22,27,.10);
-    padding:12px 16px; margin-top:0;
-  }
-  .hce-callout p{font-family:var(--sans); font-size:12px; line-height:1.5; color:var(--ink-70); margin:6px 0 0;}
   .hce-terms-link{color:var(--tw-blue); text-decoration:underline;}
   /* grant-access "how we got here", step 1 — three real iteration mocks
      shown side by side as a single evolution filmstrip rather than one
@@ -947,7 +957,7 @@
   /* text and frames are two independent rows now (not paired per-item), so
      mismatched note lengths in row 1 can never push row 2's mocks out of
      alignment with each other */
-  .history-evolution{display:flex; flex-direction:column; gap:14px; height:100%; width:100%;}
+  .history-evolution{display:flex; flex-direction:column; gap:8px; height:100%; width:100%;}
   /* mocks lead, captions trail below each one — same column pairing as
      before (matching flex-basis keeps item N in the caption row under item N
      in the frame row) but reordered so the image is what a reader sees
@@ -955,9 +965,12 @@
   .history-evolution-frames-row{display:flex; gap:22px; align-items:center; justify-content:center; flex:1; min-height:0;}
   .history-evolution-frame{flex:0 1 250px; min-height:0; min-width:0; display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
   .history-evolution-text-row{display:flex; gap:22px; justify-content:center; flex:0 0 auto;}
-  .history-evolution-text-item{flex:0 1 250px; min-width:0; display:flex; flex-direction:column; align-items:center;}
-  .history-evolution-text-item .frame-cap{text-align:center;}
-  .history-evolution-text-item .carousel-item-note{text-align:center; max-width:none;}
+  .history-evolution-text-item{flex:0 1 250px; min-width:0; display:flex; flex-direction:column; align-items:flex-start;}
+  .history-evolution-text-item .frame-cap{
+    text-align:left; font-family:var(--sans); font-weight:700; letter-spacing:normal; color:var(--ink);
+    margin:0 0 6px;
+  }
+  .history-evolution-text-item .carousel-item-note{text-align:left; max-width:none;}
   .history-evolution-frame > img{max-width:100%; max-height:100%; object-fit:contain;}
   /* V3 — a real tooltip image faded in/out over the base mock, positioned
      near the first category's info icon */
@@ -1168,7 +1181,7 @@
   .idp-tab-fav{
     width:16px; height:16px; border-radius:4px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
-    font-size:10px; font-weight:800; color:#fff;
+    font-size:10px; font-weight:700; color:#fff;
   }
   .idp-fav-okta{background:#00297A;}
   .idp-fav-twilio{background:#F22F46; position:relative;}
@@ -1336,7 +1349,7 @@
     display:flex; align-items:center; gap:14px; padding:18px 0;
   }
   .step-nav-num{
-    font-family:var(--mono); font-size:12px; font-weight:700; color:var(--ink-45);
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--ink-45);
     flex-shrink:0; width:14px;
   }
   /* size (not weight) carries the hierarchy here — title stays full-strength
@@ -1936,12 +1949,13 @@
      ChatGPT-side screen — sits in the left column under the step's callout,
      not on the mock itself, since the tag isn't part of the real product UI */
   .twilio-note{
-    display:inline-flex; align-items:center; gap:7px; margin-top:16px;
+    display:inline-flex; align-items:center; gap:0; margin-top:16px;
     background:none; color:var(--ink-45); white-space:nowrap;
-    font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase;
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
     padding:0; border-radius:0;
   }
-  .twilio-note::before{content:''; width:5px; height:5px; border-radius:50%; background:var(--ink-45); flex-shrink:0;}
+  .twilio-note-by{font-family:var(--sans); font-weight:400; letter-spacing:normal; text-transform:none; color:var(--ink-45); margin-right:-8px;}
+  .twilio-note-logo{height:14px; width:auto; flex-shrink:0; display:block;}
   /* extra-shrink variant for slide 6's much larger centered frame — the card
      needs to read as clearly smaller than its frame, not edge-to-edge */
   .consent-mobile-frame-xs{padding:20px 18px;}
@@ -2177,7 +2191,7 @@
      top-aligned with its sibling, not pushed to the bottom of the column */
   .persona-card{width:320px; text-align:left; border-top:1px solid var(--line); padding-top:20px;}
   .persona-card h4{
-    font-family:var(--mono); font-size:11px; letter-spacing:.05em;
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em;
     text-transform:uppercase; color:var(--ink-45); margin:0 0 12px;
   }
   .persona-card > p{font-family:var(--sans); font-size:14px; line-height:1.6; color:var(--ink-70); margin:0; min-height:4.8em;}
@@ -2185,6 +2199,12 @@
      (.example-callout), same text styling too — just repositioned to sit in a
      narrower column */
   .persona-card .example-callout{margin:24px 0 0; max-width:none; width:100%; box-sizing:border-box;}
+  /* inside the 360px step-nav column, the callout's own default text size
+     (15px) reads bigger than the substep description right above it (14px) —
+     scale it down to fit its narrower, denser context instead of the wide
+     standalone slide-2 usage this component was originally sized for */
+  .step-nav-body .example-callout{max-width:none; width:100%; box-sizing:border-box; padding:16px 18px; margin-top:12px;}
+  .step-nav-body .example-text{font-size:13.5px; line-height:1.55;}
 
   /* ---------- flow diagram (reused for the JWT mechanism + illustrative example) ---------- */
   .layout-diagram{
@@ -2194,14 +2214,31 @@
   .layout-diagram .text-block{max-width:640px; margin-bottom:48px;}
   .layout-diagram .teaser{margin:0 auto; max-width:600px;}
   .diagram-flow{display:flex; align-items:stretch; gap:20px;}
-  .diagram-box{width:190px; padding:22px 18px; border:1px solid var(--line); border-radius:12px; text-align:left;}
+  .diagram-box{width:190px; padding:24px 20px; border:1px solid var(--line); border-radius:12px; text-align:left;}
+  .diagram-icon{width:22px; height:22px; color:var(--ink-45); margin-bottom:14px;}
+  .diagram-icon svg{width:100%; height:100%; display:block;}
   .diagram-box .diagram-label{
-    font-family:var(--mono); font-size:10px; letter-spacing:.05em;
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em;
     text-transform:uppercase; color:var(--ink-45); margin:0 0 8px;
   }
   .diagram-box .diagram-title{font-family:var(--sans); font-weight:600; font-size:14px; color:var(--ink); margin:0;}
   .diagram-arrow{color:var(--ink-45); flex-shrink:0; display:flex; align-items:center; justify-content:center;}
   .diagram-arrow svg{width:24px; height:16px;}
+  /* timeline variant — same dot-and-line language as .timeline-track (slide 9),
+     so this sequence reads as one system with the "What We're Validating"
+     timeline instead of its own boxes-and-arrows pattern. Dot sits first at a
+     fixed position on the line; icon + title flow below it, so steps never
+     misalign even when title lengths wrap differently. */
+  .diagram-timeline{position:relative; display:flex; justify-content:space-between; width:820px; max-width:100%; margin:0 auto;}
+  .diagram-timeline::before{content:''; position:absolute; top:5px; left:0; right:0; height:1px; background:var(--line);}
+  .diagram-timeline-step{position:relative; flex:1; display:flex; flex-direction:column; align-items:center; text-align:center;}
+  .diagram-timeline-step .timeline-dot{margin:0 auto 18px;}
+  .diagram-timeline-icon{width:22px; height:22px; color:var(--ink-45); margin-bottom:10px;}
+  .diagram-timeline-icon svg{width:100%; height:100%; display:block;}
+  .diagram-timeline-step .diagram-title{
+    font-family:var(--sans); font-weight:600; font-size:14px; color:var(--ink);
+    margin:0; max-width:150px;
+  }
   .diagram-footnote{font-family:var(--sans); font-style:italic; font-size:12px; color:var(--ink-45); margin:20px 0 0; text-align:center;}
 
   /* ---------- timeline ---------- */
@@ -2219,7 +2256,7 @@
     margin:0 auto 12px; position:relative; z-index:1; border:2px solid var(--cream);
   }
   .timeline-step.current .timeline-dot{background:var(--ink); width:13px; height:13px;}
-  .timeline-step .timeline-label{font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:var(--ink-45); white-space:nowrap;}
+  .timeline-step .timeline-label{font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--ink-45); white-space:nowrap;}
   .timeline-step.current .timeline-label{color:var(--ink); font-weight:700;}
   .validation-list{list-style:none; margin:0; padding:0; text-align:left; max-width:640px;}
   .validation-list li{
@@ -2266,7 +2303,7 @@
      but with a subtle bordered card treatment instead of running text */
   .live-callout{
     flex:0 0 200px; display:flex; flex-direction:column; gap:10px;
-    background:rgba(23,22,27,.025); border:1px solid var(--line); border-radius:14px;
+    background:rgba(23,22,27,.035); border:1px solid var(--line); border-radius:12px;
     padding:20px;
   }
   .live-callout svg{width:17px; height:17px; color:var(--ink-45); animation:liveCalloutTap 1.8s ease-in-out infinite;}
@@ -2667,7 +2704,16 @@
 
   <div class="topbar">
     <div class="brand"><a class="brand-home" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back to landing page</a></div>
-    <div class="counter"><span id="counterNow">01</span> / <span id="counterTotal">05</span></div>
+    <div class="dots" id="dots"></div>
+    <div class="counter-nav">
+      <button class="navbtn" onclick="go(-1)" aria-label="Previous">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="counter"><span id="counterNow">01</span> / <span id="counterTotal">05</span></div>
+      <button class="navbtn" onclick="go(1)" aria-label="Next">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
   </div>
 
   <!-- "how we got here" pause — a deliberate detour out of the main journey,
@@ -2686,20 +2732,16 @@
       <button class="history-arrow history-arrow-prev" id="historyPrev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
       <button class="history-arrow history-arrow-next" id="historyNext" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
       <div class="history-head">
-        <p class="kicker">How We Got Here</p>
+        <p class="kicker">How We Got Here — Explorations</p>
       </div>
       <div class="history-stage active-group" data-history-group="agents">
         <div class="history-step active" data-step="1">
           <div class="history-step-text">
-            <p class="frame-cap">01 — TWO TABLES, NO CONNECTION</p>
-            <p class="history-note">Agents and users are both just table views inside Agent Identity — a console design-system pattern already used everywhere else.</p>
+            <p class="history-note">Agents and users are both just table views inside Agent Identity — a pattern already used everywhere else.</p>
             <ul class="history-note-list">
-              <li>No way to see all the agents a user individually has authorized, or all the users an agent can act on behalf of, without leaving the page you're on.</li>
+              <li><strong>No way to see the relationship</strong> — all the agents a user has authorized, or all the users an agent can act for, without leaving the page.</li>
+              <li>Terminology note: the console calls these <strong>Clients and Identities</strong> (developer-facing terms). This walkthrough says agent and user instead, since that's clearer here.</li>
             </ul>
-            <div class="hce-callout">
-              <p class="mock-callout-kicker">A Note on Terminology</p>
-              <p>The console itself calls these Clients and Identities — developer-facing terms, since this tooling is built primarily for that audience. This walkthrough uses agent and user instead, since that's clearer for this case study.</p>
-            </div>
           </div>
           <div class="history-step-media">
             <!-- real live console, not a screenshot toggle — mounts the one
@@ -2713,11 +2755,10 @@
         </div>
         <div class="history-step" data-step="2">
           <div class="history-step-text">
-            <p class="frame-cap">02 — TRIED CRAMMING USERS INTO THE AGENT VIEW</p>
-            <p class="history-note">One attempt: add a Users section directly inside an agent's own side modal, instead of giving it a separate place.</p>
+            <p class="history-note">First attempt: add a Users section directly inside an agent's own side modal.</p>
             <ul class="history-note-list">
-              <li>Everything competed for the same narrow panel — truncated IDs, a table within a table, its own scroll just to reach the Users section at the bottom.</li>
-              <li>Technically possible. Not actually usable.</li>
+              <li><strong>Everything competed for the same narrow panel</strong> — truncated IDs, a table within a table, its own scroll just to reach Users.</li>
+              <li>Technically possible. <strong>Not actually usable.</strong></li>
             </ul>
           </div>
           <div class="history-step-media">
@@ -2766,10 +2807,9 @@
         </div>
         <div class="history-step" data-step="3">
           <div class="history-step-text">
-            <p class="frame-cap">03 — GIVE IT REAL SPACE INSTEAD</p>
-            <p class="history-note">Rather than cram content into an agent's own modal, agents and users got a dedicated way to link to each other.</p>
+            <p class="history-note">Agents and users instead got a <strong>dedicated way to link</strong> to each other.</p>
             <ul class="history-note-list">
-              <li>From a user, an <strong>Authorized Clients</strong> tab (the console's own real label) lists every agent authorized to act on their behalf — and links straight through to that agent's own full details.</li>
+              <li>From a user, an <strong>Authorized Clients</strong> tab lists every agent authorized to act on their behalf, linking straight to that agent's full details.</li>
             </ul>
           </div>
           <div class="history-step-media">
@@ -2787,14 +2827,14 @@
         </div>
         <div class="history-step" data-step="4">
           <div class="history-step-text">
-            <p class="frame-cap">04 — THE REVERSE DIRECTION, CUT FROM SCOPE</p>
-            <p class="history-note">The user → agent direction shipped. Agent → users didn't.</p>
+            <p class="history-note">The user → agent direction <strong>shipped</strong>. Agent → users <strong>didn't</strong>.</p>
             <ul class="history-note-list">
-              <li>Viewing every user authorized on a given agent needs its own search endpoint — a much bigger lift than the linking pattern itself, so it got cut from this scope.</li>
-              <li>The tab infrastructure already exists on the user side, so adding it here later is straightforward once that endpoint is built.</li>
+              <li>Viewing every user authorized on an agent needs its own search endpoint — a bigger lift than the linking pattern, so it got <strong>cut from scope</strong>.</li>
+              <li>The tab infrastructure already exists on the user side, so adding it here later is <strong>straightforward</strong> once that endpoint ships.</li>
             </ul>
           </div>
           <div class="history-step-media history-step-media-captioned">
+            <p class="tw-mock-future-caption">Future state — not yet built</p>
             <!-- hand-built mock, not a screenshot — this tab doesn't exist
                  anywhere (live console or static mocks), so there's nothing
                  to photograph. Full rail + topbar chrome copied verbatim
@@ -2952,7 +2992,6 @@
               </div>
               </div>
             </div>
-            <p class="frame-cap tw-mock-future-caption">Future state — not yet built</p>
           </div>
         </div>
       </div>
@@ -2971,12 +3010,10 @@
       <div class="history-stage" data-history-group="consent">
         <div class="history-step active" data-step="1">
           <div class="history-step-text">
-            <p class="frame-cap">01 — EXPLORED: FULL CUSTOMIZATION</p>
-            <p class="history-note">Color, font, and copy were all on the table at first, letting each customer fully brand the consent screen to match their own product, not just drop in a logo. Try the controls on the left.</p>
-            <div class="hce-callout">
-              <p class="mock-callout-kicker">Design System Note</p>
-              <p>Color pickers would be a new design system component we'd have to build to support a customization like this.</p>
-            </div>
+            <p class="history-note">Color, font, and copy were all on the table at first, letting customers <strong>fully brand</strong> the consent screen instead of just dropping in a logo. Try the controls on the left.</p>
+            <ul class="history-note-list">
+              <li>Design system note: <strong>color pickers</strong> would be a new component we'd need to build for this.</li>
+            </ul>
           </div>
           <div class="history-step-media">
             <div class="wizard-proto history-mini-proto" id="historyProtoConsent1" data-initial="placeholder">
@@ -3067,8 +3104,11 @@
         </div>
         <div class="history-step" data-step="2">
           <div class="history-step-text">
-            <p class="frame-cap">02 — SHIPPED: LOGO ONLY</p>
-            <p class="history-note">Left to each customer, deeper color and font choices risked breaking accessibility contrast guarantees — a guardrail that belongs at the future full hosted-login layer, not bolted on here. Logo is the one brand element Twilio can't replicate elsewhere, so it shipped alone for launch.</p>
+            <p class="history-note">Deeper customization got cut for launch &mdash; <strong>logo shipped alone</strong>.</p>
+            <ul class="history-note-list">
+              <li><strong>Accessibility risk</strong>: customer-set colors and fonts could break contrast guarantees &mdash; a guardrail that belongs at the future hosted-login layer, not bolted on here.</li>
+              <li>Logo is the one brand element Twilio can't replicate elsewhere, so it's what shipped for launch.</li>
+            </ul>
           </div>
           <div class="history-step-media">
             <div class="wizard-proto history-mini-proto" id="historyProtoConsent2" data-initial="placeholder">
@@ -3140,9 +3180,6 @@
       </div>
       <div class="history-stage" data-history-group="grant-access">
         <div class="history-step history-step-stacked active" data-step="1">
-          <div class="history-step-text history-step-text-narrow">
-            <p class="frame-cap">01 — EARLIER EXPLORATIONS</p>
-          </div>
           <div class="history-step-media">
             <div class="history-evolution">
               <div class="history-evolution-frames-row">
@@ -3186,8 +3223,12 @@
         </div>
         <div class="history-step" data-step="2">
           <div class="history-step-text">
-            <p class="frame-cap">02 — SHIPPED: ITEMIZED PERMISSION LIST</p>
-            <p class="history-note">Scopes couldn&rsquo;t be granted individually, so per-item toggles wouldn&rsquo;t have meant anything &mdash; allow or deny was the real choice. And the list was short enough that hiding any of it behind an expand or hover just added friction. Last touches: Privacy Policy and Terms of Service links for legal, and the customer&rsquo;s own logo in place of a generic icon.</p>
+            <p class="history-note">The list shipped flat and itemized &mdash; no per-item toggles, no expand, no hover.</p>
+            <ul class="history-note-list">
+              <li>Scopes couldn&rsquo;t be granted individually, so per-item toggles wouldn&rsquo;t have meant anything &mdash; <strong>allow or deny was the real choice</strong>.</li>
+              <li>The list was short enough that hiding any of it behind an expand or hover <strong>just added friction</strong>.</li>
+              <li>Last touches: <strong>Privacy Policy and Terms of Service links</strong> for legal, and the <strong>customer&rsquo;s own logo</strong> in place of a generic icon.</li>
+            </ul>
           </div>
           <div class="history-step-media">
             <div class="consent-mobile-frame consent-mobile-frame-history2">
@@ -3545,7 +3586,7 @@
         </div>
       </div>
       <div class="step-nav-item" data-step="3">
-        <button class="step-nav-head"><span class="step-nav-num">3</span><span class="step-nav-title">Grant Access</span><span class="twilio-note">Hosted &amp; designed by Twilio</span></button>
+        <button class="step-nav-head"><span class="step-nav-num">3</span><span class="step-nav-title">Grant Access</span><span class="twilio-note-by">by</span><svg class="twilio-note-logo" viewBox="0 0 100 30" fill="#F22F46" aria-hidden="true"><path d="M14.4 11.3c0 1.7-1.4 3.1-3.1 3.1S8.2 13 8.2 11.3s1.4-3.1 3.1-3.1 3.1 1.4 3.1 3.1zm-3.1 4.3c-1.7 0-3.1 1.4-3.1 3.1s1.4 3.1 3.1 3.1 3.1-1.4 3.1-3.1-1.4-3.1-3.1-3.1zM30 15c0 8.3-6.7 15-15 15S0 23.3 0 15 6.7 0 15 0s15 6.7 15 15zm-4 0c0-6.1-4.9-11-11-11S4 8.9 4 15s4.9 11 11 11 11-4.9 11-11zm-7.3.6c-1.7 0-3.1 1.4-3.1 3.1s1.4 3.1 3.1 3.1 3.1-1.4 3.1-3.1-1.4-3.1-3.1-3.1zm0-7.4c-1.7 0-3.1 1.4-3.1 3.1s1.4 3.1 3.1 3.1 3.1-1.4 3.1-3.1-1.4-3.1-3.1-3.1zm51.6-2.3c.1 0 .2.1.3.2v3.2c0 .2-.2.3-.3.3H65c-.2 0-.3-.2-.3-.3V6.2c0-.2.2-.3.3-.3h5.3zm-.1 4.5H60c-.1 0-.3.1-.3.3l-1.3 5-.1.3-1.6-5.3c0-.1-.2-.3-.3-.3h-4c-.1 0-.3.1-.3.3l-1.5 5-.1.3-.1-.3-.6-2.5-.6-2.5c0-.1-.2-.3-.3-.3h-8V6.1c0-.1-.2-.3-.4-.2l-5 1.6c-.2 0-.3.1-.3.3v2.7h-1.3c-.1 0-.3.1-.3.3v3.8c0 .1.1.3.3.3h1.3v4.7c0 3.3 1.8 4.8 5.1 4.8 1.4 0 2.7-.3 3.6-.8v-4c0-.2-.2-.3-.3-.2-.5.2-1 .3-1.4.3-.9 0-1.4-.4-1.4-1.4v-3.4h2.9c.1 0 .3-.1.3-.3v-3.2L47.8 24c0 .1.2.3.3.3h4.2c.1 0 .3-.1.3-.3l1.8-5.6.9 2.9.8 2.7c0 .1.2.3.3.3h4.2c.1 0 .3-.1.3-.3l3.8-12.6V24c0 .1.1.3.3.3h5.1c.1 0 .3-.1.3-.3V10.7c0-.1-.1-.3-.2-.3zm6.7-4.5h-5.1c-.1 0-.3.1-.3.3v17.7c0 .1.1.3.3.3h5.1c.1 0 .3-.1.3-.3V6.1c0-.1-.1-.2-.3-.2zm6.8 0h-5.3c-.1 0-.3.1-.3.3v3.1c0 .1.1.3.3.3h5.3c.1 0 .3-.1.3-.3V6.1c0-.1-.1-.2-.3-.2zm-.1 4.5h-5.1c-.1 0-.3.1-.3.3v13.1c0 .1.1.3.3.3h5.1c.1 0 .3-.1.3-.3V10.7c0-.1-.1-.3-.3-.3zm16.1 6.8c0 3.8-3.2 7.1-7.7 7.1-4.4 0-7.6-3.3-7.6-7.1s3.2-7.1 7.7-7.1c4.4 0 7.6 3.3 7.6 7.1zm-5.4.1c0-1.4-1-2.5-2.2-2.4-1.3 0-2.2 1.1-2.2 2.4s1 2.4 2.2 2.4c1.3 0 2.2-1.1 2.2-2.4z"/></svg></button>
         <div class="step-nav-body">
           <div class="substep-callout">
           <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Grant the agent access to act on your behalf</span><span class="substep-item-desc">Once signed in, Alex sees exactly what ChatGPT is asking for and can allow or deny access before anything is connected.</span></span></button>
@@ -4054,24 +4095,25 @@
         <h1>One Console, Every Setting</h1>
         <p class="teaser">Owl Trade already manages phone numbers, messaging, and other Twilio products from the Twilio Console — Agent Identity is configured in that same place, not a separate tool. Here's the sequence Owl Trade follows to set it up.</p>
       </div>
-      <div class="diagram-flow">
-        <div class="diagram-box">
-          <p class="diagram-label">Step 1</p>
+      <div class="diagram-timeline">
+        <div class="diagram-timeline-step">
+          <div class="timeline-dot"></div>
+          <div class="diagram-timeline-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
           <p class="diagram-title">Verify Identity</p>
         </div>
-        <div class="diagram-arrow"><svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M0 8h20M14 2l6 6-6 6"/></svg></div>
-        <div class="diagram-box">
-          <p class="diagram-label">Step 2</p>
+        <div class="diagram-timeline-step">
+          <div class="timeline-dot"></div>
+          <div class="diagram-timeline-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h6M14 7h6M4 12h10M18 12h2M4 17h4M12 17h8"/><circle cx="12" cy="7" r="2" fill="var(--cream)"/><circle cx="16" cy="12" r="2" fill="var(--cream)"/><circle cx="10" cy="17" r="2" fill="var(--cream)"/></svg></div>
           <p class="diagram-title">Customize Consent</p>
         </div>
-        <div class="diagram-arrow"><svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M0 8h20M14 2l6 6-6 6"/></svg></div>
-        <div class="diagram-box">
-          <p class="diagram-label">Step 3</p>
+        <div class="diagram-timeline-step">
+          <div class="timeline-dot"></div>
+          <div class="diagram-timeline-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg></div>
           <p class="diagram-title">Manage Agents</p>
         </div>
-        <div class="diagram-arrow"><svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M0 8h20M14 2l6 6-6 6"/></svg></div>
-        <div class="diagram-box">
-          <p class="diagram-label">Step 4</p>
+        <div class="diagram-timeline-step">
+          <div class="timeline-dot"></div>
+          <div class="diagram-timeline-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3L12 4z"/><path d="M12 10v4M12 17h.01"/></svg></div>
           <p class="diagram-title">High Risk Approvals</p>
         </div>
       </div>
@@ -5195,17 +5237,6 @@
 
   </div>
 
-  <div class="dots" id="dots"></div>
-
-  <div class="navbtns">
-    <button class="navbtn" onclick="go(-1)" aria-label="Previous">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-    </button>
-    <button class="navbtn" onclick="go(1)" aria-label="Next">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-    </button>
-  </div>
-
 <script>
   const slides = document.querySelectorAll('.slide');
   const total = slides.length;
@@ -5238,6 +5269,26 @@
   }
 
   function render(){
+    // cancel every scripted autoplay/click-pulse sequence before switching
+    // slides — without this, a sequence still mid-flight on the slide being
+    // left (e.g. jumping away from slide 8 mid-walkthrough via a dot click,
+    // which bypasses go()'s own checks) keeps its setTimeouts alive in the
+    // background and later fires a "ghost" click-pulse against elements on
+    // a now-hidden slide, showing up with nothing actually there to click.
+    // selectStepContext() already re-clears the same handful when relevant,
+    // so this is just making sure it happens on every transition, not only
+    // the ones that pass through selectStepContext.
+    clearIdpAutoplay();
+    clearIdpFlowAutoplay();
+    clearConsentAutoplay();
+    clearClientsAutoplay();
+    clearCgptAutoplay();
+    clearHeEvolutionAutoplay();
+    clearMockDrawerAutoplay();
+    clearUploadAutoplay();
+    clearAgentsTabsAutoplay();
+    clearAgentsClientsLinkAutoplay();
+    clearAgentsFutureAutoplay();
     slides.forEach((s, i) => s.classList.toggle('active', i === idx));
     const activeSlide = slides[idx];
     dots.forEach((d, vi) => d.classList.toggle('active', visibleSlides[vi] === activeSlide));
@@ -5322,12 +5373,22 @@
     if (label) label.textContent = `PART ${n} OF ${total}`;
     const prog = panel.querySelector('.substep-progress');
     if (prog) prog.style.visibility = total > 1 ? 'visible' : 'hidden';
-    // some parts are mini-prototypes — replay their walkthrough when re-entered
+    // some parts are mini-prototypes — replay their walkthrough when re-entered.
+    // Slide 6 (End User Journey) reuses this same step-nav/data-step system
+    // with its own unrelated 1-4 steps (Request/Log in/Grant Access/Act on
+    // your behalf) — none of these autoplay functions exist for it, they're
+    // all slide 8 (Customer Journey) mini-prototypes, so guard on slide.id
+    // or slide 6's step 2 ("Log in") ends up firing slide 8's step 2
+    // ("Customize the consent screen") autoplay purely because both happen
+    // to be numbered "2", clicking Edit/Save on elements that live in an
+    // entirely different, currently-hidden part of the page.
     const stepNum = navItem.dataset.step;
-    if (stepNum === '1' && n === 1) autoplayIdpProto(slide);
-    if (stepNum === '2' && n === 1) autoplayConsentFlow(slide);
-    if (stepNum === '3' && n === 1) autoplayClientsFlow(slide);
-    if (stepNum === '4' && n === 2) autoplayWizardProto(slide);
+    if (slide.id === 'slideCustomerJourney') {
+      if (stepNum === '1' && n === 1) autoplayIdpProto(slide);
+      if (stepNum === '2' && n === 1) autoplayConsentFlow(slide);
+      if (stepNum === '3' && n === 1) autoplayClientsFlow(slide);
+      if (stepNum === '4' && n === 2) autoplayWizardProto(slide);
+    }
   }
 
   // ---- shared live console, embedded live in slide 7's steps 1-3 ----
@@ -6166,12 +6227,10 @@
     const root = document.querySelector('.cgpt-body-live');
     if (!root) return;
     armAutoplayCancelGuard(root, clearAgentsTabsAutoplay);
-    // slowed from the original 2600ms wait / default 260ms pulse-to-click —
-    // gives a viewer more time to read the Clients tab before it switches,
-    // and a longer beat between "cursor lands" and "screen reacts"
+    // was 4200ms — cut in half so the switch to Identities happens sooner
     agentsTabsAutoplayTimers.push(setTimeout(() => {
       clickWithPulse(root.querySelector('.tw-tab[data-tab="identities"]'), 500);
-    }, 4200));
+    }, 2100));
   }
 
   // "How We Got Here" (agents) step 3 — same real-console pattern as step 1,
