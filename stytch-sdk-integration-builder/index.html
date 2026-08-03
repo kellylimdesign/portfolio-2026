@@ -209,20 +209,18 @@
   .demo-select-nav .step-nav-item.active .step-nav-title{color:var(--ink); font-weight:600;}
   .demo-select-nav .step-nav-num{transition:color .2s ease;}
   .demo-select-nav .step-nav-item.active .step-nav-num{color:var(--ink);}
-  /* top:20px (not 0) — absolutely positioned children are placed relative
-     to .slide's padding edge, which completely ignores .slide's own
-     padding-top value, so this needs its own explicit offset to track the
-     +20px top-padding increase (44px -> 64px) rather than inheriting it */
-  /* top-anchored (not centered) — Survey Amp's aspect-ratio (3456/1770) is
-     taller than Hello Socks' (3456/1650) at the same fixed width, so
-     centering made the frame's top edge visibly shift up when toggling
-     between them; anchoring to the top keeps it fixed and only the
-     bottom edge moves. top/bottom set to 119px (not the old 20/90) so
-     that fixed top edge sits at the vertical center of the slide for
-     Survey Amp (the taller of the two, height ~600px against an 839px
-     slide) — Hello Socks (shorter, ~566px) then sits with a bit of extra
-     room below rather than dead center, but neither ever clips. */
-  .demo-select-panel{position:absolute; top:119px; right:36px; bottom:119px; left:484px; display:flex; align-items:flex-start; justify-content:center;}
+  /* true flex centering (align-items:center), not a fixed-pixel offset —
+     a hardcoded top/bottom px value only centers correctly at the one
+     viewport size it was measured against, and looked off-center on a
+     real window of a different size/aspect ratio. top:0/bottom:0 fills
+     the slide's full content-area height on this side so centering is
+     always relative to however tall the slide actually renders, on any
+     window. Trade-off: Survey Amp (taller) and Hello Socks (shorter)
+     will again shift slightly relative to each other when toggled, since
+     true centering (unlike top-anchoring) centers each on its own actual
+     height — accepted so the frame is correctly centered on real windows
+     instead of only the one size it was tuned for. */
+  .demo-select-panel{position:absolute; top:0; right:36px; bottom:0; left:484px; display:flex; align-items:center; justify-content:center;}
   .demo-select-frame{
     appearance:none; background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
     width:100%; max-width:1040px;
