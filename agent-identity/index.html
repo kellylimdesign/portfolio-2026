@@ -2773,7 +2773,7 @@
                    why). -->
               <img class="mock-spotlight-layer mock-spotlight-blur" src="mocks/iterations/v2-client-view-details.svg" alt="">
               <img class="mock-spotlight-layer mock-spotlight-sharp" src="mocks/iterations/v2-client-view-details.svg" alt="A client list with a side modal open, Users section crammed at the bottom below Details and Configurations, IDs truncated">
-              <span class="mock-zoom-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>Try it yourself — zoom &amp; scroll</span>
+              <span class="mock-zoom-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>Zoom the side modal</span>
             </button>
           </div>
         </div>
@@ -5422,11 +5422,6 @@
   // versa); historyPendingAdvance/-Step track whether + where the deferred
   // "next" transition should land once the CURRENTLY open one closes.
   const historySeenGroups = { agents:false, consent:false, 'grant-access':false };
-  // one-time auto-demo of the side-modal's zoom+scroll (see updateHistoryStep)
-  // so a visitor doesn't have to guess there's more to see below the fold —
-  // separate from historySeenGroups since this is scoped to one step, not a
-  // whole group
-  let agentsModalAutoZoomShown = false;
   let historyGroup = 'agents';
   let historyStep = 1;
   let historyPendingAdvance = false;
@@ -5462,18 +5457,6 @@
     clearAgentsTabsAutoplay();
     if (historyGroup === 'agents' && historyStep === 1) initAgentsTabsAutoplay();
     if (historyGroup === 'agents' && historyStep === 2) playAgentsModalSpotlightReveal();
-    // demo the zoom+scroll once automatically the first time this step is
-    // seen, so the "Users table is below the fold" reveal doesn't depend on
-    // a visitor guessing to click first — reuses the exact same trigger the
-    // hint/click path already uses, just fired programmatically, so the
-    // scroll-to-fraction math and animation stay in one place (initMockZoom)
-    if (historyGroup === 'agents' && historyStep === 2 && !agentsModalAutoZoomShown) {
-      agentsModalAutoZoomShown = true;
-      setTimeout(() => {
-        const trigger = document.querySelector('[data-zoom-target="agentsModalZoom"]');
-        if (trigger) trigger.click();
-      }, 900);
-    }
     clearAgentsClientsLinkAutoplay();
     if (historyGroup === 'agents' && historyStep === 3) initAgentsClientsLinkAutoplay();
     clearAgentsFutureAutoplay();
@@ -6655,7 +6638,7 @@
   window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') go(1);
     if (e.key === 'ArrowLeft') go(-1);
-    if (e.key === 'r' || e.key === 'R') { idx = 0; historySeenGroups.agents = false; historySeenGroups.consent = false; historySeenGroups['grant-access'] = false; agentsModalAutoZoomShown = false; render(); }
+    if (e.key === 'r' || e.key === 'R') { idx = 0; historySeenGroups.agents = false; historySeenGroups.consent = false; historySeenGroups['grant-access'] = false; render(); }
   });
 
   // ---- live console prototype (slide 9) ----
