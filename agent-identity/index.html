@@ -883,6 +883,7 @@
      mocks read as more "finished" than they were) — this restores a plain
      rounded card frame in its place. */
   .history-mini-proto .wizard-stage.wizard-stage-card{
+    position:relative;
     border:1px solid var(--line); border-radius:14px; background:var(--cream);
     box-shadow:0 16px 40px rgba(23,22,27,.10), 0 3px 10px rgba(23,22,27,.05);
     overflow:hidden;
@@ -3098,6 +3099,7 @@
                     </div>
                   </div>
                 </div>
+                <span class="mock-zoom-hint" id="hceConsent1ScrollHint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Try it yourself — scroll for more</span>
               </div>
             </div>
           </div>
@@ -5422,6 +5424,12 @@
   // versa); historyPendingAdvance/-Step track whether + where the deferred
   // "next" transition should land once the CURRENTLY open one closes.
   const historySeenGroups = { agents:false, consent:false, 'grant-access':false };
+  // one-time auto-demo of the consent-customize panel's scroll (see
+  // updateHistoryStep) — its content genuinely overflows (scrollHeight >
+  // clientHeight, the last 1-2 color rows sit below the fold) with no
+  // visible scrollbar hint, so this proves there's more without a visitor
+  // having to guess
+  let consentPanelAutoScrollShown = false;
   let historyGroup = 'agents';
   let historyStep = 1;
   let historyPendingAdvance = false;
@@ -5451,6 +5459,17 @@
     clearHeEvolutionAutoplay();
     clearMockDrawerAutoplay();
     if (historyGroup === 'grant-access' && historyStep === 1) initHistoryEvolution();
+    // demo the consent-customize panel's scroll once, the first time this
+    // step is seen — reuses the same eased animateScrollTo helper the mock
+    // zoom lightbox uses elsewhere, just targeting this panel directly
+    // instead of a lightbox scroller
+    if (historyGroup === 'consent' && historyStep === 1 && !consentPanelAutoScrollShown) {
+      consentPanelAutoScrollShown = true;
+      setTimeout(() => {
+        const panel = document.querySelector('#historyProtoConsent1 .hce-panel');
+        if (panel) animateScrollTo(panel, panel.scrollHeight - panel.clientHeight, 1800);
+      }, 900);
+    }
     // agents step 1 and step 3's live-console demos only make sense while
     // their own step is showing — same on/off pattern as the evolution loop
     // above
@@ -6638,7 +6657,7 @@
   window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') go(1);
     if (e.key === 'ArrowLeft') go(-1);
-    if (e.key === 'r' || e.key === 'R') { idx = 0; historySeenGroups.agents = false; historySeenGroups.consent = false; historySeenGroups['grant-access'] = false; render(); }
+    if (e.key === 'r' || e.key === 'R') { idx = 0; historySeenGroups.agents = false; historySeenGroups.consent = false; historySeenGroups['grant-access'] = false; consentPanelAutoScrollShown = false; render(); }
   });
 
   // ---- live console prototype (slide 9) ----
