@@ -365,8 +365,10 @@
      to miss as clickable otherwise, so the hint stays visible at rest. */
   .mock-zoom-hint{
     position:absolute; right:14px; bottom:14px; z-index:1; display:inline-flex; align-items:center; gap:6px;
-    background:var(--ink); color:var(--cream); font-family:var(--sans); font-size:11px; font-weight:600;
-    padding:7px 12px; border-radius:20px; opacity:1; transform:translateY(0); pointer-events:none;
+    background:var(--cream); color:var(--ink); font-family:var(--sans); font-size:11px; font-weight:600;
+    padding:7px 12px; border-radius:20px; border:1px solid var(--line);
+    box-shadow:0 4px 12px rgba(23,22,27,.08);
+    opacity:1; transform:translateY(0); pointer-events:none;
   }
   .mock-zoom-hint svg{width:13px; height:13px; flex-shrink:0;}
   /* spotlight: two stacked copies of the same image, one blurred (the page,
@@ -883,6 +885,7 @@
      mocks read as more "finished" than they were) — this restores a plain
      rounded card frame in its place. */
   .history-mini-proto .wizard-stage.wizard-stage-card{
+    position:relative;
     border:1px solid var(--line); border-radius:14px; background:var(--cream);
     box-shadow:0 16px 40px rgba(23,22,27,.10), 0 3px 10px rgba(23,22,27,.05);
     overflow:hidden;
@@ -957,13 +960,13 @@
   /* text and frames are two independent rows now (not paired per-item), so
      mismatched note lengths in row 1 can never push row 2's mocks out of
      alignment with each other */
-  .history-evolution{display:flex; flex-direction:column; gap:8px; height:100%; width:100%;}
+  .history-evolution{display:flex; flex-direction:column; justify-content:flex-end; gap:8px; height:100%; width:100%;}
   /* mocks lead, captions trail below each one — same column pairing as
      before (matching flex-basis keeps item N in the caption row under item N
      in the frame row) but reordered so the image is what a reader sees
      first, caption second, instead of the reverse. */
-  .history-evolution-frames-row{display:flex; gap:22px; align-items:center; justify-content:center; flex:1; min-height:0;}
-  .history-evolution-frame{flex:0 1 250px; min-height:0; min-width:0; display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
+  .history-evolution-frames-row{display:flex; gap:22px; align-items:center; justify-content:center; flex:0 0 auto; min-height:0;}
+  .history-evolution-frame{flex:0 1 250px; min-height:0; min-width:0; display:flex; align-items:center; justify-content:center; width:100%; height:auto;}
   .history-evolution-text-row{display:flex; gap:22px; justify-content:center; flex:0 0 auto;}
   .history-evolution-text-item{flex:0 1 250px; min-width:0; display:flex; flex-direction:column; align-items:flex-start;}
   .history-evolution-text-item .frame-cap{
@@ -3098,6 +3101,7 @@
                     </div>
                   </div>
                 </div>
+                <span class="mock-zoom-hint" id="hceConsent1ScrollHint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Try it yourself — scroll for more</span>
               </div>
             </div>
           </div>
@@ -5422,6 +5426,12 @@
   // versa); historyPendingAdvance/-Step track whether + where the deferred
   // "next" transition should land once the CURRENTLY open one closes.
   const historySeenGroups = { agents:false, consent:false, 'grant-access':false };
+  // one-time auto-demo of the consent-customize panel's scroll (see
+  // updateHistoryStep) — its content genuinely overflows (scrollHeight >
+  // clientHeight, the last 1-2 color rows sit below the fold) with no
+  // visible scrollbar hint, so this proves there's more without a visitor
+  // having to guess
+  let consentPanelAutoScrollShown = false;
   let historyGroup = 'agents';
   let historyStep = 1;
   let historyPendingAdvance = false;
@@ -5451,6 +5461,17 @@
     clearHeEvolutionAutoplay();
     clearMockDrawerAutoplay();
     if (historyGroup === 'grant-access' && historyStep === 1) initHistoryEvolution();
+    // demo the consent-customize panel's scroll once, the first time this
+    // step is seen — reuses the same eased animateScrollTo helper the mock
+    // zoom lightbox uses elsewhere, just targeting this panel directly
+    // instead of a lightbox scroller
+    if (historyGroup === 'consent' && historyStep === 1 && !consentPanelAutoScrollShown) {
+      consentPanelAutoScrollShown = true;
+      setTimeout(() => {
+        const panel = document.querySelector('#historyProtoConsent1 .hce-panel');
+        if (panel) animateScrollTo(panel, panel.scrollHeight - panel.clientHeight, 1800);
+      }, 900);
+    }
     // agents step 1 and step 3's live-console demos only make sense while
     // their own step is showing — same on/off pattern as the evolution loop
     // above
@@ -6638,7 +6659,7 @@
   window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') go(1);
     if (e.key === 'ArrowLeft') go(-1);
-    if (e.key === 'r' || e.key === 'R') { idx = 0; historySeenGroups.agents = false; historySeenGroups.consent = false; historySeenGroups['grant-access'] = false; render(); }
+    if (e.key === 'r' || e.key === 'R') { idx = 0; historySeenGroups.agents = false; historySeenGroups.consent = false; historySeenGroups['grant-access'] = false; consentPanelAutoScrollShown = false; render(); }
   });
 
   // ---- live console prototype (slide 9) ----
