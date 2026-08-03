@@ -419,11 +419,16 @@
   .layout-text .teaser{margin:0 auto; max-width:600px;}
 
   .layout-hero{
+    height:100%;
     display:flex; flex-direction:column;
     align-items:center; text-align:center;
+    /* match Trust's hero padding exactly (.slide's own default here is
+       64px 64px 44px) so the laptop mock gets the same available height
+       and renders at a consistent size between the two decks */
+    padding:44px 64px;
   }
-  .layout-hero .text-block{flex:0 0 auto; max-width:640px; margin-bottom:22px;}
-  .layout-hero .teaser{margin:0 auto; max-width:600px;}
+  .layout-hero .text-block{flex:0 0 auto; max-width:800px; margin-bottom:22px;}
+  .layout-hero .teaser{margin:0 auto; max-width:780px;}
   .layout-hero .stage{
     flex:1; min-height:0; width:100%;
     display:flex; align-items:center; justify-content:center;
