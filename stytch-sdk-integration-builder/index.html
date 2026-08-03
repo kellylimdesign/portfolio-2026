@@ -209,20 +209,19 @@
   .demo-select-nav .step-nav-item.active .step-nav-title{color:var(--ink); font-weight:600;}
   .demo-select-nav .step-nav-num{transition:color .2s ease;}
   .demo-select-nav .step-nav-item.active .step-nav-num{color:var(--ink);}
-  /* top:20px (not 0) — absolutely positioned children are placed relative
-     to .slide's padding edge, which completely ignores .slide's own
-     padding-top value, so this needs its own explicit offset to track the
-     +20px top-padding increase (44px -> 64px) rather than inheriting it */
-  /* top-anchored (not centered) — Survey Amp's aspect-ratio (3456/1770) is
-     taller than Hello Socks' (3456/1650) at the same fixed width, so
-     centering made the frame's top edge visibly shift up when toggling
-     between them; anchoring to the top keeps it fixed and only the
-     bottom edge moves. top/bottom set to 119px (not the old 20/90) so
-     that fixed top edge sits at the vertical center of the slide for
-     Survey Amp (the taller of the two, height ~600px against an 839px
-     slide) — Hello Socks (shorter, ~566px) then sits with a bit of extra
-     room below rather than dead center, but neither ever clips. */
-  .demo-select-panel{position:absolute; top:119px; right:36px; bottom:119px; left:484px; display:flex; align-items:flex-start; justify-content:center;}
+  /* true flex centering (align-items:center) — a fixed pixel top/bottom
+     offset only centers correctly at the one viewport size it's tuned
+     against, and looked off-center on a differently sized/proportioned
+     real window. top/bottom are equal (55px each, not 0) so the reserved
+     margin stays the same total as the original 20px+90px=110px — using
+     0/0 instead gave the frame more room to grow into, visibly enlarging
+     it instead of just recentering it. Hello Socks and Survey Amp have
+     different aspect ratios (3456/1650 vs 3456/1770), so the frame's
+     height — and therefore its centered position — shifts slightly when
+     toggling between them; accepted so centering is correct at any
+     window size, rather than only appearing correct at one specific
+     size. */
+  .demo-select-panel{position:absolute; top:55px; right:36px; bottom:55px; left:484px; display:flex; align-items:center; justify-content:center;}
   .demo-select-frame{
     appearance:none; background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
     width:100%; max-width:1040px;
@@ -285,9 +284,16 @@
      .slide's specificity outright, so it can't fall into the same silent
      source-order tie the comment above warns about. */
   #journeySlide{justify-content:flex-start;}
-  /* top:20px (not 0) — same padding-doesn't-apply-to-absolute-children gotcha
-     as .demo-select-panel above, tracking the same +20px top-padding increase */
-  .journey-panel{position:absolute; top:20px; right:36px; bottom:90px; left:484px; display:flex; align-items:center; justify-content:center;}
+  /* true flex centering, equal top/bottom (55px each, same reserved
+     total as the original 20px+90px=110px) — same reasoning as
+     .demo-select-panel above, including the "keep 0/0 out of it" note:
+     removing the margin entirely gave the frame more room to grow into,
+     visibly enlarging it rather than just recentering it. The tool frame
+     is always height:100% of this panel regardless of which step is
+     active (only width changes, via .journey-frame-narrow for the
+     single-pane steps), so unlike the left column's step-nav, centering
+     this panel doesn't cause any jump between steps. */
+  .journey-panel{position:absolute; top:55px; right:36px; bottom:55px; left:484px; display:flex; align-items:center; justify-content:center;}
   /* no border/shadow/background of its own — .sk-pane already draws that
      chrome per-pane (matching mocks/Full Customizer.svg's two separate
      cards), so a wrapper with its own border was doubling up into a visible
