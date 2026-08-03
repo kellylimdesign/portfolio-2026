@@ -276,18 +276,16 @@
   /* right-side panel, positioned the same way Trust's .substep-panel sits —
      holds a second, independent live instance of the tool (tool.js), with
      each step focusing a different real piece of it rather than a mock */
-  /* this slide's text column (bare h1 + step-nav, no kicker/teaser) is much
-     shorter than the mock panel beside it — .slide's default
-     justify-content:center technically centers it correctly, but against
-     the much taller mock it reads as a big gap up top with the "how we got
-     here" link crammed near the bottom. Top-align instead so the header
-     starts at the same height as the mock does. #journeySlide (an ID) beats
-     .slide's specificity outright, so it can't fall into the same silent
-     source-order tie the comment above warns about. */
-  #journeySlide{justify-content:flex-start;}
-  /* top:20px (not 0) — same padding-doesn't-apply-to-absolute-children gotcha
-     as .demo-select-panel above, tracking the same +20px top-padding increase */
-  .journey-panel{position:absolute; top:20px; right:36px; bottom:90px; left:484px; display:flex; align-items:center; justify-content:center;}
+  /* previously top-aligned (#journeySlide{justify-content:flex-start})
+     since the text column reads much shorter than the mock panel beside
+     it — Kelly asked for both columns centered instead, so this now just
+     falls through to .slide's own default justify-content:center. */
+  /* top:0/bottom:0 (not a fixed px offset) — same reasoning as
+     .demo-select-panel above: a hardcoded top/bottom only centers
+     correctly at the one viewport size it was tuned against. Filling the
+     full content-area height here and centering via align-items:center
+     keeps it correct at any window size. */
+  .journey-panel{position:absolute; top:0; right:36px; bottom:0; left:484px; display:flex; align-items:center; justify-content:center;}
   /* no border/shadow/background of its own — .sk-pane already draws that
      chrome per-pane (matching mocks/Full Customizer.svg's two separate
      cards), so a wrapper with its own border was doubling up into a visible
