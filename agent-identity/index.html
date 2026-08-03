@@ -365,8 +365,10 @@
      to miss as clickable otherwise, so the hint stays visible at rest. */
   .mock-zoom-hint{
     position:absolute; right:14px; bottom:14px; z-index:1; display:inline-flex; align-items:center; gap:6px;
-    background:var(--ink); color:var(--cream); font-family:var(--sans); font-size:11px; font-weight:600;
-    padding:7px 12px; border-radius:20px; opacity:1; transform:translateY(0); pointer-events:none;
+    background:var(--cream); color:var(--ink); font-family:var(--sans); font-size:11px; font-weight:600;
+    padding:7px 12px; border-radius:20px; border:1px solid var(--line);
+    box-shadow:0 4px 12px rgba(23,22,27,.08);
+    opacity:1; transform:translateY(0); pointer-events:none;
   }
   .mock-zoom-hint svg{width:13px; height:13px; flex-shrink:0;}
   /* spotlight: two stacked copies of the same image, one blurred (the page,
