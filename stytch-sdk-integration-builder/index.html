@@ -1390,6 +1390,24 @@
     const panelFav = document.getElementById('demoSelectFav');
     const frame = document.getElementById('demoSelectFrame');
 
+    // the panel's own thumb always uses the TALLEST app's ratio, regardless
+    // of which is selected — Hello Socks (wider/shorter, 3456/1650) then
+    // just letterboxes with a little invisible white space at the bottom
+    // of its video (object-fit:contain, .demo-thumb's own background is
+    // already white) instead of the frame's total height changing per app.
+    // Keeps the frame a constant height so align-items:center on the panel
+    // centers it identically either way, with no jump when toggled. The
+    // lightbox's own thumb (openLightbox below) intentionally keeps using
+    // each item's true ratio instead — no centering concern there.
+    let tallestRatio = items[0].dataset.ratio;
+    let tallestValue = Infinity;
+    items.forEach(item => {
+      const [w, h] = item.dataset.ratio.split('/').map(Number);
+      const value = w / h;
+      if (value < tallestValue) { tallestValue = value; tallestRatio = item.dataset.ratio; }
+    });
+    panelThumb.style.aspectRatio = tallestRatio;
+
     const lightbox = document.getElementById('demoLightbox');
     const lightboxVideo = document.getElementById('demoLightboxVideo');
     const lightboxThumb = lightbox.querySelector('.demo-thumb-large');
@@ -1405,11 +1423,13 @@
       current = item;
       currentDemoIdx = Array.prototype.indexOf.call(items, item);
       items.forEach(i => i.classList.toggle('active', i === item));
-      const { src, url, ratio } = item.dataset;
+      const { src, url } = item.dataset;
       const label = item.querySelector('.step-nav-title').textContent;
       const fav = FAVICONS[url];
       panelVideo.src = src;
-      panelThumb.style.aspectRatio = ratio;
+      // panelThumb's aspect-ratio is intentionally NOT touched here — it
+      // stays fixed at tallestRatio (set once, above) so the frame's total
+      // height never changes between apps
       panelUrl.textContent = url;
       panelTabLabel.textContent = label;
       panelFav.style.background = fav.bg;
