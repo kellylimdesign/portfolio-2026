@@ -213,7 +213,12 @@
      to .slide's padding edge, which completely ignores .slide's own
      padding-top value, so this needs its own explicit offset to track the
      +20px top-padding increase (44px -> 64px) rather than inheriting it */
-  .demo-select-panel{position:absolute; top:20px; right:36px; bottom:90px; left:484px; display:flex; align-items:center; justify-content:center;}
+  /* top-anchored (not centered) — Survey Amp's aspect-ratio (3456/1770) is
+     taller than Hello Socks' (3456/1650) at the same fixed width, so
+     centering made the frame's top edge visibly shift up when toggling
+     between them; anchoring to the top keeps it fixed and only the
+     bottom edge moves */
+  .demo-select-panel{position:absolute; top:20px; right:36px; bottom:90px; left:484px; display:flex; align-items:flex-start; justify-content:center;}
   .demo-select-frame{
     appearance:none; background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
     width:100%; max-width:1040px;
