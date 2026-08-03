@@ -174,6 +174,26 @@
   .demo-chrome-url-star{width:14px; height:14px; color:var(--ink-45); flex-shrink:0;}
   .demo-chrome-url-avatar{width:16px; height:16px; border-radius:50%; background:#4A7CE0; flex-shrink:0;}
 
+  /* Hello Socks' recorded video dims its own page content (nav, hero, etc.)
+     to a flat rgb(113,113,113) — confirmed via pixel sampling, not a
+     translucent tint (a white 252 background and a yellow 251/208/62
+     background both land on the exact same 113/113/113) — whenever its
+     scripted "Log in" modal is open. That dimming can't reach the browser
+     chrome above it, since the chrome is separate DOM sitting outside the
+     video, so the chrome stayed visibly bright while the page beneath it
+     dimmed — a jarring seam. .dim-active (toggled by video.currentTime,
+     see initDemoSelectSlide) matches the same flat grey on every chrome
+     surface, transitioning at the same ~0.2s pace the video's own dim
+     seems to fade at. Text/icon colors are untouched, same as the video. */
+  .demo-chrome-titlebar, .demo-chrome-tab, .demo-chrome-urlbar, .demo-chrome-url, .demo-chrome-url-tune{
+    transition:background-color .2s ease;
+  }
+  .demo-chrome.dim-active .demo-chrome-titlebar{background:rgb(113,113,113);}
+  .demo-chrome.dim-active .demo-chrome-tab{background:rgb(113,113,113);}
+  .demo-chrome.dim-active .demo-chrome-urlbar{background:rgb(113,113,113);}
+  .demo-chrome.dim-active .demo-chrome-url{background:rgb(113,113,113);}
+  .demo-chrome.dim-active .demo-chrome-url-tune{background:rgb(113,113,113);}
+
   /* aspect-ratio is set inline per card, matching each video's real source
      dimensions (2456x1650 / 3456x1770 — both wider than 16:9) — object-fit
      is now contain so the recording is never cropped, whatever its shape */
@@ -1402,6 +1422,24 @@
 
     let current = items[0];
     let currentDemoIdx = 0;
+
+    // Hello Socks' video dims its own page content from ~4.1s to ~14.35s
+    // of its ~15.47s loop (measured by sampling frames across the full
+    // timeline) — toggle the matching chrome dim (.dim-active, see CSS)
+    // in sync so the browser chrome dims and undims right along with it.
+    // Survey Amp's recording never dims, so this is a no-op there.
+    const panelChrome = frame.querySelector('.demo-chrome');
+    const DIM_START = 4.1, DIM_END = 14.35;
+    const syncChromeDim = () => {
+      const t = panelVideo.currentTime;
+      const shouldDim = t >= DIM_START && t <= DIM_END;
+      panelChrome.classList.toggle('dim-active', shouldDim);
+    };
+    // timeupdate covers normal playback; seeked covers a programmatic
+    // currentTime jump while paused, which doesn't reliably fire timeupdate
+    // on its own — both call the same check so neither path is missed
+    panelVideo.addEventListener('timeupdate', syncChromeDim);
+    panelVideo.addEventListener('seeked', syncChromeDim);
 
     const select = (item) => {
       current = item;
