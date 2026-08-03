@@ -217,8 +217,12 @@
      taller than Hello Socks' (3456/1650) at the same fixed width, so
      centering made the frame's top edge visibly shift up when toggling
      between them; anchoring to the top keeps it fixed and only the
-     bottom edge moves */
-  .demo-select-panel{position:absolute; top:20px; right:36px; bottom:90px; left:484px; display:flex; align-items:flex-start; justify-content:center;}
+     bottom edge moves. top/bottom set to 119px (not the old 20/90) so
+     that fixed top edge sits at the vertical center of the slide for
+     Survey Amp (the taller of the two, height ~600px against an 839px
+     slide) — Hello Socks (shorter, ~566px) then sits with a bit of extra
+     room below rather than dead center, but neither ever clips. */
+  .demo-select-panel{position:absolute; top:119px; right:36px; bottom:119px; left:484px; display:flex; align-items:flex-start; justify-content:center;}
   .demo-select-frame{
     appearance:none; background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
     width:100%; max-width:1040px;
