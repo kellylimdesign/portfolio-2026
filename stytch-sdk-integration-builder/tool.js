@@ -29,7 +29,11 @@
   .sk-preview-bar span:nth-child(1){background:#FF5F57;}
   .sk-preview-bar span:nth-child(2){background:#FEBC2E;}
   .sk-preview-bar span:nth-child(3){background:#28C840;}
-  .sk-preview-body{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:32px; overflow:auto;}
+  /* overscroll-behavior:contain — without it, scrolling this pane past its
+     own top/bottom edge chains to the outer deck page (the whole slide
+     scrolls), since the browser's default is to hand off leftover scroll
+     delta to the next scrollable ancestor once this one is exhausted */
+  .sk-preview-body{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:32px; overflow:auto; overscroll-behavior:contain;}
 
   .sk-card{
     width:var(--sk-card-width,391px); background:var(--sk-card-bg,#FFFFFF); border:1px solid var(--sk-card-border,#CFCFCF);
@@ -102,7 +106,7 @@
     border:none; border-radius:7px; padding:9px 16px; cursor:pointer;
   }
   .sk-view-code-btn:hover{background:#000;}
-  .sk-config-scroll{flex:1; min-height:0; overflow-y:auto; padding:20px 22px 32px;}
+  .sk-config-scroll{flex:1; min-height:0; overflow-y:auto; padding:20px 22px 32px; overscroll-behavior-y:contain;}
   .sk-section-label{font-family:var(--sk-mono); font-size:12px; font-weight:700; letter-spacing:.02em; margin:0 0 12px; color:var(--sk-ink);}
   .sk-subsection-label{font-size:13px; font-weight:600; margin:22px 0 12px; color:var(--sk-ink);}
   .sk-divider-line{height:1px; background:var(--sk-line); margin:20px 0 0;}
@@ -153,7 +157,7 @@
      inset card within the pane (.sk-code-card), not a full-bleed dark pane,
      so it reads as "a code sample sitting in the panel" rather than the
      panel itself going dark mode. */
-  .sk-code-scroll{flex:1; min-height:0; overflow:auto; padding:0 22px 22px;}
+  .sk-code-scroll{flex:1; min-height:0; overflow:auto; padding:0 22px 22px; overscroll-behavior:contain;}
   .sk-code-card{
     margin:0; padding:20px 22px; border-radius:10px; background:#151515;
     font-family:var(--sk-mono); font-size:12.5px; line-height:1.7; color:#D8D8D8; white-space:pre;

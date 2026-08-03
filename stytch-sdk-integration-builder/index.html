@@ -1119,6 +1119,12 @@
   document.getElementById('counterTotal').textContent = String(total).padStart(2, '0');
 
   function render(){
+    // defensive reset — the Journey slide's style demo used to be able to
+    // leave the outer page itself scrolled (see scrollConfigPaneToCenter's
+    // comment for the actual cause, now fixed at the source), and that
+    // scroll had nothing resetting it, so it silently carried into every
+    // slide navigated to afterward. Costs nothing on a normal transition.
+    window.scrollTo(0, 0);
     // symmetric to __onActivate below — stop whatever the slide being LEFT
     // was running before switching .active off it, so its timers can't keep
     // firing in the background (see the __onDeactivate comment for the bug
@@ -1625,12 +1631,29 @@
       styleDemoPendingTimeouts.forEach(t => clearTimeout(t));
       styleDemoPendingTimeouts = [];
     }
+    // el.scrollIntoView({block:'center'}) walks every scrollable ancestor
+    // to center the target, not just the nearest one — per spec, if
+    // centering isn't fully achieved by scrolling .sk-config-scroll alone,
+    // the browser keeps walking up and ends up scrolling the outer deck
+    // page too. That's the "whole slide jumps" bug: a real, sticking
+    // scroll on the outer page, not just a visual effect. Scrolling only
+    // .sk-config-scroll directly (computed manually) keeps it contained.
+    function scrollConfigPaneToCenter(el){
+      if (!el) return;
+      const scroller = el.closest('.sk-config-scroll');
+      if (!scroller) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      const scrollerRect = scroller.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const elCenterInScroller = (elRect.top - scrollerRect.top) + scroller.scrollTop + elRect.height / 2;
+      const targetScrollTop = elCenterInScroller - scroller.clientHeight / 2;
+      scroller.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
+    }
     function playNextStyleStep(){
       if (!journeySlide.classList.contains('active')) { stopStyleDemo(); return; }
       const step = STYLE_DEMO_STEPS[styleDemoIdx % STYLE_DEMO_STEPS.length];
       styleDemoIdx++;
       const el = journeyToolMount.querySelector(step.pulseSel);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      scrollConfigPaneToCenter(el);
       styleDemoPendingTimeouts.push(setTimeout(() => {
         showClickPulseOnEl(el);
         styleDemoPendingTimeouts.push(setTimeout(() => step.run(), 260));
