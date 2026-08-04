@@ -14,11 +14,6 @@
     font-family:-apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
   }
   .wrap{max-width:920px; margin:0 auto; padding:96px 24px;}
-  .kicker{
-    font-family:"SF Mono", "JetBrains Mono", ui-monospace, monospace;
-    font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-45); margin:0 0 12px;
-  }
-  h1{font-size:clamp(28px,4vw,38px); font-weight:700; margin:0 0 40px; letter-spacing:-.01em;}
   .list{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:24px;}
   @media (max-width:640px){
     .list{grid-template-columns:1fr;}
@@ -30,7 +25,7 @@
   .card:hover{border-color:var(--ink-45); box-shadow:0 12px 28px rgba(23,22,27,.08);}
   .card a{display:block; text-decoration:none; color:inherit;}
   .card-thumb{
-    display:block; width:100%; aspect-ratio:1130/792; object-fit:cover;
+    display:block; width:100%; aspect-ratio:1200/708; object-fit:cover;
     object-position:top; border-bottom:1px solid var(--line);
     background:var(--cream);
   }
@@ -42,12 +37,10 @@
 </head>
 <body>
   <div class="wrap">
-    <p class="kicker">Kelly Lim · Portfolio</p>
-    <h1>Case Studies</h1>
     <ul class="list">
       <li class="card">
         <a href="agent-identity/">
-          <img class="card-thumb" style="aspect-ratio:640/454;" src="agent-identity/thumbnail.gif" alt="Agent Identity deck: live demo of the Twilio Console's Agent Identity product page, clicking through Configurations, Clients, and Identities">
+          <img class="card-thumb" src="agent-identity/thumbnail.png" alt="Agent Identity deck hero slide, showing the Twilio Console's Agent Identity product page">
           <div class="card-body">
             <p class="item-title">Building Trust in the Age of AI</p>
             <p class="item-desc">Identity for AI Agents — securely authenticate AI agents to act on a user's behalf.</p>
@@ -56,7 +49,7 @@
       </li>
       <li class="card">
         <a href="stytch-sdk-integration-builder/">
-          <img class="card-thumb" style="aspect-ratio:640/510;" src="stytch-sdk-integration-builder/thumbnail.gif" alt="Stytch SDK Integration Builder deck: live demo cycling through auth products and branding customization">
+          <img class="card-thumb" src="stytch-sdk-integration-builder/thumbnail.png" alt="Stytch SDK Integration Builder deck hero slide, showing the SDK Integration Builder tool">
           <div class="card-body">
             <p class="item-title">Driving SDK Adoption</p>
             <p class="item-desc">A tool to let customers preview a live Stytch SDK, complete with the auth products and branding they want, before writing any code.</p>
