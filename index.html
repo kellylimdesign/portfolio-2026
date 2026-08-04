@@ -30,8 +30,8 @@
   .card:hover{border-color:var(--ink-45); box-shadow:0 12px 28px rgba(23,22,27,.08);}
   .card a{display:block; text-decoration:none; color:inherit;}
   .card-thumb{
-    display:block; width:100%; aspect-ratio:1130/792;
-    border-bottom:1px solid var(--line);
+    display:block; width:100%; aspect-ratio:1130/792; object-fit:cover;
+    object-position:top; border-bottom:1px solid var(--line);
     background:var(--cream);
   }
   .card-body{padding:22px 24px 24px;}
@@ -47,7 +47,7 @@
     <ul class="list">
       <li class="card">
         <a href="agent-identity/">
-          <div class="card-thumb"></div>
+          <img class="card-thumb" style="aspect-ratio:640/454;" src="agent-identity/thumbnail.gif" alt="Agent Identity deck: live demo of the Twilio Console's Agent Identity product page, clicking through Configurations, Clients, and Identities">
           <div class="card-body">
             <p class="item-title">Building Trust in the Age of AI</p>
             <p class="item-desc">Identity for AI Agents — securely authenticate AI agents to act on a user's behalf.</p>
@@ -56,7 +56,7 @@
       </li>
       <li class="card">
         <a href="stytch-sdk-integration-builder/">
-          <div class="card-thumb"></div>
+          <img class="card-thumb" style="aspect-ratio:640/510;" src="stytch-sdk-integration-builder/thumbnail.gif" alt="Stytch SDK Integration Builder deck: live demo cycling through auth products and branding customization">
           <div class="card-body">
             <p class="item-title">Driving SDK Adoption</p>
             <p class="item-desc">A tool to let customers preview a live Stytch SDK, complete with the auth products and branding they want, before writing any code.</p>
