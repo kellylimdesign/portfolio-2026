@@ -44,14 +44,20 @@
   .sk-card-brand{font-size:22px; font-weight:700; margin-bottom:10px; color:var(--sk-ink);}
   .sk-card-brand img{max-height:26px; max-width:160px;}
   .sk-card-heading{font-size:15.5px; font-weight:600; margin:0 0 18px; color:var(--sk-ink);}
-  .sk-tabs{display:flex; gap:18px; justify-content:center; border-bottom:1px solid var(--sk-line); margin-bottom:16px;}
+  /* each tab is an equal-width flex column (not gap+justify-content:center,
+     which let tabs sit bunched in the middle instead of dividing the full
+     card width) — the container's border-bottom is the shared thin track,
+     the active tab's ::after draws a bolder line spanning just its own
+     column on top of it. Only rendered at all when 2+ sign-in methods are
+     enabled — a single enabled method skips the tab bar entirely (see
+     renderForm), so there's nothing to switch between. */
+  .sk-tabs{display:flex; border-bottom:1px solid var(--sk-line); margin-bottom:16px;}
   .sk-tab{
     appearance:none; background:none; border:none; font-family:inherit; font-size:13px; color:var(--sk-ink-45);
-    padding:0 0 9px; cursor:pointer; position:relative;
+    flex:1; text-align:center; padding:0 0 9px; cursor:pointer; position:relative;
   }
   .sk-tab.active{color:var(--sk-ink); font-weight:600;}
-  .sk-tab.active::after{content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--sk-primary-color,var(--sk-ink));}
-  .sk-tab.single{cursor:default; color:var(--sk-ink); font-weight:600;}
+  .sk-tab.active::after{content:''; position:absolute; left:0; right:0; bottom:-1px; height:3px; background:var(--sk-primary-color,var(--sk-ink));}
   .sk-input{
     width:100%; box-sizing:border-box; font-family:inherit; font-size:13.5px; padding:10px 12px;
     border:1px solid var(--sk-line-strong); border-radius:6px; margin-bottom:10px; color:var(--sk-ink); background:#fff;
@@ -174,10 +180,20 @@
     {id:'passwords', label:'Passwords', kind:'password'},
     {id:'smsOtp', label:'SMS OTP', kind:'text'},
     {id:'emailOtp', label:'Email OTP', kind:'email'},
-    {id:'whatsappOtp', label:'WhatsApp OTP', kind:'text'},
+    {id:'whatsappOtp', label:'WhatsApp OTP', kind:'whatsapp'},
     {id:'web3', label:'Web3', kind:'oauth'},
   ];
   const DEFAULT_SELECTED = ['magicLinks', 'smsOtp'];
+  // one entry per sign-in-method tab kind (not per product — magicLinks +
+  // emailOtp both map to 'email', so selecting either one is enough to
+  // surface the Email tab). Drives the tab label, the destination input's
+  // type/placeholder, and the verify-step copy so all three stay in sync
+  // instead of re-deriving "isEmail" ad hoc in three different places.
+  const KIND_META = {
+    email: {label:'Email', inputType:'email', placeholder:'example@email.com', verifyLabel:'Check your email', destNoun:'email', continueLabel:'email'},
+    text: {label:'Text', inputType:'tel', placeholder:'+1 (555) 000-0000', verifyLabel:'Check your phone', destNoun:'number', continueLabel:'text'},
+    whatsapp: {label:'WhatsApp', inputType:'tel', placeholder:'+1 (555) 000-0000', verifyLabel:'Check WhatsApp', destNoun:'number', continueLabel:'WhatsApp'},
+  };
   // real brand marks, pulled straight from @stytch/vanilla-js's own bundled
   // assets (dist/.../assets/logo-color/{Google,Facebook,Metamask}.mjs) —
   // same source as the theme defaults above, not redrawn by hand. Used in
@@ -358,10 +374,11 @@
     function renderForm(){
       const hasEmail = selectedByKind('email').length > 0;
       const hasText = selectedByKind('text').length > 0;
+      const hasWhatsapp = selectedByKind('whatsapp').length > 0;
       const hasPassword = state.selected.has('passwords');
       const oauth = selectedByKind('oauth');
 
-      if (!hasEmail && !hasText && !hasPassword && !oauth.length) {
+      if (!hasEmail && !hasText && !hasWhatsapp && !hasPassword && !oauth.length) {
         formArea.innerHTML = `<p class="sk-empty">Select a product on the right to see it appear here.</p>`;
         return;
       }
@@ -378,25 +395,29 @@
       }
 
       if (state.flowStep === 'verify') {
-        const isEmail = state.flowKind === 'email';
+        const meta = KIND_META[state.flowKind] || KIND_META.email;
         formArea.innerHTML = `
-          <p class="sk-flow-verify-text">${isEmail ? 'Check your email' : 'Check your phone'} — we sent a 6-digit code to ${state.flowDest}.</p>
+          <p class="sk-flow-verify-text">${meta.verifyLabel} — we sent a 6-digit code to ${state.flowDest}.</p>
           <input class="sk-input" type="text" inputmode="numeric" maxlength="6" placeholder="123456">
           <button class="sk-primary-btn ready">Verify</button>
-          <button class="sk-flow-back" type="button">Use a different ${isEmail ? 'email' : 'number'}</button>`;
+          <button class="sk-flow-back" type="button">Use a different ${meta.destNoun}</button>`;
         formArea.querySelector('.sk-primary-btn').onclick = goToSuccess;
         formArea.querySelector('.sk-flow-back').onclick = resetFlow;
         return;
       }
 
+      // fixed email -> text -> whatsapp order regardless of product-grid
+      // selection order, so the tab bar doesn't reshuffle as products are
+      // toggled on/off
       const tabs = [];
-      if (hasEmail) tabs.push({id:'email', label:'Email'});
-      if (hasText) tabs.push({id:'text', label:'Text'});
-      if (!tabs.some(t => t.id === state.activeTab)) state.activeTab = tabs[0] ? tabs[0].id : null;
+      if (hasEmail) tabs.push('email');
+      if (hasText) tabs.push('text');
+      if (hasWhatsapp) tabs.push('whatsapp');
+      if (!tabs.includes(state.activeTab)) state.activeTab = tabs[0] || null;
 
-      // OAuth first, then the email/text/password fields below it — matches
-      // the Journey slide's step 3 flow (mocks/authkit.gif: Google button
-      // above the tabs), not the old tabs-first order
+      // OAuth first, then the email/text/whatsapp/password fields below it —
+      // matches the Journey slide's step 3 flow (mocks/authkit.gif: Google
+      // button above the tabs), not the old tabs-first order
       let html = '';
       if (oauth.length) {
         html += `<div class="sk-oauth-list">${oauth.map(p => `<button class="sk-oauth-btn" data-id="${p.id}">${OAUTH_ICONS[p.id] || '<span class="sk-oauth-dot"></span>'}Continue with ${p.label}</button>`).join('')}</div>`;
@@ -405,11 +426,17 @@
         html += `<div class="sk-divider"><span>or</span></div>`;
       }
       if (tabs.length) {
-        html += `<div class="sk-tabs">${tabs.map(t => `<button class="sk-tab ${tabs.length === 1 ? 'single' : (t.id === state.activeTab ? 'active' : '')}" data-tab="${t.id}">${t.label}</button>`).join('')}</div>`;
+        // tab bar only appears once there's something to switch between —
+        // a single enabled method (e.g. only Email OTP) goes straight to
+        // its input with no tab row at all
+        if (tabs.length > 1) {
+          html += `<div class="sk-tabs">${tabs.map(id => `<button class="sk-tab ${id === state.activeTab ? 'active' : ''}" data-tab="${id}">${KIND_META[id].label}</button>`).join('')}</div>`;
+        }
+        const meta = KIND_META[state.activeTab];
         const isEmail = state.activeTab === 'email';
-        html += `<input class="sk-input" id="skFlowDest" type="${isEmail ? 'email' : 'tel'}" placeholder="${isEmail ? 'example@email.com' : '+1 (555) 000-0000'}">`;
+        html += `<input class="sk-input" id="skFlowDest" type="${meta.inputType}" placeholder="${meta.placeholder}">`;
         if (hasPassword && isEmail) html += `<input class="sk-input" id="skFlowPassword" type="password" placeholder="Password">`;
-        const btnLabel = hasPassword && isEmail ? 'Log in' : `Continue with ${isEmail ? 'email' : 'text'}`;
+        const btnLabel = hasPassword && isEmail ? 'Log in' : `Continue with ${meta.continueLabel}`;
         html += `<button class="sk-primary-btn ready">${btnLabel}</button>`;
       } else if (hasPassword) {
         html += `<input class="sk-input" id="skFlowDest" type="email" placeholder="example@email.com">`;
@@ -418,18 +445,19 @@
       }
       formArea.innerHTML = html;
 
-      formArea.querySelectorAll('.sk-tab:not(.single)').forEach(btn => {
+      formArea.querySelectorAll('.sk-tab').forEach(btn => {
         btn.onclick = () => { state.activeTab = btn.dataset.tab; renderForm(); };
       });
       const primaryBtn = formArea.querySelector('.sk-primary-btn');
       if (primaryBtn) {
         primaryBtn.onclick = () => {
-          const isEmail = tabs.length ? state.activeTab === 'email' : true;
+          const activeKind = tabs.length ? state.activeTab : 'email';
+          const meta = KIND_META[activeKind];
           const destEl = formArea.querySelector('#skFlowDest');
-          const dest = (destEl && destEl.value.trim()) || (isEmail ? 'example@email.com' : '+1 (555) 000-0000');
+          const dest = (destEl && destEl.value.trim()) || meta.placeholder;
           // password fields log straight in — no second-factor code needed
-          if (hasPassword && isEmail) { goToSuccess(); return; }
-          goToVerify(isEmail ? 'email' : 'text', dest);
+          if (hasPassword && activeKind === 'email') { goToSuccess(); return; }
+          goToVerify(activeKind, dest);
         };
       }
       formArea.querySelectorAll('.sk-oauth-btn').forEach(btn => {
