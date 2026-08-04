@@ -60,6 +60,21 @@
   .dot{width:6px; height:6px; border-radius:50%; background:var(--line); transition:background .2s;}
   .dot.active{background:var(--ink);}
 
+  /* narrow-viewport chrome — below this, "Back to landing page" +
+     centered dots + "< 01/10 >" no longer fit on one line at the 64px
+     side padding built for laptop widths, and the brand link wraps to a
+     second line that visually collides with the dot tracker sitting on
+     top of it (topbar has a fixed 56px height, so wrapped text just
+     overflows it instead of growing it). Tightening the side padding and
+     dropping the now-redundant dot tracker (the "01/10" counter already
+     says exactly the same thing) keeps everything on one line down to
+     phone widths instead. Same fix as Agent Identity's deck. */
+  @media (max-width:640px){
+    .topbar{padding:0 20px;}
+    .dots{display:none;}
+    .brand-home{white-space:nowrap;}
+  }
+
   /* ---------- slides ---------- */
   .deck{position:relative; width:100%; height:100vh;}
   /* height set explicitly rather than relying on top+bottom to constrain an
@@ -447,8 +462,28 @@
   .frame-laptop2 .screen-crop img{display:block; width:100%; height:auto;}
   .frame-laptop2 .chrome{position:absolute; inset:0; width:100%; height:100%; pointer-events:none;}
 
-  @media (max-width:900px){
+  @media (max-width:1150px){
     .persona-cols, .demo-row{flex-direction:column;}
+    .persona-cols{gap:28px; align-items:center;}
+    .persona-card{width:100%; max-width:420px;}
+
+    /* .demo-select-panel and .journey-panel are pinned with a fixed
+       left:484px offset (see their own rules above) sized for the
+       360px-wide step-nav column sitting next to them at laptop widths —
+       at tablet widths that left offset alone out-eats most of the
+       viewport, squeezing the two-pane tool/mock down to an unusably
+       narrow sliver instead of just being some fixed amount smaller.
+       Stacking below the step-nav (position:static, full width) sidesteps
+       the fixed-offset math entirely rather than trying to make it scale.
+       overflow-y:auto on the slide itself lets the now-taller stacked
+       content scroll within the slide's own box — body has overflow:
+       hidden globally, so without this the stacked content below the
+       fold would be genuinely unreachable, not just visually tight. */
+    .layout-steps-next{display:block; overflow-y:auto; padding-bottom:48px;}
+    .demo-select-panel, .journey-panel{
+      position:static; width:100%; height:420px; margin-top:24px;
+    }
+    .journey-tool-frame.journey-frame-narrow{max-width:100%;}
   }
 
   /* "how we got here" pause — a single wizard (this deck only has one story
