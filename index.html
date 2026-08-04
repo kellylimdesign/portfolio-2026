@@ -30,9 +30,9 @@
   .card:hover{border-color:var(--ink-45); box-shadow:0 12px 28px rgba(23,22,27,.08);}
   .card a{display:block; text-decoration:none; color:inherit;}
   .card-thumb{
-    display:block; width:100%; aspect-ratio:1130/792; object-fit:cover;
-    object-position:top; border-bottom:1px solid var(--line);
-    background:#fff;
+    display:block; width:100%; aspect-ratio:1130/792;
+    border-bottom:1px solid var(--line);
+    background:var(--cream);
   }
   .card-body{padding:22px 24px 24px;}
   .item-title{font-size:19px; font-weight:600; margin:0 0 6px; transition:opacity .15s ease;}
@@ -47,19 +47,19 @@
     <ul class="list">
       <li class="card">
         <a href="agent-identity/">
-          <img class="card-thumb" src="agent-identity/thumbnail.png" alt="Agent Identity deck hero slide, showing the Twilio Console's Agent Identity product page">
+          <div class="card-thumb"></div>
           <div class="card-body">
             <p class="item-title">Building Trust in the Age of AI</p>
-            <p class="item-desc">Identity for AI Agents — Twilio's product for letting AI agents securely authenticate and act on a user's behalf, illustrated through a fictional trading app connecting to ChatGPT.</p>
+            <p class="item-desc">Identity for AI Agents — securely authenticate AI agents to act on a user's behalf.</p>
           </div>
         </a>
       </li>
       <li class="card">
         <a href="stytch-sdk-integration-builder/">
-          <img class="card-thumb" style="aspect-ratio:1030/717;" src="stytch-sdk-integration-builder/thumbnail.png" alt="Stytch SDK Integration Builder deck hero slide, showing the SDK Integration Builder tool">
+          <div class="card-thumb"></div>
           <div class="card-body">
             <p class="item-title">Driving SDK Adoption</p>
-            <p class="item-desc">Stytch's prebuilt auth SDK promised fast integration, but customers had no way to know if it actually fit their product without integrating it first — closing that gap with a tool that lets them preview the SDK live against their own product before writing any code.</p>
+            <p class="item-desc">A tool to let customers preview a live Stytch SDK, complete with the auth products and branding they want, before writing any code.</p>
           </div>
         </a>
       </li>
