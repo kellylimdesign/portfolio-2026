@@ -6,62 +6,2152 @@
 <title>Kelly Lim — Portfolio</title>
 <style>
   :root{
-    --cream:#FAF9F6; --ink:#17161B; --ink-70:#4A4950; --ink-45:#8A8891; --line:#E4E2DD;
+    --cream:#F5F3EF; --page-bg:#E9E6DF; --ink:#17161B; --ink-70:#4A4950; --ink-45:#8A8891; --line:#E4E2DD;
+    --accent:#6D3FD1; --accent-2:#4F2A94; --accent-hover:#5A32AE;
+    /* state-overlay tints — kept as tokens (not inlined rgba per rule) so dark mode
+       can invert them from "dark tint on light surface" to "light tint on dark surface" */
+    --hover-tint:rgba(23,22,27,.07); --hover-tint-soft:rgba(23,22,27,.035);
+    --active-tint:rgba(23,22,27,.05); --track-tint:rgba(23,22,27,.16);
+    --bar-space:0px;
+    --sans:-apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+    --sf-system:-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    --bezel:#0E0E10;
+    /* for text sitting on the hero-band's colored fill (not a plain page
+       surface) — the inverse of --ink/--ink-70 per theme, so it stays legible
+       whether the theme's base ink is dark-on-light or light-on-dark */
+    --hero-text:#F5F3EF; --hero-text-70:rgba(245,243,239,.78);
   }
+  /* dark theme — overrides the shell's own tokens only. The embedded product mocks
+     (ChatGPT window, phone/SMS frame) intentionally reuse these SAME token names for
+     visual consistency with the shell (see their own comments), which means without
+     the pin rule below they'd incorrectly go dark too — a real ChatGPT/iMessage
+     screenshot doesn't re-theme itself when the portfolio around it does. The Stytch
+     tool is unaffected already since it defines its own separate --sk-* namespace. */
+  html[data-theme="dark"]{
+    --cream:#1E1B24; --page-bg:#121014; --ink:#F3F1F6; --ink-70:#B8B4C2; --ink-45:#7A7686; --line:#332F3D;
+    --accent:#8B63E8; --accent-2:#6B4BC7; --accent-hover:#9B76ED;
+    --hover-tint:rgba(255,255,255,.08); --hover-tint-soft:rgba(255,255,255,.05);
+    --active-tint:rgba(255,255,255,.07); --track-tint:rgba(255,255,255,.16);
+    --hero-text:#1E1B24; --hero-text-70:rgba(30,27,36,.78);
+  }
+  .pv-cgpt-wrap, .pv-phone-wrap{
+    --cream:#FAF9F6; --ink:#17161B; --ink-70:#4A4950; --ink-45:#8A8891; --line:#E4E2DD; --bezel:#0E0E10;
+  }
+  html[data-theme="dark"] body::before{mix-blend-mode:overlay; opacity:.05;}
+  html[data-theme="dark"] .hero-band{background:linear-gradient(135deg, #26202F 0%, var(--cream) 70%);}
   *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  html, body{height:100%;}
   body{
-    margin:0; background:var(--cream); color:var(--ink);
+    margin:0; background:var(--page-bg); color:var(--ink); overflow:hidden;
     font-family:-apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+    transition:background-color .2s ease, color .2s ease;
   }
-  .wrap{max-width:920px; margin:0 auto; padding:96px 24px;}
-  .kicker{
-    font-family:"SF Mono", "JetBrains Mono", ui-monospace, monospace;
-    font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-45); margin:0 0 40px;
+  body.bar-visible{--bar-space:94px;}
+  @media (max-width:640px){ body.bar-visible{--bar-space:70px;} }
+  button{font-family:inherit;}
+
+  /* --- overall shell: library sidebar + main content + slide-out preview panel, each its own floating rounded container.
+     Height is bounded to the viewport minus the playbar's footprint, so the page itself never scrolls —
+     each container scrolls its own contents internally instead. --- */
+  .app-shell{position:relative; z-index:1; display:flex; align-items:stretch; height:calc(100vh - var(--bar-space)); transition:height .3s ease;}
+  .page{
+    flex:1; min-width:0; background:var(--cream); border-radius:20px;
+    margin:8px 8px 8px 0; overflow-x:hidden; overflow-y:auto;
   }
-  .list{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+  /* position+z-index+opaque background so that on the artist page, once .wrap
+     (toolbar, artist pick, etc.) scrolls up underneath the still-pinned photo,
+     it paints as a solid sheet covering the photo instead of being hidden
+     behind it — "in front of the image" per Kelly's note. Harmless on every
+     other view that reuses .wrap (Portfolio/album), since there's nothing
+     stacked beneath it there to begin with. */
+  .wrap{position:relative; z-index:2; background:var(--cream); max-width:none; margin:0; padding:28px 40px 32px;}
+  /* .hero-band/.artist-hero/.wrap share this one wrapper so they're always
+     pixel-identical width by construction. No max-width cap here on purpose —
+     when the preview panel opens, this content fills all remaining space next
+     to it rather than stopping at a fixed width and leaving a gap. */
+  .page-inner{max-width:none;}
+  @media (max-width:900px){.page{margin-left:8px;}}
+  @media (max-width:640px){.page{margin:6px; border-radius:16px;}}
+
+  /* --- library sidebar: collapsed icon-rail by default, click toggle pins it expanded --- */
+  .library-sidebar{
+    width:64px; flex-shrink:0; padding:40px 12px 24px; background:var(--cream);
+    border-radius:20px; margin:8px 8px 8px 8px;
+    transition:width .22s ease;
+  }
+  .library-sidebar.expanded{width:228px;}
+  @media (max-width:900px){.library-sidebar{display:none;}}
+
+  .lib-header-row{display:flex; flex-direction:row; align-items:center; gap:10px; margin:0 0 16px;}
+  .lib-toggle-btn{
+    position:relative; width:34px; height:34px; flex-shrink:0; border:none; background:none;
+    color:var(--ink); border-radius:50%; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:background-color .15s ease, opacity .18s ease;
+  }
+  .lib-toggle-btn:hover{background:var(--hover-tint);}
+  .lib-toggle-arrow{transition:transform .2s ease; transform-origin:7.5px 12px;}
+  .library-sidebar.expanded .lib-toggle-arrow{transform:scaleX(-1);}
+  .lib-toggle-btn::after{
+    content:attr(data-tooltip);
+    position:absolute; top:50%; left:calc(100% + 10px); transform:translateY(-50%);
+    background:var(--ink); color:var(--cream); font-size:11.5px; font-weight:600;
+    padding:6px 10px; border-radius:6px; white-space:nowrap;
+    opacity:0; pointer-events:none; transition:opacity .12s ease .1s; z-index:40;
+  }
+  .lib-toggle-btn:hover::after, .lib-toggle-btn:focus-visible::after{opacity:1;}
+  /* expanded state: collapse icon hidden by default, revealed on hover/focus anywhere in the sidebar */
+  /* collapsed rail state only — sized closer to the 38px album-cover icons below it,
+     rather than the smaller 34px/18px button used once it's inline with "Your Library" */
+  .library-sidebar:not(.expanded) #libToggle,
+  .library-sidebar:not(.expanded) #themeToggle{width:38px; height:38px;}
+  .library-sidebar:not(.expanded) #libToggle svg,
+  .library-sidebar:not(.expanded) #themeToggle svg{width:22px; height:22px;}
+  .library-sidebar.expanded .lib-toggle-btn{opacity:0; pointer-events:none;}
+  .library-sidebar.expanded:hover .lib-toggle-btn,
+  .library-sidebar.expanded:focus-within .lib-toggle-btn{opacity:1; pointer-events:auto;}
+  /* theme toggle is a standalone utility, not the header-row's hover-revealed collapse
+     icon — stays visible regardless of expand state (overrides the rule above) */
+  .library-sidebar.expanded #themeToggle{opacity:1; pointer-events:auto;}
+  #themeToggle{margin:0 0 14px;}
+  #themeToggle .theme-icon-moon{display:none;}
+  html[data-theme="dark"] #themeToggle .theme-icon-sun{display:none;}
+  html[data-theme="dark"] #themeToggle .theme-icon-moon{display:block;}
+
+  .lib-title{font-size:16px; font-weight:700; color:var(--ink); margin:0; white-space:nowrap; display:none; transition:margin-left .2s ease;}
+  .library-sidebar.expanded .lib-title{display:block; margin-right:auto; margin-left:-44px;}
+  .library-sidebar.expanded:hover .lib-title,
+  .library-sidebar.expanded:focus-within .lib-title{margin-left:0;}
+
+  .lib-list{display:flex; flex-direction:column; gap:2px;}
+  .lib-item{
+    position:relative;
+    display:flex; align-items:center; justify-content:flex-start; gap:12px; padding:9px 1px; border-radius:8px;
+    cursor:pointer; transition:background-color .15s ease; border:none; background:none; width:100%; text-align:left;
+  }
+  .lib-item:focus-visible{outline:2px solid var(--ink); outline-offset:-2px;}
+  .lib-item-icon{
+    position:relative; width:38px; height:38px; border-radius:8px; flex-shrink:0; overflow:hidden;
+    background:linear-gradient(135deg, var(--ink) 0%, var(--accent) 100%);
+  }
+  /* ring sized to exactly match the album-cover icon (not the row's full padded hit
+     area, which read as an oddly tall pill) — box-shadow rather than border so it
+     wraps all four edges evenly without adding to layout size */
+  .lib-item:hover .lib-item-icon{box-shadow:0 0 0 3px var(--ink-45);}
+  .lib-item.pinned .lib-item-icon{background:linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);}
+  .lib-item-icon-mono{
+    background:
+      radial-gradient(circle at 78% 18%, rgba(163,130,224,.65), rgba(163,130,224,0) 55%),
+      radial-gradient(circle at 12% 88%, rgba(79,42,148,.6), rgba(79,42,148,0) 55%),
+      linear-gradient(150deg, #7C4CDB 0%, #4F2A94 100%);
+  }
+  .lib-item-icon-glyph{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:var(--cream);
+  }
+  .lib-item-icon-glyph img{width:100%; height:100%; object-fit:cover;}
+  /* collapsed-rail only — the cover itself stays fully visible on hover (no play-button
+     mask over it); instead a tooltip identifies what the icon is, like Spotify's hover
+     card on truncated/icon-only tiles */
+  .lib-item-tooltip{
+    position:absolute; left:calc(100% + 10px); top:50%; transform:translateY(-50%);
+    background:var(--ink); color:var(--cream); padding:9px 13px; border-radius:8px;
+    white-space:nowrap; display:flex; flex-direction:column; gap:2px;
+    opacity:0; pointer-events:none; transition:opacity .12s ease; z-index:30;
+  }
+  .lib-item-tooltip-title{font-size:12.5px; font-weight:700; color:var(--cream);}
+  .lib-item-tooltip-sub{font-size:11px; color:var(--ink-45);}
+  .library-sidebar:not(.expanded) .lib-item:hover .lib-item-tooltip,
+  .library-sidebar:not(.expanded) .lib-item:focus-visible .lib-item-tooltip{opacity:1;}
+  /* currently-viewed album, so switching between Portfolio/Twilio/Stytch reads as real navigation */
+  .lib-item.active .lib-item-title{color:var(--accent);}
+  .lib-item-text{min-width:0; display:none; flex-direction:column; gap:2px;}
+  .library-sidebar.expanded .lib-item-text{display:flex;}
+  .lib-item-title{font-size:15px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .lib-item-sub{
+    display:flex; align-items:center; font-size:13px; color:var(--ink-70);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .lib-item-pin{display:inline-flex; margin-right:4px; color:var(--ink-45); flex-shrink:0;}
+
+  /* --- hero --- */
+  /* full-width flush banner at the top of .page (like Spotify's own playlist header)
+     rather than a separate bordered card inset within the page's padding — .page's
+     own overflow+border-radius clips this flush child into its rounded top corners */
+  .hero-band{
+    background:linear-gradient(135deg, #EDEBE5 0%, var(--cream) 70%);
+    border-bottom:1px solid var(--line); padding:32px 40px 26px;
+  }
+  .hero{display:flex; align-items:flex-end; gap:24px; flex-wrap:wrap;}
+  /* "Work" album cover — no text/mark at all, just a refined static version of the
+     same organic blob gradient used on the Now Playing panel backdrops (+ grain,
+     + a thin inset frame echoing the record-sleeve reference), so the cover
+     foreshadows the visual language used everywhere else on the site */
+  .hero-art{
+    position:relative; overflow:hidden;
+    width:128px; height:128px; flex-shrink:0; border-radius:8px;
+    background:
+      radial-gradient(circle at 78% 18%, rgba(163,130,224,.65), rgba(163,130,224,0) 55%),
+      radial-gradient(circle at 12% 88%, rgba(79,42,148,.6), rgba(79,42,148,0) 55%),
+      linear-gradient(150deg, #A98CE8 0%, #7C4CDB 45%, #4F2A94 100%);
+    box-shadow:0 14px 32px rgba(23,22,27,.18);
+  }
+  .hero-art::before{
+    content:""; position:absolute; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:.3; mix-blend-mode:overlay;
+  }
+  .hero-art-frame{position:absolute; inset:8px; border:1.5px solid rgba(255,255,255,.85); border-radius:3px; pointer-events:none;}
+  /* swapped in for Twilio/Stytch album views so the cover actually matches that
+     project's own icon, instead of reusing the generic Portfolio gradient cover */
+  .hero-art-cover{position:relative; z-index:1; width:100%; height:100%; object-fit:cover;}
+  .hero-text{min-width:0; flex:1;}
+  .hero-eyebrow{font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--hero-text-70); margin:0 0 6px;}
+  .hero-title{font-size:clamp(28px,5vw,44px); font-weight:800; letter-spacing:-.02em; line-height:1.02; margin:0 0 12px; color:var(--hero-text);}
+  .hero-meta{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--hero-text-70); margin:0;}
+  .hero-avatar{
+    width:22px; height:22px; border-radius:50%; background:var(--ink); color:var(--cream);
+    display:inline-flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; flex-shrink:0;
+    overflow:hidden;
+  }
+  .hero-avatar img{width:100%; height:100%; object-fit:cover;}
+  .hero-owner{font-weight:700; color:var(--hero-text);}
+  .hero-dot{color:var(--hero-text-70);}
   @media (max-width:640px){
-    .list{grid-template-columns:1fr;}
+    .wrap{padding:24px 20px 88px;}
+    .hero-band{padding:24px 20px 20px;}
+    .hero{align-items:flex-start;}
+    .hero-art{width:96px; height:96px;}
   }
-  .card{
-    border:1px solid var(--line); border-radius:14px; overflow:hidden;
-    background:#fff; transition:border-color .2s ease, box-shadow .2s ease;
+
+  /* --- artist page: shown in place of .hero-band when "About" is opened as a
+     full page (like clicking into an artist on Spotify) instead of the side
+     preview panel. The rest of the page below (toolbar, track table) is the
+     same shared markup used everywhere else — only the hero swaps and the
+     table's filtered down to "show everything".
+
+     Scroll behavior (from Kelly's reference clip): the photo stays pinned
+     (position:sticky) while the name/stat text scrolls normally up over it;
+     once that text clears the top, the photo un-sticks and scrolls away with
+     everything else. That needs two separate layers — a sticky photo layer
+     and a normally-flowing text layer — sized inside a taller "zone" wrapper,
+     since a sticky element only stays pinned while its own containing block
+     (the zone) is still passing through the viewport. The zone must NOT get
+     overflow:hidden (that silently breaks position:sticky on any ancestor
+     between the sticky element and the scroll container) — only the sticky
+     photo layer itself clips its image/grain/scrim. */
+  /* the zone is taller than the sticky photo (that extra 180px of room is
+     the travel budget that keeps the photo pinned while the text scrolls
+     past it) — but a negative bottom margin equal to that extra room pulls
+     everything that follows (.wrap) back up flush against the photo, so at
+     rest there's no gap/gradient bar sitting under the photo before any
+     scrolling happens. .wrap sits ABOVE the sticky photo in z-index (see
+     .wrap's own rule) with an opaque background, so once scrolling carries
+     .wrap up underneath the still-pinned photo, .wrap paints over it like a
+     sheet sliding up over the image, rather than being hidden behind it. */
+  .artist-hero{position:relative; height:520px; margin-bottom:-180px;}
+  .artist-hero-sticky{position:sticky; top:0; z-index:1; height:340px; overflow:hidden; background:var(--line);}
+  /* muted per Kelly's note ("not so vibrant") — desaturated + darkened rather
+     than the photo's natural color, closer to how Spotify's own artist-header
+     photos read: toned down, not a vivid snapshot */
+  .artist-hero-img{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 62%;
+    filter:saturate(.55) brightness(.8) contrast(1.05);
   }
-  .card:hover{border-color:var(--ink-45); box-shadow:0 12px 28px rgba(23,22,27,.08);}
-  .card a{display:block; text-decoration:none; color:inherit;}
-  .card-thumb{
-    display:block; width:100%; aspect-ratio:1200/783; object-fit:cover;
-    object-position:top; border-bottom:1px solid var(--line);
-    background:var(--cream);
+  .artist-hero-grain{
+    position:absolute; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:.35; mix-blend-mode:overlay;
   }
-  .card-body{padding:22px 24px 24px;}
-  .item-title{font-size:19px; font-weight:600; margin:0 0 6px; transition:opacity .15s ease;}
-  .card a:hover .item-title{opacity:.6;}
-  .item-desc{font-size:14px; line-height:1.55; color:var(--ink-70); margin:0;}
+  .artist-hero-scrim{
+    position:absolute; inset:0;
+    background:linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.25) 55%, rgba(0,0,0,0) 100%);
+  }
+  /* positioned by its own bottom offset from the zone (not the photo), so it
+     keeps the same starting position over the photo but scrolls at normal
+     document speed — this is what visually reads as "scrolling over" the
+     pinned photo beneath it. */
+  .artist-hero-content{position:absolute; z-index:3; left:40px; right:40px; bottom:208px;}
+  .artist-hero-name{
+    font-size:clamp(40px,7vw,64px); font-weight:800; letter-spacing:-.02em;
+    line-height:1; color:#fff; margin:0 0 14px;
+  }
+  .artist-hero-meta{
+    display:flex; align-items:center; gap:8px; margin:0;
+    font-size:14px; font-weight:600; color:#fff;
+  }
+  .artist-hero-badge{
+    width:19px; height:19px; border-radius:50%; background:var(--accent);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .artist-hero-badge svg{width:11px; height:11px;}
+  @media (max-width:640px){
+    .artist-hero{height:380px; margin-bottom:-140px;}
+    .artist-hero-sticky{height:240px;}
+    .artist-hero-content{left:20px; right:20px; bottom:160px;}
+  }
+
+  /* --- section heading (e.g. "Popular" on the artist page) --- */
+  .section-heading{font-size:20px; font-weight:800; letter-spacing:-.01em; color:var(--ink); margin:4px 0 14px;}
+
+  /* --- artist pick: a single featured-project callout, styled like Spotify's
+     "posted by the artist" card --- */
+  .artist-pick{margin:0 0 40px;}
+  .pick-card{
+    display:flex; align-items:center; gap:18px; text-align:left; max-width:640px;
+    background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
+  }
+  .pick-thumb{width:110px; height:110px; border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 8px 20px rgba(23,22,27,.18);}
+  .pick-thumb img{width:100%; height:100%; object-fit:cover;}
+  .pick-body{display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .pick-posted{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-70);}
+  .pick-title{font-size:17px; font-weight:800; letter-spacing:-.01em; color:var(--ink); line-height:1.3;}
+  .pick-sub{font-size:12.5px; color:var(--ink-45);}
+
+  /* --- discography: one card per case study --- */
+  .artist-discog{margin:0 0 40px;}
+  .discog-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:20px; max-width:640px;}
+  .discog-card{
+    display:flex; flex-direction:column; gap:8px; text-align:left;
+    background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
+  }
+  .discog-thumb{width:100%; aspect-ratio:1/1; border-radius:8px; overflow:hidden; box-shadow:0 8px 20px rgba(23,22,27,.14);}
+  .discog-thumb img{width:100%; height:100%; object-fit:cover; transition:transform .2s ease;}
+  .discog-card:hover .discog-thumb img{transform:scale(1.03);}
+  .discog-title{font-size:14px; font-weight:700; color:var(--ink); line-height:1.3;}
+  .discog-meta{font-size:12px; color:var(--ink-45);}
+
+  /* --- about: photo card with the stat + bio overlaid at the bottom, same
+     scrim technique as the track preview's image overlay --- */
+  .artist-bio{max-width:640px; margin:0 0 40px;}
+  .about-photo{position:relative; width:100%; max-height:420px; aspect-ratio:3/4; border-radius:14px; overflow:hidden; background:var(--line);}
+  .about-photo-img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 80%;}
+  .about-photo-overlay{
+    position:absolute; left:0; right:0; bottom:0; padding:22px 24px;
+    background:linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.35) 60%, rgba(0,0,0,0) 100%);
+  }
+  .about-stat{font-size:16px; font-weight:800; color:#fff; margin:0 0 10px;}
+  .about-desc{font-size:13.5px; line-height:1.6; color:rgba(255,255,255,.88); margin:0;}
+
+  .artist-experience .exp-list{display:flex; flex-direction:column; gap:20px; max-width:640px;}
+
+  /* --- toolbar --- */
+  .toolbar{display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 14px; flex-wrap:wrap;}
+  .toolbar-left{display:flex; align-items:center; gap:16px;}
+  .hero-play{
+    width:52px; height:52px; border-radius:50%; background:var(--accent); color:var(--cream);
+    border:none; font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease, background-color .15s ease;
+  }
+  .hero-play:hover{transform:scale(1.06); background:var(--accent-hover);}
+  .follow-btn{
+    appearance:none; border:1px solid var(--ink-45); background:none; color:var(--ink);
+    font-size:13px; font-weight:600; padding:8px 18px; border-radius:20px; cursor:pointer;
+    transition:border-color .15s ease, color .15s ease, background-color .15s ease;
+  }
+  .follow-btn:hover{border-color:var(--ink);}
+  .follow-btn.following{background:var(--ink); border-color:var(--ink); color:var(--cream);}
+
+  /* film-grain texture over the whole page, including the containers */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:50; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:.16; mix-blend-mode:multiply;
+  }
+  .toolbar-icon{
+    width:34px; height:34px; border:none; background:none; color:var(--ink-70);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:50%;
+    transition:color .15s ease, background-color .15s ease;
+  }
+  .toolbar-icon:hover{color:var(--ink); background:var(--hover-tint);}
+  .toolbar-right{display:flex; align-items:center; gap:14px;}
+  .sort-control{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-70);}
+
+  /* --- tag filter row --- */
+  .tag-row{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px;}
+  .tag-pill{
+    font-size:12px; letter-spacing:.02em; padding:7px 16px; border-radius:20px;
+    border:1px solid var(--line); background:var(--cream); color:var(--ink-70); cursor:pointer;
+    transition:background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .tag-pill:hover{border-color:var(--ink-45); color:var(--ink);}
+  .tag-pill.active{background:var(--ink); border-color:var(--ink); color:var(--cream);}
+
+  /* --- track table --- */
+  .track-table{margin:0 0 40px;}
+  .tt-head, .tt-row{
+    display:grid; grid-template-columns:32px minmax(0,1fr) 140px 64px;
+    align-items:center; gap:16px; padding:0 10px;
+  }
+  .tt-head{
+    font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-45);
+    padding-bottom:10px; margin-bottom:2px; border-bottom:1px solid var(--line);
+  }
+  .tt-col-num{text-align:center;}
+  .tt-col-duration{text-align:right; display:flex; justify-content:flex-end;}
+  .tt-row{
+    padding:12px 10px; margin:2px 0; border-radius:8px; cursor:pointer;
+    transition:background-color .15s ease;
+  }
+  .tt-row:hover{background:var(--hover-tint-soft);}
+  .tt-row.active{background:var(--active-tint);}
+  .tt-row:focus-visible{outline:2px solid var(--ink); outline-offset:-2px;}
+  .tt-row.hidden{display:none;}
+
+  .num-stack{position:relative; width:20px; height:20px; margin:0 auto; display:grid; place-items:center;}
+  .num-stack > *{grid-area:1/1;}
+  .tt-index{font-size:13px; color:var(--ink-45); font-variant-numeric:tabular-nums;}
+  .tt-play-icon{opacity:0; font-size:11px; color:var(--ink);}
+  .tt-eq{opacity:0; display:flex; align-items:flex-end; gap:2px; height:12px;}
+  .tt-eq .eq-bar{background:var(--ink); width:2px;}
+  .tt-row:hover:not(.playing) .tt-index{opacity:0;}
+  .tt-row:hover:not(.playing) .tt-play-icon{opacity:1;}
+  .tt-row.playing .tt-index, .tt-row.playing .tt-play-icon{opacity:0;}
+  .tt-row.playing .tt-eq{opacity:1;}
+
+  .tt-col-title{display:flex; align-items:center; gap:12px; min-width:0;}
+  .tt-thumb{width:44px; height:44px; border-radius:4px; object-fit:cover; object-position:top; flex-shrink:0; background:var(--line);}
+  .tt-title-text{min-width:0; display:flex; flex-direction:column; gap:2px;}
+  .tt-title-main{font-size:14px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color .15s ease;}
+  .tt-row.active .tt-title-main{color:var(--accent);}
+  .tt-title-sub{font-size:12px; color:var(--ink-70); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .tt-col-album{font-size:13px; color:var(--ink-70); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .tt-col-duration{font-size:13px; color:var(--ink-70); font-variant-numeric:tabular-nums;}
+
+  @media (max-width:640px){
+    .tt-head, .tt-row{grid-template-columns:26px minmax(0,1fr) 56px;}
+    .tt-col-album{display:none;}
+  }
+  @keyframes eq{0%,100%{transform:scaleY(.35);} 50%{transform:scaleY(1);}}
+  @media (prefers-reduced-motion:reduce){.eq-bar{animation:none !important;}}
+  .eq-bar{animation:eq 0.9s ease-in-out infinite;}
+  .eq-bar:nth-child(1){height:6px; animation-delay:-0.6s;}
+  .eq-bar:nth-child(2){height:12px; animation-delay:-0.3s;}
+  .eq-bar:nth-child(3){height:9px; animation-delay:-0.15s;}
+
+  /* --- preview panel: collapses to a slim rail with an open button when closed --- */
+  #previewPanel{
+    position:relative; width:56px; flex-shrink:0; overflow:hidden;
+    background:var(--cream); border-radius:20px; margin:8px 8px 8px 0;
+    transition:width .28s ease;
+  }
+  #previewPanel.open{width:380px; background:var(--cream);}
+  .panel-open-btn{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:36px; height:36px; border:none; background:none;
+    color:var(--ink-70); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:color .15s ease, opacity .15s ease;
+  }
+  .panel-open-btn:hover{color:var(--ink);}
+  #previewPanel.open .panel-open-btn{opacity:0; pointer-events:none;}
+  .preview-panel-inner{
+    display:none;
+    width:380px; height:100%;
+    padding:0 0 32px; overflow-y:auto;
+  }
+  #previewPanel.open .preview-panel-inner{display:block;}
+  .preview-header{display:flex; align-items:center; justify-content:flex-start; gap:8px; padding:18px 22px 14px;}
+  .preview-header-expand{margin-left:auto; text-decoration:none;}
+  .preview-eyebrow{
+    font-size:11px; letter-spacing:.08em; color:var(--ink-45); margin:0 0 0 -42px;
+    transition:margin-left .2s ease;
+  }
+  #previewPanel:hover .preview-eyebrow,
+  #previewPanel:focus-within .preview-eyebrow{margin-left:0;}
+  .lib-toggle-btn.tooltip-below::after{
+    top:calc(100% + 8px); left:0; bottom:auto; transform:none;
+  }
+  .lib-toggle-btn.tooltip-below-right::after{
+    top:calc(100% + 8px); left:auto; right:0; bottom:auto; transform:none;
+  }
+  .preview-header .lib-toggle-btn{opacity:0; pointer-events:none;}
+  #previewPanel:hover .preview-header .lib-toggle-btn,
+  #previewPanel:focus-within .preview-header .lib-toggle-btn{opacity:1; pointer-events:auto;}
+  .preview-image-wrap{position:relative;}
+  .preview-image{
+    position:relative; width:100%; aspect-ratio:1/1; overflow:hidden;
+    margin:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--line);
+    color:var(--ink-45);
+  }
+  /* stands in for a Spotify-Canvas-style looping clip: a slow-drifting abstract gradient
+     mesh in the site's own ink/accent palette, not tied to any actual project screenshot */
+  .preview-image-bg{
+    position:absolute; inset:-10%; overflow:hidden;
+    background-image:linear-gradient(150deg, #F5F1FC 0%, #E6DBF7 45%, #D4C2ED 100%);
+    background-size:100% 100%;
+  }
+  /* three independently-timed blobs (different durations/directions/scales) rather than
+     one synced layer — reads as organic, alive movement instead of a uniform drift */
+  .mesh-blob{position:absolute; border-radius:50%; filter:blur(6px); animation-play-state:paused;}
+  .preview-image-bg.active .mesh-blob{animation-play-state:running;}
+  .mesh-blob-a{
+    width:62%; height:62%; left:-12%; top:-8%;
+    background:radial-gradient(circle, rgba(109,63,209,.55), rgba(109,63,209,0) 70%);
+    animation:blobDriftA 8s ease-in-out infinite alternate;
+  }
+  .mesh-blob-b{
+    width:52%; height:52%; right:-10%; top:22%;
+    background:radial-gradient(circle, rgba(163,130,224,.5), rgba(163,130,224,0) 70%);
+    animation:blobDriftB 12s ease-in-out infinite alternate;
+  }
+  .mesh-blob-c{
+    width:48%; height:48%; left:22%; bottom:-12%;
+    background:radial-gradient(circle, rgba(79,42,148,.42), rgba(79,42,148,0) 70%);
+    animation:blobDriftC 15s ease-in-out infinite alternate;
+  }
+  @keyframes blobDriftA{0%{transform:translate(0,0) scale(1);} 100%{transform:translate(20%,16%) scale(1.18);}}
+  @keyframes blobDriftB{0%{transform:translate(0,0) scale(1);} 100%{transform:translate(-16%,-14%) scale(.86);}}
+  @keyframes blobDriftC{0%{transform:translate(0,0) scale(1);} 100%{transform:translate(12%,-18%) scale(1.12);}}
+  .preview-image-bg.variant-b .mesh-blob{animation-direction:alternate-reverse;}
+  /* subtle grain, same technique as the page-wide texture (body::before) but
+     scoped to just this backdrop so it doesn't also wash over the mocks on top */
+  .preview-image-bg::after{
+    content:""; position:absolute; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:.28; mix-blend-mode:multiply;
+  }
+  @media (prefers-reduced-motion:reduce){.mesh-blob{animation:none;}}
+
+  /* a condensed, looping re-creation of the case study's own ChatGPT-window + "+" popover +
+     SMS-approval mocks (ported from agent-identity/index.html's .cgpt-window/.phone-frame),
+     scaled down via zoom (same technique the case study itself uses for embeds) so the
+     original component markup/CSS renders faithfully instead of a re-drawn simplification. */
+  .preview-scene{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  .pv-cgpt-wrap, .pv-phone-wrap{position:absolute; inset:0; margin:auto; opacity:0; transition:opacity .5s ease;}
+  .pv-cgpt-wrap.pv-visible, .pv-phone-wrap.pv-visible{opacity:1;}
+  .pv-cgpt-wrap{width:640px; aspect-ratio:736/460; zoom:.5;}
+  .pv-phone-wrap{height:560px; aspect-ratio:492/1010; zoom:.46;}
+
+  .cgpt-window{
+    width:100%; height:100%; box-sizing:border-box; display:flex; flex-direction:column;
+    background:var(--cream); overflow:hidden; border-radius:9px;
+    box-shadow:0 16px 40px rgba(23,22,27,.10), 0 3px 10px rgba(23,22,27,.05);
+  }
+  .cgpt-titlebar{display:flex; align-items:flex-end; gap:14px; padding:10px 10px 0 20px; background:#E7E7EA; flex-shrink:0;}
+  .cgpt-dots{display:flex; gap:8px; padding-bottom:13px;}
+  .cgpt-dots span{width:12px; height:12px; border-radius:50%;}
+  .cgpt-dots span:nth-child(1){background:#FF5F57;}
+  .cgpt-dots span:nth-child(2){background:#FEBC2E;}
+  .cgpt-dots span:nth-child(3){background:#28C840;}
+  .cgpt-tab{display:flex; align-items:center; gap:7px; background:var(--cream); border-radius:8px 8px 0 0; padding:8px 12px; max-width:160px; font-family:var(--sans); font-size:11.5px; font-weight:500; color:var(--ink);}
+  .cgpt-tab-fav{width:13px; height:13px; color:var(--ink); flex-shrink:0;}
+  .cgpt-tab-fav svg{width:100%; height:100%;}
+  .cgpt-tab-label{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .cgpt-tab-close{width:10px; height:10px; color:var(--ink-45); margin-left:4px; flex-shrink:0;}
+  .cgpt-urlbar{display:flex; align-items:center; gap:14px; padding:9px 14px; background:var(--cream); border-bottom:1px solid var(--line); flex-shrink:0;}
+  .cgpt-urlbar-icons{display:flex; align-items:center; gap:14px; flex-shrink:0;}
+  .cgpt-urlbar svg{width:15px; height:15px; color:var(--ink-45); flex-shrink:0;}
+  .cgpt-urlbar-left svg:nth-child(1), .cgpt-urlbar-left svg:nth-child(3){color:var(--ink-70);}
+  .cgpt-urlbar-left svg:nth-child(2){color:rgba(23,22,27,.25);}
+  .cgpt-url{flex:1; min-width:0; display:flex; align-items:center; gap:8px; font-family:var(--sans); font-size:12px; color:var(--ink-70); background:#F1F1F3; border-radius:20px; padding:5px 8px 5px 5px;}
+  .cgpt-url-text{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .cgpt-url-tune{width:22px; height:22px; border-radius:50%; flex-shrink:0; border:1px solid rgba(23,22,27,.15); background:var(--cream); display:flex; align-items:center; justify-content:center;}
+  .cgpt-url-tune svg{width:13px; height:13px; color:var(--ink-70);}
+  .cgpt-url svg.cgpt-url-star{width:14px; height:14px; color:var(--ink-45); flex-shrink:0;}
+  .cgpt-url-avatar{width:16px; height:16px; border-radius:50%; background:#4A7CE0; flex-shrink:0;}
+  .cgpt-body{flex:1; min-height:0; display:flex;}
+  .cgpt-sidebar{width:168px; flex-shrink:0; border-right:1px solid var(--line); padding:14px 12px; box-sizing:border-box; display:flex; flex-direction:column;}
+  .cgpt-sidebar-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .cgpt-logo{font-family:var(--sans); font-weight:700; font-size:13.5px; color:var(--ink);}
+  .cgpt-sidebar-head-icons{display:flex; align-items:center; gap:8px;}
+  .cgpt-sidebar-head svg{width:13px; height:13px; color:var(--ink-45); flex-shrink:0;}
+  .cgpt-nav-item{display:flex; align-items:center; gap:9px; font-family:var(--sans); font-size:11px; color:var(--ink); padding:6px 6px; border-radius:6px;}
+  .cgpt-nav-item svg{width:12px; height:12px; color:var(--ink-70); flex-shrink:0;}
+  .cgpt-nav-active{background:rgba(23,22,27,.05);}
+  .cgpt-recents-label{font-family:var(--sans); font-size:10.5px; font-weight:600; color:var(--ink-45); margin:12px 0 4px; padding:0 6px;}
+  .cgpt-recent-item{font-family:var(--sans); font-size:11px; color:var(--ink-70); padding:6px 6px; border-radius:6px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
+  .cgpt-recent-active{background:rgba(23,22,27,.05); color:var(--ink);}
+  .cgpt-main{position:relative; flex:1; min-width:0; display:flex; flex-direction:column; padding:20px 26px 12px; box-sizing:border-box;}
+  .cgpt-thread{flex:1; min-height:0; display:flex; flex-direction:column; gap:10px; overflow:hidden;}
+  .cgpt-msg-user{align-self:flex-end; background:#EFEFF1; border-radius:16px; padding:11px 15px; font-family:var(--sans); font-size:12px; line-height:1.5; color:var(--ink); max-width:75%; opacity:0; transform:translateY(8px);}
+  .cgpt-msg-assistant-wrap{align-self:flex-start; max-width:80%; opacity:0; transform:translateY(8px);}
+  .cgpt-msg-assistant{font-family:var(--sans); font-size:12px; line-height:1.55; color:var(--ink); margin:0;}
+  .cgpt-msg-actions{display:flex; align-items:center; gap:10px; margin-top:9px;}
+  .cgpt-msg-actions svg{width:12.5px; height:12.5px; color:var(--ink-45); flex-shrink:0;}
+  .cgpt-msg-user.pv-in{animation:uiBubbleIn .4s cubic-bezier(.34,1.2,.64,1) forwards;}
+  .cgpt-msg-assistant-wrap.pv-in{animation:uiBubbleIn .4s cubic-bezier(.34,1.2,.64,1) forwards;}
+  .cgpt-input{margin-top:12px; display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:22px; padding:9px 12px 9px 9px; flex-shrink:0;}
+  .cgpt-input-plus{background:var(--cream); padding:0; margin:0; width:20px; height:20px; border-radius:50%; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-family:var(--sans); font-size:13px; color:var(--ink-45); flex-shrink:0; line-height:1;}
+  .cgpt-plus-wrap{position:relative; display:flex; flex-shrink:0;}
+  .cgpt-input-ph{flex:1; font-family:var(--sans); font-size:11.5px; color:var(--ink-45);}
+  .cgpt-input > svg{width:15px; height:15px; color:var(--ink-45); flex-shrink:0;}
+  .cgpt-input-send{width:22px; height:22px; border-radius:50%; background:var(--ink); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .cgpt-input-send svg{width:11px; height:11px; color:var(--cream);}
+  .cgpt-disclaimer{font-family:var(--sans); font-size:9px; color:var(--ink-45); text-align:center; margin:7px 0 0;}
+
+  .cgpt-popover{
+    position:absolute; left:20px; right:20px; bottom:64px; max-width:300px;
+    background:var(--cream); border:1px solid var(--line); border-radius:14px;
+    box-shadow:0 18px 40px rgba(23,22,27,.16), 0 4px 14px rgba(23,22,27,.08);
+    opacity:0; transform:translateY(8px) scale(.98); pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease, height .32s cubic-bezier(.4,0,.2,1);
+    overflow:hidden; z-index:20;
+  }
+  .cgpt-popover.show{opacity:1; transform:translateY(0) scale(1); pointer-events:auto;}
+  .cgpt-pop-view{display:flex; flex-direction:column; position:absolute; inset:0; opacity:0; pointer-events:none; transition:opacity .22s ease;}
+  .cgpt-pop-view.active{position:relative; inset:auto; opacity:1; pointer-events:auto;}
+  .cgpt-pop-quick{display:flex; gap:6px; padding:8px 8px 2px;}
+  .cgpt-pop-quick-item{display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; padding:8px 4px; border-radius:8px;}
+  .cgpt-pop-quick-item svg{width:15px; height:15px; color:var(--ink-70);}
+  .cgpt-pop-quick-item span{font-family:var(--sans); font-size:9px; color:var(--ink-70);}
+  .cgpt-pop-list{padding:6px; display:flex; flex-direction:column;}
+  .cgpt-pop-item{display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px; width:100%; box-sizing:border-box; background:none; border:none; text-align:left; font-family:inherit;}
+  .cgpt-pop-item > svg{width:14px; height:14px; color:var(--ink); flex-shrink:0;}
+  .cgpt-pop-item-text{display:flex; flex-direction:column; flex:1; min-width:0;}
+  .cgpt-pop-item-text p{font-family:var(--sans); font-size:11px; font-weight:600; color:var(--ink); margin:0;}
+  .cgpt-pop-item-text span{font-family:var(--sans); font-size:9.5px; color:var(--ink-45);}
+  .cgpt-pop-item-connect{margin-left:auto; font-family:var(--sans); font-size:10px; color:var(--ink-45); flex-shrink:0;}
+  .cgpt-pop-item-chevron{width:12px; height:12px; color:var(--ink-45); margin-left:auto; flex-shrink:0;}
+  .cgpt-owl-icon{width:42px; height:42px; border-radius:10px; background:var(--ink); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .cgpt-owl-icon svg{width:24px; height:24px;}
+  .cgpt-owl-icon-sm{width:26px; height:26px; border-radius:7px;}
+  .cgpt-pop-app-head{display:flex; align-items:center; gap:10px; padding:12px 14px 4px; font-family:var(--sans); font-size:11px; font-weight:600; color:var(--ink);}
+  .cgpt-pop-back{width:22px; height:22px; border-radius:50%; background:rgba(23,22,27,.06); display:flex; align-items:center; justify-content:center; border:none; flex-shrink:0;}
+  .cgpt-pop-back svg{width:11px; height:11px; color:var(--ink);}
+  .cgpt-pop-app-head svg:last-child{width:13px; height:13px; color:var(--ink-45); margin-left:auto;}
+  .cgpt-pop-app-card{display:flex; align-items:center; gap:12px; padding:10px 16px;}
+  .cgpt-pop-app-meta{display:flex; flex-direction:column; gap:6px;}
+  .cgpt-pop-app-name{font-family:var(--sans); font-size:13.5px; font-weight:700; color:var(--ink); margin:0;}
+  .cgpt-pop-connect{appearance:none; background:var(--ink); color:var(--cream); border:none; border-radius:14px; padding:4px 12px; font-family:var(--sans); font-size:10.5px; font-weight:600; width:fit-content;}
+  .cgpt-pop-app-tagline{font-family:var(--sans); font-size:10.5px; color:var(--ink-45); margin:0; padding:0 16px 14px;}
+  .cgpt-pop-view[data-view="connect"]{padding:20px 16px 16px; box-sizing:border-box;}
+  .cgpt-pop-close{position:absolute; top:10px; right:10px; width:22px; height:22px; border-radius:50%; background:rgba(23,22,27,.06); display:flex; align-items:center; justify-content:center; border:none;}
+  .cgpt-pop-close svg{width:10px; height:10px; color:var(--ink);}
+  .cgpt-pop-connect-icons{display:flex; align-items:center; justify-content:center; gap:10px; margin:6px 0 14px;}
+  .cgpt-pop-connect-icons .cgpt-tab-fav{width:24px; height:24px; color:var(--ink);}
+  .cgpt-pop-connect-dots{display:flex; gap:3px;}
+  .cgpt-pop-connect-dots span{width:3px; height:3px; border-radius:50%; background:var(--ink-45); display:block;}
+  .cgpt-pop-connect-heading{font-family:var(--sans); font-weight:700; font-size:14.5px; text-align:center; color:var(--ink); margin:0 0 14px;}
+  .cgpt-pop-warning-box{border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:14px;}
+  .cgpt-pop-warning-box p{font-family:var(--sans); font-size:9.5px; line-height:1.5; color:var(--ink-70); margin:0 0 9px;}
+  .cgpt-pop-warning-box p strong{color:var(--ink); font-weight:700;}
+  .cgpt-pop-toggle-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:9px; border-top:1px solid var(--line);}
+  .cgpt-pop-toggle-row strong{font-family:var(--sans); font-size:9.5px; font-weight:700; color:var(--ink); line-height:1.4;}
+  .cgpt-pop-toggle{width:28px; height:16px; border-radius:10px; background:var(--line); position:relative; flex-shrink:0;}
+  .cgpt-pop-toggle::after{content:''; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:var(--cream);}
+  .cgpt-pop-continue{appearance:none; width:100%; background:var(--ink); color:var(--cream); border:none; border-radius:20px; padding:11px; font-family:var(--sans); font-size:11.5px; font-weight:600;}
+
+  /* --- phone-frame + iMessage SMS approval, ported verbatim from agent-identity --- */
+  .phone-frame{position:relative; box-sizing:border-box; background:var(--bezel); border-radius:52px; box-shadow:0 0 0 2px #C7C7CC;}
+  .phone-frame .frame{position:relative; border-radius:36px; overflow:hidden;}
+  .phone-frame.phone-frame-fit{width:100%; height:100%; padding:11px; border-radius:46px; display:flex;}
+  .phone-frame-fit .frame{flex:1; width:100%; min-height:0;}
+  .phone-frame::after{content:''; position:absolute; z-index:2; top:32px; left:50%; transform:translateX(-50%); width:84px; height:24px; background:var(--bezel); border-radius:14px;}
+  .phone-frame-fit::after{width:25%; height:15px; top:20px; border-radius:999px;}
+  .phone-btn{position:absolute; background:#c7c7ca; z-index:0;}
+  .phone-btn-mute{left:-3px; top:17%; width:2px; height:14px; border-radius:2px 0 0 2px;}
+  .phone-btn-vol-up{left:-3px; top:25%; width:2px; height:26px; border-radius:2px 0 0 2px;}
+  .phone-btn-vol-down{left:-3px; top:36%; width:2px; height:26px; border-radius:2px 0 0 2px;}
+  .phone-btn-power{right:-3px; top:23%; width:2px; height:36px; border-radius:0 2px 2px 0;}
+  .step-phone-peek{position:absolute; inset:0; background:var(--cream); padding:9px 18px 16px; box-sizing:border-box; display:flex; flex-direction:column; align-items:flex-start;}
+  .ui-phone-status{display:flex; align-items:center; justify-content:space-between; width:100%; color:var(--ink); font-family:var(--sf-system); font-size:11px; font-weight:600; margin-bottom:12px; flex-shrink:0; padding:0 5px 0 10px;}
+  .ui-phone-status > span{flex-shrink:0;}
+  .ui-phone-icons{display:flex; align-items:center; gap:4px; flex-shrink:0;}
+  .ui-signal{display:flex; align-items:flex-end; gap:1.4px; height:10px; flex-shrink:0;}
+  .ui-signal span{width:2.3px; background:var(--ink); border-radius:1.2px; display:block; flex-shrink:0;}
+  .ui-signal span:nth-child(1){height:45%;}
+  .ui-signal span:nth-child(2){height:63%;}
+  .ui-signal span:nth-child(3){height:81%;}
+  .ui-signal span:nth-child(4){height:100%;}
+  .ui-wifi{width:13px; height:10px; flex-shrink:0;}
+  .ui-battery{position:relative; width:19px; height:10px; border:1px solid rgba(23,22,27,.35); border-radius:3px; padding:1.5px; box-sizing:border-box; flex-shrink:0;}
+  .ui-battery span{display:block; width:88%; height:100%; background:var(--ink); border-radius:1.2px;}
+  .ui-battery::after{content:''; position:absolute; right:-2.5px; top:50%; transform:translateY(-50%); width:1.6px; height:4px; background:rgba(23,22,27,.35); border-radius:0 1.5px 1.5px 0;}
+  .ui-phone-header{display:flex; align-items:flex-start; justify-content:space-between; width:calc(100% + 36px); margin:0 -18px 14px; padding:0 18px 10px; border-bottom:1px solid rgba(23,22,27,.1); opacity:0; transform:translateY(-3px);}
+  .ui-phone-header.pv-in{animation:uiFadeUp .3s ease-out forwards;}
+  .ui-phone-navbtn{background:none; border:none; padding:0; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-top:8px;}
+  .ui-phone-navbtn svg{width:18px; height:18px; color:var(--ink);}
+  .ui-phone-navbtn-facetime svg{color:#0A84FF;}
+  .ui-phone-contact{display:flex; flex-direction:column; align-items:center;}
+  .ui-phone-avatar-wrap{position:relative; display:flex;}
+  .ui-phone-avatar{width:31px; height:31px; border-radius:50%; background:#C7C7CC; overflow:hidden; display:flex; align-items:center; justify-content:center;}
+  .ui-phone-avatar img{width:100%; height:100%; object-fit:cover;}
+  .ui-verified-badge{position:absolute; right:-2px; bottom:-2px; width:13px; height:13px; border-radius:50%; background:#0A84FF; border:1.5px solid var(--cream); display:flex; align-items:center; justify-content:center;}
+  .ui-verified-badge svg{width:7px; height:7px;}
+  .ui-phone-sender{display:flex; align-items:center; gap:3px; margin:5px 0 0; font-family:var(--sf-system); font-size:11px; font-weight:400; color:var(--ink); white-space:nowrap;}
+  .ui-phone-sender::after{content:'\203A'; color:var(--ink-45); font-size:13px; line-height:1;}
+  .ui-phone-timestamp{width:100%; text-align:center; margin:0 0 10px; font-family:var(--sf-system); font-size:9.5px; font-weight:500; color:var(--ink-45);}
+  .ui-phone-inputbar{margin-top:auto; display:flex; align-items:center; gap:8px; width:100%; padding-top:12px; opacity:0;}
+  .ui-phone-inputbar.pv-in{animation:uiFadeIn .35s ease-out forwards;}
+  .ui-phone-inputbar-plus{width:29px; height:29px; border-radius:50%; background:#ECECEF; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:var(--sf-system); font-size:18px; font-weight:400; color:#8E8E93; line-height:0;}
+  .ui-phone-inputbar-field{flex:1; height:30px; border:1px solid var(--line); border-radius:16px; display:flex; align-items:center; justify-content:space-between; padding:0 6px 0 13px; font-family:var(--sf-system); font-size:11px; color:var(--ink-45);}
+  .ui-phone-inputbar-field svg{width:15px; height:15px; color:#8E8E93; flex-shrink:0;}
+  .ui-phone-body{width:100%;}
+  .step-phone-peek .ui-bubble{margin:0 0 12px;}
+  .step-phone-peek .ui-suggest-stack{margin:0;}
+
+  .ui-bubble{position:relative; background:#E9E9EB; border-radius:20px; padding:9px 14px; font-family:var(--sf-system); font-size:12.5px; line-height:1.4; color:var(--ink); text-align:left; max-width:192px; margin:0 auto 12px; opacity:0; transform:translateY(10px);}
+  .ui-bubble.pv-in{animation:uiBubbleIn .6s cubic-bezier(.34,1.2,.64,1) forwards;}
+  .ui-suggest-wrap{position:relative; opacity:0; transform:translateY(10px);}
+  .ui-suggest-wrap.pv-in{animation:uiBubbleIn .6s cubic-bezier(.34,1.2,.64,1) forwards;}
+  .ui-suggest-stack{position:relative; z-index:1; display:flex; flex-direction:column; max-width:192px; margin:0 auto; background:#E9E9EB; border-radius:20px; overflow:hidden;}
+  .ui-suggest-wrap::before{content:''; position:absolute; z-index:0; bottom:0; left:-7px; width:20px; height:20px; background:#E9E9EB; border-bottom-right-radius:16px;}
+  .ui-suggest-wrap::after{content:''; position:absolute; z-index:2; bottom:0; left:-10px; width:10px; height:20px; background:var(--cream); border-bottom-right-radius:10px;}
+  .ui-suggest-item{appearance:none; background:none; border:none; width:100%; text-align:left; padding:11px 16px; font-family:var(--sf-system); font-size:13px; font-weight:400; color:#0A84FF;}
+  .ui-suggest-item + .ui-suggest-item{border-top:1px solid rgba(23,22,27,.1);}
+
+  /* success view swapped into the SAME popover card after "Continue to Owl Trade" —
+     stays inside the chat interface rather than cutting to a separate consent card */
+  .cgpt-pop-success{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:38px 16px;}
+  .cgpt-pop-success-icon{width:36px; height:36px; border-radius:50%; background:var(--ink); display:flex; align-items:center; justify-content:center;}
+  .cgpt-pop-success-icon svg{width:17px; height:17px;}
+  .cgpt-pop-success-text{font-family:var(--sans); font-weight:600; font-size:13.5px; color:var(--ink); margin:0;}
+
+  /* second chat turn — the follow-up ask that shows Owl Trade actually being used,
+     once it's connected (tool-call pill crossfades loading -> done in place) */
+  .cgpt-owl-icon-xs{width:16px; height:16px; border-radius:5px; background:var(--ink); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .cgpt-owl-icon-xs svg{width:9px; height:9px;}
+  .cgpt-tool-pill{display:inline-grid; margin-bottom:10px;}
+  .cgpt-tool-pill-loading, .cgpt-tool-pill-done{grid-area:1/1; display:flex; align-items:center; gap:7px; background:rgba(23,22,27,.05); border-radius:20px; padding:5px 12px 5px 5px; font-family:var(--sans); font-size:11px; color:var(--ink-70); white-space:nowrap; transition:opacity .3s ease;}
+  .cgpt-tool-pill-done{opacity:0;}
+  .cgpt-tool-pill.pv-done .cgpt-tool-pill-loading{opacity:0;}
+  .cgpt-tool-pill.pv-done .cgpt-tool-pill-done{opacity:1;}
+  .cgpt-msg-assistant-delayed{opacity:0; transform:translateY(6px);}
+  .cgpt-msg-assistant-delayed.pv-in{animation:uiBubbleIn .4s cubic-bezier(.34,1.2,.64,1) forwards;}
+  .cgpt-pop-preview-chart{background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
+  .cgpt-pop-ticker{font-family:var(--sans); font-size:10.5px; color:var(--ink); display:block; margin-bottom:6px;}
+  .cgpt-pop-spark{width:100%; height:20px; color:var(--ink-45);}
+
+  @keyframes uiBubbleIn{ to{opacity:1; transform:translateY(0);} }
+  @keyframes uiFadeUp{ to{opacity:1; transform:translateY(0);} }
+  @keyframes uiFadeIn{ to{opacity:1;} }
+  @media (prefers-reduced-motion:reduce){
+    .pv-cgpt-wrap, .pv-phone-wrap{transition:none;}
+    .cgpt-msg-user.pv-in, .cgpt-msg-assistant-wrap.pv-in, .ui-phone-header.pv-in, .ui-phone-inputbar.pv-in, .ui-bubble.pv-in, .ui-suggest-wrap.pv-in, .cgpt-msg-assistant-delayed.pv-in{animation:none; opacity:1; transform:none;}
+  }
+
+  /* Stytch scene — a condensed re-creation of the SDK Integration Builder's real
+     side-by-side "live preview + config panel" (ported from tool.js's .sk-* system,
+     authentic Stytch colors/type per that file's own convention, separate from the
+     deck's ink/cream palette), cycling the same customization steps the real demo does */
+  .pv-stytch-wrap{
+    position:absolute; inset:0; margin:auto; width:660px; height:430px;
+    opacity:0; transition:opacity .5s ease; zoom:.54;
+  }
+  .pv-stytch-wrap.pv-visible{opacity:1;}
+  .sk-tool{
+    --sk-lime:#E6FD13; --sk-ink:#1D1D1D; --sk-ink-70:rgba(29,29,29,.7); --sk-ink-45:rgba(29,29,29,.45);
+    --sk-cream:#FBFAFA; --sk-line:#E3E1DE; --sk-line-strong:#A3A3A3;
+    --sk-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+    --sk-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    position:relative; width:100%; height:100%; display:flex; gap:22px;
+    font-family:var(--sk-sans); color:var(--sk-ink);
+  }
+  .sk-pane{background:var(--sk-cream); min-width:0; border:1px solid var(--sk-line); border-radius:14px; overflow:hidden; box-shadow:0 20px 50px rgba(23,22,27,.08);}
+  .sk-pane-preview{flex:1.1; display:flex; flex-direction:column;}
+  .sk-pane-config{flex:1; display:flex; flex-direction:column; background:#fff;}
+  .sk-preview-bar{height:30px; flex-shrink:0; display:flex; align-items:center; gap:6px; padding:0 12px; border-bottom:1px solid var(--sk-line);}
+  .sk-preview-bar span{width:7px; height:7px; border-radius:50%;}
+  .sk-preview-bar span:nth-child(1){background:#FF5F57;}
+  .sk-preview-bar span:nth-child(2){background:#FEBC2E;}
+  .sk-preview-bar span:nth-child(3){background:#28C840;}
+  .sk-preview-body{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:26px;}
+  .sk-card{
+    width:100%; max-width:280px; background:var(--sk-card-bg,#FFFFFF); border:1px solid #CFCFCF;
+    border-radius:var(--sk-card-radius,10px); padding:26px 24px; font-family:var(--sk-card-font,Arial,sans-serif); text-align:center;
+    box-shadow:0 4px 24px rgba(23,22,27,.05);
+    transition:background-color .3s ease, border-radius .3s ease;
+  }
+  .sk-card-brand{font-size:19px; font-weight:700; margin-bottom:8px; color:var(--sk-ink);}
+  .sk-card-heading{font-size:14px; font-weight:600; margin:0 0 14px; color:var(--sk-ink);}
+  .sk-input{width:100%; box-sizing:border-box; font-family:inherit; font-size:12.5px; padding:9px 11px; border:1px solid var(--sk-line-strong); border-radius:6px; margin-bottom:9px; color:var(--sk-ink); background:#fff;}
+  .sk-primary-btn{
+    width:100%; font-family:inherit; font-size:12.5px; font-weight:600; padding:10px; margin-bottom:4px;
+    border-radius:6px; border:1px solid transparent; background:var(--sk-pbtn-bg,#161616); color:#fff; cursor:default;
+    transition:background-color .3s ease, border-color .3s ease;
+  }
+  .sk-divider{display:flex; align-items:center; gap:9px; margin:14px 0; color:var(--sk-ink-45); font-size:10.5px;}
+  .sk-divider::before, .sk-divider::after{content:''; flex:1; height:1px; background:var(--sk-line);}
+  .sk-oauth-btn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%; font-family:inherit; font-size:12px; padding:8px; border-radius:6px; border:1px solid var(--sk-line-strong); background:#fff; color:var(--sk-ink);}
+  .sk-oauth-dot{width:13px; height:13px; border-radius:4px; background:#4285F4; flex-shrink:0;}
+  .sk-config-scroll{flex:1; min-height:0; padding:20px 20px 18px;}
+  .sk-subsection-label{font-size:12.5px; font-weight:600; margin:0 0 12px; color:var(--sk-ink);}
+  .sk-field-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 6px; border-radius:6px; transition:background-color .35s ease;}
+  .sk-field-row.pv-flash{background:rgba(230,253,19,.45);}
+  .sk-field-row label{font-size:12.5px; color:var(--sk-ink-70);}
+  .sk-field-control{flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; gap:7px;}
+  .sk-field-value{font-family:var(--sk-mono); font-size:12px; border-bottom:1px solid var(--sk-line-strong); padding:3px 2px 4px; color:var(--sk-ink); text-align:right; min-width:52px; display:inline-block;}
+  .sk-suffix{font-family:var(--sk-mono); font-size:11.5px; color:var(--sk-ink-45); flex-shrink:0;}
+  .sk-hex-prefix{color:var(--sk-ink-45); font-family:var(--sk-mono); font-size:12px; flex-shrink:0;}
+  .sk-swatch{width:18px; height:18px; border-radius:5px; border:1px solid var(--sk-line-strong); flex-shrink:0; transition:background-color .3s ease;}
+  @media (prefers-reduced-motion:reduce){.pv-stytch-wrap{transition:none;} .sk-field-row{transition:none;}}
+  .preview-image-overlay{
+    position:absolute; left:0; right:0; bottom:0; padding:16px 18px 14px;
+    background:linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.36) 60%, rgba(0,0,0,0) 100%);
+    display:flex; align-items:flex-end; justify-content:space-between; gap:12px;
+  }
+  .preview-image-overlay-text{min-width:0; flex:1;}
+  .preview-expand-inline{
+    width:32px; height:32px; border-radius:50%; flex-shrink:0; margin-bottom:1px;
+    background:var(--accent); color:#fff; text-decoration:none;
+    display:flex; align-items:center; justify-content:center;
+    transition:background-color .15s ease, transform .15s ease;
+  }
+  .preview-expand-inline:hover{background:var(--accent-hover); transform:scale(1.06);}
+  .preview-image-title{overflow:hidden; white-space:nowrap;}
+  .preview-image-title-text{display:inline-block; font-size:19px; font-weight:700; color:#fff; letter-spacing:-.01em;}
+  @keyframes marqueeScroll{
+    0%, 12%{transform:translateX(0);}
+    88%, 100%{transform:translateX(var(--marquee-distance, 0px));}
+  }
+  .preview-image-title.marquee .preview-image-title-text{animation:marqueeScroll 7s ease-in-out infinite;}
+  @media (prefers-reduced-motion:reduce){.preview-image-title.marquee .preview-image-title-text{animation:none;}}
+  .preview-image-subtitle{
+    font-size:12.5px; color:rgba(255,255,255,.75); margin:2px 0 0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .preview-content-pad{padding:20px 26px 0;}
+  .preview-plain-title{font-size:22px; font-weight:700; letter-spacing:-.01em; margin:0 0 16px; line-height:1.25;}
+  .preview-callout{
+    display:flex; align-items:flex-start; gap:8px;
+    background:rgba(109,63,209,.07); border-left:3px solid var(--accent); border-radius:6px;
+    padding:10px 12px; margin:0 0 16px;
+  }
+  .preview-callout svg{flex-shrink:0; margin-top:1px; color:var(--accent);}
+  .preview-callout p{font-size:12.5px; line-height:1.5; color:var(--ink-70); margin:0;}
+  .preview-callout strong{color:var(--ink); font-weight:600;}
+  .preview-card{
+    background:var(--cream); border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; margin:0 0 16px;
+  }
+  .preview-card-label{font-size:14px; font-weight:700; color:var(--ink); margin:0 0 8px;}
+  .preview-desc{font-size:13.5px; line-height:1.6; color:var(--ink-70); margin:0;}
+  .credits-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px;}
+  .credits-list li{display:flex; align-items:baseline; justify-content:space-between; gap:12px; font-size:13.5px;}
+  .credits-role{color:var(--ink-70);}
+  .credits-count{font-weight:500; color:var(--ink-70); font-variant-numeric:tabular-nums; flex-shrink:0;}
+  .credits-note{font-size:11.5px; color:var(--ink-45); margin:10px 0 0; line-height:1.5;}
+  /* "On tour"-style row: logo tile + role/company/dates stack, instead of a flat list */
+  .exp-list{display:flex; flex-direction:column; gap:16px;}
+  .exp-row{display:flex; align-items:flex-start; gap:13px;}
+  .exp-logo{
+    width:46px; height:46px; border-radius:8px; flex-shrink:0; overflow:hidden;
+    background:var(--ink); color:var(--cream); display:flex; align-items:center; justify-content:center;
+    font-family:var(--sans); font-size:16px; font-weight:700;
+  }
+  .exp-logo img{width:100%; height:100%; object-fit:cover;}
+  /* Patio (wide wordmark) and Stanford (near-square mark) aren't square icon-style
+     marks like Twilio/Stytch's — contain + a fixed light chip keeps them legible on
+     their own backing regardless of theme, instead of cropping or going illegible */
+  .exp-logo-contain{background:#fff;}
+  .exp-logo-contain img{width:100%; height:100%; object-fit:contain; padding:7px; box-sizing:border-box;}
+  .exp-text{min-width:0;}
+  .exp-role{font-size:14px; font-weight:700; color:var(--ink); margin:0 0 2px; line-height:1.3;}
+  .exp-company{font-size:12.5px; color:var(--ink-70); margin:0 0 2px; line-height:1.3;}
+  .exp-dates{font-size:12px; color:var(--ink-45); margin:0; line-height:1.3;}
+
+  @media (max-width:640px){
+    .app-shell{display:block;}
+    .page{height:100%;}
+    #previewPanel{
+      position:fixed; left:6px; right:6px; top:auto; bottom:68px;
+      width:auto!important; height:0; margin:0; border-radius:16px 16px 0 0;
+      transition:height .28s ease; z-index:25;
+    }
+    #previewPanel.open{height:72vh;}
+    .preview-panel-inner{width:auto; min-height:0; height:100%; padding:22px 20px 40px;}
+  }
+
+  /* --- persistent transport bar: flush, full-width, part of the viewport chrome --- */
+  #transportBar{
+    position:fixed; left:0; right:0; bottom:0; width:100%; z-index:30; height:96px;
+    background:var(--cream); border-top:1px solid var(--line);
+    color:var(--ink);
+    display:grid; grid-template-columns:1fr minmax(300px, 640px) 1fr; align-items:center; gap:24px; padding:0 28px;
+    box-shadow:0 -6px 20px rgba(23,22,27,.06);
+    transform:translateY(100%); transition:transform .3s ease;
+  }
+  #transportBar.visible{transform:translateY(0);}
+  @media (max-width:640px){#transportBar{height:72px; gap:12px; padding:0 14px; grid-template-columns:1fr minmax(160px, 320px) 1fr;}}
+  .tb-track{display:flex; align-items:center; gap:12px; min-width:0;}
+  .tb-thumb-wrap{position:relative; flex-shrink:0;}
+  .tb-thumb{width:48px; height:48px; border-radius:6px; object-fit:cover; display:block; background:var(--line);}
+  @media (max-width:640px){.tb-thumb{width:38px; height:38px;}}
+  .tb-eq{
+    position:absolute; inset:0; display:none; align-items:flex-end; justify-content:center; gap:3px;
+    background:rgba(23,22,27,.55); border-radius:6px;
+  }
+  .tb-eq.active{display:flex;}
+  .tb-eq .eq-bar{background:var(--cream);}
+  .tb-meta{min-width:0;}
+  .tb-title{font-size:13px; font-weight:600; margin:0 0 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .tb-subtitle{font-size:11px; color:var(--ink-70); margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  @media (max-width:480px){.tb-subtitle{display:none;}}
+  .tb-controls{display:flex; flex-direction:column; align-items:center; gap:6px; justify-self:stretch; width:100%;}
+  .tb-buttons{display:flex; align-items:center; gap:14px;}
+  .tb-progress{display:flex; align-items:center; gap:11px; width:100%;}
+  .tb-time{font-size:12px; font-weight:500; color:var(--ink-70); font-variant-numeric:tabular-nums; flex-shrink:0; width:32px;}
+  .tb-time-elapsed{text-align:right;}
+  .tb-time-duration{text-align:left;}
+  .tb-progress-track{flex:1; height:4px; border-radius:999px; background:var(--track-tint); position:relative; overflow:hidden;}
+  .tb-progress-fill{position:absolute; left:0; top:0; bottom:0; width:0%; background:var(--ink); border-radius:999px;}
+  @media (max-width:480px){.tb-time{display:none;}}
+  .tb-btn{
+    background:none; border:none; color:var(--ink-70); cursor:pointer;
+    font-size:15px; line-height:1; width:32px; height:32px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .15s ease, background-color .15s ease, color .15s ease;
+  }
+  .tb-btn:hover{opacity:1; color:var(--ink);}
+  .tb-play{width:36px; height:36px; background:var(--ink); color:var(--cream); font-size:13px;}
+  .tb-play:hover{opacity:.85; color:var(--cream);}
+  .tb-actions{justify-self:end;}
+  .tb-actions .tb-btn[aria-expanded="true"]{background:var(--hover-tint); color:var(--ink);}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <p class="kicker">Kelly Lim · Portfolio</p>
-    <ul class="list">
-      <li class="card">
-        <a href="agent-identity/">
-          <img class="card-thumb" src="agent-identity/thumbnail.png" alt="Agent Identity deck hero slide, showing the Twilio Console's Agent Identity product page">
-          <div class="card-body">
-            <p class="item-title">Building Trust in the Age of AI</p>
-            <p class="item-desc">Identity for AI Agents — securely authenticate AI agents to act on a user's behalf.</p>
+  <div class="app-shell">
+    <aside class="library-sidebar expanded">
+      <div class="lib-header-row">
+        <button class="lib-toggle-btn" id="libToggle" data-tooltip="Collapse Your Library" aria-label="Collapse Your Library" aria-expanded="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+            <line x1="9.5" y1="4" x2="9.5" y2="20"></line>
+            <polygon class="lib-toggle-arrow" points="6.2,9.6 6.2,14.4 9,12" fill="currentColor" stroke="none"></polygon>
+          </svg>
+        </button>
+        <p class="lib-title">Your Library</p>
+      </div>
+      <button class="lib-toggle-btn" id="themeToggle" data-tooltip="Switch to dark mode" aria-label="Switch to dark mode">
+        <svg class="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+        <svg class="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+      <div class="lib-list">
+        <button class="lib-item pinned" id="lib-about" type="button">
+          <span class="lib-item-icon" aria-hidden="true">
+            <span class="lib-item-icon-glyph"><img src="assets/photos/kelly.jpg" alt=""></span>
+          </span>
+          <span class="lib-item-tooltip" aria-hidden="true">
+            <span class="lib-item-tooltip-title">About</span>
+            <span class="lib-item-tooltip-sub">Profile · kellylim</span>
+          </span>
+          <span class="lib-item-text">
+            <span class="lib-item-title">About</span>
+            <span class="lib-item-sub">
+              <span class="lib-item-pin" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" stroke="none"><path d="M12 2a5 5 0 0 0-5 5c0 3.5 5 11 5 11s5-7.5 5-11a5 5 0 0 0-5-5z"></path></svg>
+              </span>
+              Profile · kellylim
+            </span>
+          </span>
+        </button>
+
+        <button class="lib-item" id="lib-portfolio" type="button"
+            data-eyebrow="WORK" data-title="Portfolio" data-subtitle=""
+            data-cta-text="" data-href="#">
+          <span class="lib-item-icon lib-item-icon-mono" aria-hidden="true">
+            <span class="lib-item-icon-glyph"></span>
+          </span>
+          <span class="lib-item-tooltip" aria-hidden="true">
+            <span class="lib-item-tooltip-title">Portfolio</span>
+            <span class="lib-item-tooltip-sub">Playlist · kellylim</span>
+          </span>
+          <span class="lib-item-text">
+            <span class="lib-item-title">Portfolio</span>
+            <span class="lib-item-sub">Playlist · kellylim</span>
+          </span>
+          <template class="preview-content">
+            <div class="preview-card">
+              <p class="preview-card-label">Overview</p>
+              <p class="preview-desc">Product design work spanning identity, trust, and developer tools — two case studies so far, more on the way.</p>
+            </div>
+          </template>
+        </button>
+
+        <button class="lib-item lib-album" id="lib-twilio" type="button" data-company="Twilio">
+          <span class="lib-item-icon" aria-hidden="true">
+            <span class="lib-item-icon-glyph"><img src="assets/icons/twilio-favicon.png" alt=""></span>
+          </span>
+          <span class="lib-item-tooltip" aria-hidden="true">
+            <span class="lib-item-tooltip-title">Twilio</span>
+            <span class="lib-item-tooltip-sub">Album · kellylim</span>
+          </span>
+          <span class="lib-item-text">
+            <span class="lib-item-title">Twilio</span>
+            <span class="lib-item-sub">Album · kellylim</span>
+          </span>
+        </button>
+
+        <button class="lib-item lib-album" id="lib-stytch" type="button" data-company="Stytch">
+          <span class="lib-item-icon" aria-hidden="true">
+            <span class="lib-item-icon-glyph"><img src="assets/icons/stytch-favicon.png" alt=""></span>
+          </span>
+          <span class="lib-item-tooltip" aria-hidden="true">
+            <span class="lib-item-tooltip-title">Stytch</span>
+            <span class="lib-item-tooltip-sub">Album · kellylim</span>
+          </span>
+          <span class="lib-item-text">
+            <span class="lib-item-title">Stytch</span>
+            <span class="lib-item-sub">Album · kellylim</span>
+          </span>
+        </button>
+
+      </div>
+    </aside>
+
+    <main class="page">
+      <div class="page-inner">
+      <div class="hero-band">
+        <div class="hero">
+          <div class="hero-art" aria-hidden="true">
+            <img class="hero-art-cover" id="heroArtCover" alt="" hidden>
+            <span class="hero-art-frame"></span>
           </div>
-        </a>
-      </li>
-      <li class="card">
-        <a href="stytch-sdk-integration-builder/">
-          <img class="card-thumb" src="stytch-sdk-integration-builder/thumbnail.png" alt="Stytch SDK Integration Builder deck hero slide, showing the SDK Integration Builder tool">
-          <div class="card-body">
-            <p class="item-title">Driving SDK Adoption</p>
-            <p class="item-desc">A tool to let customers preview a live Stytch SDK, complete with the auth products and branding they want, before writing any code.</p>
+          <div class="hero-text">
+            <p class="hero-eyebrow" id="heroEyebrow">Work</p>
+            <h1 class="hero-title" id="heroTitle">Portfolio</h1>
+            <p class="hero-meta">
+              <span class="hero-avatar" aria-hidden="true"><img src="assets/photos/kelly.jpg" alt=""></span>
+              <span class="hero-owner">kellylim</span>
+              <span class="hero-dot">·</span>
+              <span id="heroStats">2 projects, 12 min read</span>
+            </p>
           </div>
-        </a>
-      </li>
-    </ul>
+        </div>
+      </div>
+      <div class="artist-hero" id="artistHero" hidden>
+        <div class="artist-hero-sticky">
+          <img class="artist-hero-img" src="assets/photos/kelly.jpg" alt="">
+          <div class="artist-hero-grain" aria-hidden="true"></div>
+          <div class="artist-hero-scrim"></div>
+        </div>
+        <div class="artist-hero-content">
+          <h1 class="artist-hero-name">Kelly Lim</h1>
+          <p class="artist-hero-meta">
+            <span class="artist-hero-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
+            Senior Product Designer @ Twilio
+          </p>
+        </div>
+      </div>
+      <div class="wrap">
+
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <button class="hero-play" id="heroPlay" aria-label="Play">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"><path id="heroPlayIcon" d="M6 4l14 8-14 8V4z"></path></svg>
+            </button>
+            <button class="toolbar-icon" id="shuffleBtn" aria-label="Shuffle" title="Shuffle">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
+            </button>
+            <button class="toolbar-icon" aria-label="Download" title="Download">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            </button>
+            <button class="follow-btn" id="followBtn" type="button" hidden>Follow</button>
+          </div>
+          <div class="toolbar-right">
+            <button class="toolbar-icon" aria-label="Search" title="Search">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </button>
+            <span class="sort-control">
+              Recently added
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            </span>
+          </div>
+        </div>
+
+        <div class="artist-pick" id="artistPick" hidden>
+          <h2 class="section-heading">Artist pick</h2>
+          <button class="pick-card" id="pickCard" type="button">
+            <span class="pick-thumb"><img src="assets/icons/twilio-favicon.png" alt=""></span>
+            <span class="pick-body">
+              <span class="pick-posted"><span class="hero-avatar" aria-hidden="true"><img src="assets/photos/kelly.jpg" alt=""></span> Posted by Kelly Lim</span>
+              <span class="pick-title">Building Trust in the Age of AI</span>
+              <span class="pick-sub">Case study</span>
+            </span>
+          </button>
+        </div>
+
+        <h2 class="section-heading" id="popularHeading" hidden>Popular</h2>
+
+        <div class="tag-row" id="tagRow">
+          <button class="tag-pill" data-company="Twilio">Twilio</button>
+          <button class="tag-pill" data-company="Stytch">Stytch</button>
+        </div>
+
+        <div class="track-table" id="trackTable">
+          <div class="tt-head">
+            <span class="tt-col-num">#</span>
+            <span class="tt-col-title">Title</span>
+            <span class="tt-col-album">Album</span>
+            <span class="tt-col-duration">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </span>
+          </div>
+
+          <div class="tt-row" id="track-01" tabindex="0" role="button" aria-pressed="false"
+              data-eyebrow="TWILIO" data-duration="6:30" data-company="Twilio"
+              data-title="Building Trust in the Age of AI"
+              data-subtitle="Kelly Lim"
+              data-thumb="agent-identity/thumbnail.png"
+              data-icon="assets/icons/twilio-favicon.png"
+              data-cta-text="Open case study"
+              data-href="agent-identity/">
+            <span class="tt-col-num">
+              <span class="num-stack">
+                <span class="tt-index">1</span>
+                <span class="tt-play-icon">▶</span>
+                <span class="tt-eq" aria-hidden="true"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></span>
+              </span>
+            </span>
+            <span class="tt-col-title">
+              <img class="tt-thumb" src="assets/icons/twilio-favicon.png" alt="">
+              <span class="tt-title-text">
+                <span class="tt-title-main">Building Trust in the Age of AI</span>
+                <span class="tt-title-sub">Kelly Lim</span>
+              </span>
+            </span>
+            <span class="tt-col-album">Twilio</span>
+            <span class="tt-col-duration">6:30</span>
+            <template class="preview-content">
+              <div class="preview-card">
+                <p class="preview-card-label">Overview</p>
+                <p class="preview-desc">Letting AI agents securely authenticate and act on a user's behalf — with a human-in-the-loop approval step built in for sensitive requests.</p>
+              </div>
+              <div class="preview-card">
+                <p class="preview-card-label">Credits</p>
+                <ul class="credits-list">
+                  <li><span class="credits-role">Product Designer</span><span class="credits-count">1</span></li>
+                  <li><span class="credits-role">Product Manager</span><span class="credits-count">1</span></li>
+                  <li><span class="credits-role">Engineers</span><span class="credits-count">5</span></li>
+                </ul>
+              </div>
+            </template>
+          </div>
+
+          <div class="tt-row" id="track-02" tabindex="0" role="button" aria-pressed="false"
+              data-eyebrow="STYTCH" data-duration="5:15" data-company="Stytch"
+              data-title="Driving SDK Adoption"
+              data-subtitle="Kelly Lim"
+              data-thumb="stytch-sdk-integration-builder/thumbnail.png"
+              data-icon="assets/icons/stytch-favicon.png"
+              data-cta-text="Open case study"
+              data-href="stytch-sdk-integration-builder/">
+            <span class="tt-col-num">
+              <span class="num-stack">
+                <span class="tt-index">2</span>
+                <span class="tt-play-icon">▶</span>
+                <span class="tt-eq" aria-hidden="true"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></span>
+              </span>
+            </span>
+            <span class="tt-col-title">
+              <img class="tt-thumb" src="assets/icons/stytch-favicon.png" alt="">
+              <span class="tt-title-text">
+                <span class="tt-title-main">Driving SDK Adoption</span>
+                <span class="tt-title-sub">Kelly Lim</span>
+              </span>
+            </span>
+            <span class="tt-col-album">Stytch</span>
+            <span class="tt-col-duration">5:15</span>
+            <template class="preview-content">
+              <div class="preview-callout">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"></path></svg>
+                <p>Originated as a <strong>Hack Week</strong> idea.</p>
+              </div>
+              <div class="preview-card">
+                <p class="preview-card-label">Overview</p>
+                <p class="preview-desc">Closing the gap between a prebuilt auth SDK's promise of fast integration and a customer's actual confidence in it — preview the SDK live before writing any code.</p>
+              </div>
+              <div class="preview-card">
+                <p class="preview-card-label">Credits</p>
+                <ul class="credits-list">
+                  <li><span class="credits-role">Product Designer</span><span class="credits-count">1</span></li>
+                  <li><span class="credits-role">Engineer</span><span class="credits-count">1</span></li>
+                </ul>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div class="artist-discog" id="artistDiscog" hidden>
+          <h2 class="section-heading">Discography</h2>
+          <div class="discog-grid">
+            <button class="discog-card" data-track="track-01" type="button">
+              <span class="discog-thumb"><img src="assets/icons/twilio-favicon.png" alt=""></span>
+              <span class="discog-title">Building Trust in the Age of AI</span>
+              <span class="discog-meta">Twilio · Case study</span>
+            </button>
+            <button class="discog-card" data-track="track-02" type="button">
+              <span class="discog-thumb"><img src="assets/icons/stytch-favicon.png" alt=""></span>
+              <span class="discog-title">Driving SDK Adoption</span>
+              <span class="discog-meta">Stytch · Case study</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="artist-bio" id="artistBio" hidden>
+          <h2 class="section-heading">About</h2>
+          <div class="about-photo">
+            <img class="about-photo-img" src="assets/photos/kelly.jpg" alt="Kelly Lim">
+            <div class="about-photo-overlay">
+              <p class="about-stat">Senior Product Designer @ Twilio</p>
+              <p class="about-desc">Currently building identity for both human users and AI agents.<br><br>Previously at Stytch (acquired by Twilio), designing scalable and secure identity solutions that integrate seamlessly into customers' applications.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="artist-experience" id="artistExperience" hidden>
+          <h2 class="section-heading">Experience</h2>
+          <div class="exp-list">
+            <div class="exp-row">
+              <div class="exp-logo"><img src="assets/icons/twilio-favicon.png" alt="Twilio"></div>
+              <div class="exp-text">
+                <p class="exp-role">Senior Product Designer</p>
+                <p class="exp-company">Twilio</p>
+                <p class="exp-dates">2025–present</p>
+              </div>
+            </div>
+            <div class="exp-row">
+              <div class="exp-logo"><img src="assets/icons/stytch-favicon.png" alt="Stytch"></div>
+              <div class="exp-text">
+                <p class="exp-role">Product Designer</p>
+                <p class="exp-company">Stytch (acquired by Twilio)</p>
+                <p class="exp-dates">2022–2025</p>
+              </div>
+            </div>
+            <div class="exp-row">
+              <div class="exp-logo exp-logo-contain"><img src="assets/icons/patio-logo.svg" alt="Patio"></div>
+              <div class="exp-text">
+                <p class="exp-role">Product Designer</p>
+                <p class="exp-company">Patio</p>
+                <p class="exp-dates">2021–2022</p>
+              </div>
+            </div>
+            <div class="exp-row">
+              <div class="exp-logo exp-logo-contain"><img src="assets/icons/stanford-logo.png" alt="Stanford"></div>
+              <div class="exp-text">
+                <p class="exp-role">Product Design</p>
+                <p class="exp-company">Stanford</p>
+                <p class="exp-dates">2016–2020</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </div>
+    </main>
+
+    <aside id="previewPanel" aria-hidden="true">
+      <button class="panel-open-btn" id="panelOpenBtn" aria-label="Open panel">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <div class="preview-panel-inner">
+        <div class="preview-header">
+          <button class="lib-toggle-btn tooltip-below" id="previewClose" data-tooltip="Collapse Now Playing view" aria-label="Collapse Now Playing view">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+              <line x1="14.5" y1="4" x2="14.5" y2="20"></line>
+              <polygon points="15.2,9.6 15.2,14.4 18,12" fill="currentColor" stroke="none"></polygon>
+            </svg>
+          </button>
+          <p class="preview-eyebrow" id="previewEyebrow">TRACK 01</p>
+          <a class="lib-toggle-btn tooltip-below-right preview-header-expand" id="previewExpandTop" href="#" data-tooltip="Open case study" aria-label="Open case study">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+          </a>
+        </div>
+        <div class="preview-image-wrap" id="previewImageWrap">
+          <div class="preview-image" id="previewImage" aria-hidden="true">
+            <div class="preview-image-bg" id="previewImageBg">
+              <div class="mesh-blob mesh-blob-a"></div>
+              <div class="mesh-blob mesh-blob-b"></div>
+              <div class="mesh-blob mesh-blob-c"></div>
+            </div>
+            <div class="preview-scene" id="previewScene" hidden>
+              <div class="pv-cgpt-wrap" id="pvCgptWrap">
+                <div class="cgpt-window">
+                  <div class="cgpt-titlebar">
+                    <div class="cgpt-dots"><span></span><span></span><span></span></div>
+                    <div class="cgpt-tab">
+                      <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
+                      <span class="cgpt-tab-label">ChatGPT</span>
+                      <svg class="cgpt-tab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                    </div>
+                    <span class="cgpt-tab-plus">+</span>
+                  </div>
+                  <div class="cgpt-urlbar">
+                    <div class="cgpt-urlbar-icons cgpt-urlbar-left">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
+                    </div>
+                    <div class="cgpt-url">
+                      <span class="cgpt-url-tune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8H9.3M13.7 8H20"/><circle cx="11.5" cy="8" r="2.2"/><path d="M4 16H6.8M11.2 16H20"/><circle cx="9" cy="16" r="2.2"/></svg></span>
+                      <span class="cgpt-url-text">chatgpt.com</span>
+                      <svg class="cgpt-url-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 17.3l-6.2 3.6 1.6-7-5.4-4.7 7.1-.6L12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7z"/></svg>
+                    </div>
+                    <div class="cgpt-urlbar-icons cgpt-urlbar-right">
+                      <span class="cgpt-url-avatar"></span>
+                      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+                    </div>
+                  </div>
+                  <div class="cgpt-body">
+                    <div class="cgpt-sidebar">
+                      <div class="cgpt-sidebar-head">
+                        <span class="cgpt-logo">ChatGPT</span>
+                        <div class="cgpt-sidebar-head-icons">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
+                        </div>
+                      </div>
+                      <div class="cgpt-nav-item cgpt-nav-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>New chat</div>
+                      <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7.5" height="16" rx="2"/><rect x="13.5" y="4" width="7.5" height="16" rx="2"/></svg>Library</div>
+                      <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Projects</div>
+                      <p class="cgpt-recents-label">Recents</p>
+                      <div class="cgpt-recent-item">Plan my next vacation</div>
+                      <div class="cgpt-recent-item">Help me organize my week</div>
+                      <div class="cgpt-recent-item cgpt-recent-active">Monitor my trading account</div>
+                    </div>
+                    <div class="cgpt-main">
+                      <div class="cgpt-thread">
+                        <div id="pvCgptThread1">
+                          <div class="cgpt-msg-user" id="pvCgptUser">Monitor my Owl Trade account and notify me when I should buy or sell.</div>
+                          <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistant">
+                            <div class="cgpt-msg-assistant">I can help with that — first I'll need access to your Owl Trade account.</div>
+                            <div class="cgpt-msg-actions">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3zm0 0l4.5-8a2 2 0 0 1 3.6 1.4L14 10h5a2 2 0 0 1 2 2.3l-1.3 7A2 2 0 0 1 17.7 21H7"/></svg>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+                            </div>
+                          </div>
+                        </div>
+                        <div id="pvCgptThread2" hidden>
+                          <div class="cgpt-msg-user" id="pvCgptUser2">Any updates on OJ?</div>
+                          <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistant2">
+                            <div class="cgpt-tool-pill" id="pvCgptToolPill">
+                              <span class="cgpt-tool-pill-loading">
+                                <span class="cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span>Using Owl Trade&hellip;</span>
+                              </span>
+                              <span class="cgpt-tool-pill-done">
+                                <span class="cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span>Used Owl Trade</span>
+                              </span>
+                            </div>
+                            <p class="cgpt-msg-assistant cgpt-msg-assistant-delayed" id="pvCgptReply2">Not yet — OJ is at $3.42, three cents below your $3.45 alert threshold. I'll keep watching and let you know the moment it crosses.</p>
+                            <div class="cgpt-pop-preview-chart cgpt-msg-assistant-delayed" id="pvCgptChart2" style="margin-top:10px;">
+                              <span class="cgpt-pop-ticker">OJ <b>+0.08</b> (2.4%)</span>
+                              <svg class="cgpt-pop-spark" viewBox="0 0 100 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M0 10 L10 14 L20 6 L30 16 L40 12 L50 15 L60 9 L70 13 L80 8 L90 11 L100 5"/></svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="cgpt-input">
+                        <span class="cgpt-plus-wrap"><button class="cgpt-input-plus" tabindex="-1">+</button></span>
+                        <span class="cgpt-input-ph">Ask anything</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+                        <span class="cgpt-input-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span>
+                      </div>
+                      <div class="cgpt-popover" id="pvCgptPopover">
+                        <div class="cgpt-pop-view active" data-view="menu">
+                          <div class="cgpt-pop-quick">
+                            <div class="cgpt-pop-quick-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="14" r="3.3"/></svg><span>Camera</span></div>
+                            <div class="cgpt-pop-quick-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Photos</span></div>
+                            <div class="cgpt-pop-quick-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg><span>Files</span></div>
+                          </div>
+                          <div class="cgpt-pop-list">
+                            <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="cgpt-pop-item-text"><p>Create image</p><span>Visualize anything</span></span></div>
+                            <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span class="cgpt-pop-item-text"><p>Web search</p><span>Find real-time news and info</span></span></div>
+                            <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="cgpt-pop-item-text"><p>Explore apps</p><span>Chat with apps in ChatGPT</span></span><svg class="cgpt-pop-item-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+                          </div>
+                        </div>
+                        <div class="cgpt-pop-view" data-view="app">
+                          <div class="cgpt-pop-app-head">
+                            <button class="cgpt-pop-back" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                            <span>Apps</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+                          </div>
+                          <div class="cgpt-pop-app-card">
+                            <div class="cgpt-owl-icon"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                            <div class="cgpt-pop-app-meta"><p class="cgpt-pop-app-name">Owl Trade</p><button class="cgpt-pop-connect" tabindex="-1">Connect</button></div>
+                          </div>
+                          <p class="cgpt-pop-app-tagline">Invest, buy, trade</p>
+                        </div>
+                        <div class="cgpt-pop-view" data-view="connect">
+                          <button class="cgpt-pop-close" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                          <div class="cgpt-pop-connect-icons">
+                            <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
+                            <span class="cgpt-pop-connect-dots"><span></span><span></span><span></span></span>
+                            <div class="cgpt-owl-icon cgpt-owl-icon-sm"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                          </div>
+                          <p class="cgpt-pop-connect-heading">Connect Owl Trade</p>
+                          <div class="cgpt-pop-warning-box">
+                            <p><strong>You're in control.</strong> ChatGPT always respects your training data preferences.</p>
+                            <p><strong>Data shared with this app.</strong> By connecting, you allow it to access basic account info and a summary of your recent context and intent within ChatGPT.</p>
+                            <div class="cgpt-pop-toggle-row"><strong>Reference memories and chats</strong><span class="cgpt-pop-toggle"></span></div>
+                          </div>
+                          <button class="cgpt-pop-continue" tabindex="-1">Continue to Owl Trade</button>
+                        </div>
+                        <div class="cgpt-pop-view" data-view="success">
+                          <div class="cgpt-pop-success">
+                            <div class="cgpt-pop-success-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cream)" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg></div>
+                            <p class="cgpt-pop-success-text">Owl Trade connected</p>
+                          </div>
+                        </div>
+                      </div>
+                      <p class="cgpt-disclaimer">ChatGPT can make mistakes. Check important info.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="pv-phone-wrap" id="pvPhoneWrap">
+                <div class="phone-frame phone-frame-fit">
+                  <span class="phone-btn phone-btn-mute"></span>
+                  <span class="phone-btn phone-btn-vol-up"></span>
+                  <span class="phone-btn phone-btn-vol-down"></span>
+                  <span class="phone-btn phone-btn-power"></span>
+                  <div class="frame">
+                    <div class="step-phone-peek">
+                      <div class="ui-phone-status">
+                        <span>9:41</span>
+                        <div class="ui-phone-icons">
+                          <div class="ui-signal"><span></span><span></span><span></span><span></span></div>
+                          <svg class="ui-wifi" viewBox="0 0 24 18" fill="var(--ink)"><path d="M12 3.2C7.9 3.2 4.1 4.8 1.3 7.6l1.6 1.6C5.3 6.8 8.5 5.5 12 5.5s6.7 1.3 9.1 3.7l1.6-1.6C19.9 4.8 16.1 3.2 12 3.2z"/><path d="M12 8.3c-2.6 0-5 1-6.8 2.7l1.6 1.6C8.2 11.3 10 10.6 12 10.6s3.8.7 5.2 2l1.6-1.6C17 9.3 14.6 8.3 12 8.3z"/><path d="M12 13.3c-1.2 0-2.3.4-3.2 1.2l3.2 3.2 3.2-3.2c-.9-.8-2-1.2-3.2-1.2z"/></svg>
+                          <div class="ui-battery"><span></span></div>
+                        </div>
+                      </div>
+                      <div class="ui-phone-header" id="pvPhoneHeader">
+                        <button class="ui-phone-navbtn" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M15 18l-6-6 6-6"/></svg></button>
+                        <div class="ui-phone-contact">
+                          <div class="ui-phone-avatar-wrap">
+                            <div class="ui-phone-avatar"><img src="agent-identity/assets/owltrade-logo.png" alt="OwlTrade logo"></div>
+                            <span class="ui-verified-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
+                          </div>
+                          <p class="ui-phone-sender">OwlTrade</p>
+                        </div>
+                        <button class="ui-phone-navbtn ui-phone-navbtn-facetime" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1.5" y="6" width="14" height="12" rx="2.5"/><path d="M15.5 10.2l6-3.7v11l-6-3.7"/></svg></button>
+                      </div>
+                      <div class="ui-phone-body">
+                        <p class="ui-phone-timestamp">iMessage · Today 9:41 AM</p>
+                        <div class="ui-bubble" id="pvPhoneBubble">Your agent wants to close your OJ futures position — about $12,800. Approve this trade?</div>
+                        <div class="ui-suggest-wrap" id="pvPhoneSuggest">
+                          <div class="ui-suggest-stack">
+                            <button class="ui-suggest-item" tabindex="-1">Approve</button>
+                            <button class="ui-suggest-item" tabindex="-1">Decline</button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="ui-phone-inputbar" id="pvPhoneInputbar">
+                        <span class="ui-phone-inputbar-plus">+</span>
+                        <div class="ui-phone-inputbar-field"><span>iMessage</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pv-stytch-wrap" id="pvStytchWrap" hidden>
+              <div class="sk-tool">
+                <div class="sk-pane sk-pane-preview">
+                  <div class="sk-preview-bar"><span></span><span></span><span></span></div>
+                  <div class="sk-preview-body">
+                    <div class="sk-card" id="pvSkCard">
+                      <div class="sk-card-brand">Stytch</div>
+                      <h3 class="sk-card-heading">Sign up or log in</h3>
+                      <input class="sk-input" type="email" placeholder="example@email.com" readonly tabindex="-1">
+                      <button class="sk-primary-btn" id="pvSkPrimaryBtn" tabindex="-1">Continue with email</button>
+                      <div class="sk-divider">or</div>
+                      <button class="sk-oauth-btn" tabindex="-1"><span class="sk-oauth-dot"></span>Continue with Google</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="sk-pane sk-pane-config">
+                  <div class="sk-config-scroll">
+                    <p class="sk-subsection-label">Styling</p>
+                    <div class="sk-field-row" id="pvSkFontRow">
+                      <label>Font</label>
+                      <div class="sk-field-control"><span class="sk-field-value" id="pvSkFontVal">system-ui</span></div>
+                    </div>
+                    <div class="sk-field-row" id="pvSkBgRow">
+                      <label>Background Color</label>
+                      <div class="sk-field-control">
+                        <span class="sk-swatch" id="pvSkBgSwatch" style="background:#FFFFFF"></span>
+                        <span class="sk-hex-prefix">#</span><span class="sk-field-value" id="pvSkBgVal">FFFFFF</span>
+                      </div>
+                    </div>
+                    <div class="sk-field-row" id="pvSkRadiusRow">
+                      <label>Border radius</label>
+                      <div class="sk-field-control"><span class="sk-field-value" id="pvSkRadiusVal">4</span><span class="sk-suffix">px</span></div>
+                    </div>
+                    <div class="sk-field-row" id="pvSkPBtnRow">
+                      <label>Primary Button</label>
+                      <div class="sk-field-control">
+                        <span class="sk-swatch" id="pvSkPBtnSwatch" style="background:#161616"></span>
+                        <span class="sk-hex-prefix">#</span><span class="sk-field-value" id="pvSkPBtnVal">161616</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="preview-image-overlay">
+            <div class="preview-image-overlay-text">
+              <div class="preview-image-title" id="previewImageTitleWrap">
+                <span class="preview-image-title-text" id="previewTitle"></span>
+              </div>
+              <p class="preview-image-subtitle" id="previewImageSubtitle"></p>
+            </div>
+            <a class="preview-expand-inline" id="previewExpandInline" href="#" aria-label="Open case study" title="Open case study">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+            </a>
+          </div>
+        </div>
+        <div class="preview-content-pad">
+          <h2 class="preview-plain-title" id="previewPlainTitle" hidden></h2>
+          <div id="previewBody"></div>
+        </div>
+      </div>
+    </aside>
   </div>
+
+  <div id="transportBar">
+    <div class="tb-track">
+      <div class="tb-thumb-wrap">
+        <img class="tb-thumb" id="tbThumb" src="assets/icons/twilio-favicon.png" alt="">
+        <div class="tb-eq" id="tbEq" aria-hidden="true"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></div>
+      </div>
+      <div class="tb-meta">
+        <p class="tb-title" id="tbTitle">Building Trust in the Age of AI</p>
+        <p class="tb-subtitle" id="tbSubtitle">Twilio · Identity for AI Agents</p>
+      </div>
+    </div>
+    <div class="tb-controls">
+      <div class="tb-buttons">
+        <button class="tb-btn" id="tbShuffle" aria-label="Shuffle" title="Shuffle">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg>
+        </button>
+        <button class="tb-btn" id="tbPrev" aria-label="Previous track">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="5" width="2" height="14" rx="1"></rect><path d="M18 5.3 8.6 12 18 18.7z"></path></svg>
+        </button>
+        <button class="tb-btn tb-play" id="tbPlay" aria-label="Play">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"><path id="tbPlayIcon" d="M6 4l14 8-14 8V4z"></path></svg>
+        </button>
+        <button class="tb-btn" id="tbNext" aria-label="Next track">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"><rect x="17" y="5" width="2" height="14" rx="1"></rect><path d="M6 5.3 15.4 12 6 18.7z"></path></svg>
+        </button>
+        <button class="tb-btn" id="tbRepeat" aria-label="Repeat" title="Repeat">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+        </button>
+      </div>
+      <div class="tb-progress" aria-hidden="true">
+        <span class="tb-time tb-time-elapsed" id="tbTimeElapsed">0:00</span>
+        <div class="tb-progress-track">
+          <div class="tb-progress-fill" id="tbProgressFill"></div>
+        </div>
+        <span class="tb-time tb-time-duration" id="tbTimeDuration">0:00</span>
+      </div>
+    </div>
+    <div class="tb-actions">
+      <button class="tb-btn" id="tbPanelToggle" aria-label="Toggle preview panel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var rows = Array.prototype.slice.call(document.querySelectorAll('.tt-row'));
+      var trackIds = rows.map(function(r){ return r.id; });
+      var currentId = trackIds[0];
+      var isPlaying = false;
+      var activeCompanies = new Set();
+
+      var panel = document.getElementById('previewPanel');
+      var panelOpenBtn = document.getElementById('panelOpenBtn');
+      var previewImageWrap = document.getElementById('previewImageWrap');
+      var previewImage = document.getElementById('previewImage');
+      var previewImageBg = document.getElementById('previewImageBg');
+      var previewScene = document.getElementById('previewScene');
+      var pvCgptWrap = document.getElementById('pvCgptWrap');
+      var pvPhoneWrap = document.getElementById('pvPhoneWrap');
+      var pvCgptUser = document.getElementById('pvCgptUser');
+      var pvCgptAssistant = document.getElementById('pvCgptAssistant');
+      var pvCgptPopover = document.getElementById('pvCgptPopover');
+      var pvCgptPopViews = pvCgptPopover.querySelectorAll('.cgpt-pop-view');
+      var pvPhoneHeader = document.getElementById('pvPhoneHeader');
+      var pvPhoneBubble = document.getElementById('pvPhoneBubble');
+      var pvPhoneSuggest = document.getElementById('pvPhoneSuggest');
+      var pvPhoneInputbar = document.getElementById('pvPhoneInputbar');
+      var pvCgptThread1 = document.getElementById('pvCgptThread1');
+      var pvCgptThread2 = document.getElementById('pvCgptThread2');
+      var pvCgptUser2 = document.getElementById('pvCgptUser2');
+      var pvCgptToolPill = document.getElementById('pvCgptToolPill');
+      var pvCgptReply2 = document.getElementById('pvCgptReply2');
+      var pvCgptChart2 = document.getElementById('pvCgptChart2');
+      var pvStytchWrap = document.getElementById('pvStytchWrap');
+      var pvSkCard = document.getElementById('pvSkCard');
+      var pvSkPrimaryBtn = document.getElementById('pvSkPrimaryBtn');
+      var pvSkFontRow = document.getElementById('pvSkFontRow');
+      var pvSkFontVal = document.getElementById('pvSkFontVal');
+      var pvSkBgRow = document.getElementById('pvSkBgRow');
+      var pvSkBgSwatch = document.getElementById('pvSkBgSwatch');
+      var pvSkBgVal = document.getElementById('pvSkBgVal');
+      var pvSkRadiusRow = document.getElementById('pvSkRadiusRow');
+      var pvSkRadiusVal = document.getElementById('pvSkRadiusVal');
+      var pvSkPBtnRow = document.getElementById('pvSkPBtnRow');
+      var pvSkPBtnSwatch = document.getElementById('pvSkPBtnSwatch');
+      var pvSkPBtnVal = document.getElementById('pvSkPBtnVal');
+      var previewEyebrow = document.getElementById('previewEyebrow');
+      var previewTitleWrap = document.getElementById('previewImageTitleWrap');
+      var previewTitle = document.getElementById('previewTitle');
+      var previewImageSubtitle = document.getElementById('previewImageSubtitle');
+      var previewPlainTitle = document.getElementById('previewPlainTitle');
+      var previewBody = document.getElementById('previewBody');
+      var previewExpandTop = document.getElementById('previewExpandTop');
+      var previewExpandInline = document.getElementById('previewExpandInline');
+      var previewClose = document.getElementById('previewClose');
+
+      var tbThumb = document.getElementById('tbThumb');
+      var tbTitle = document.getElementById('tbTitle');
+      var tbSubtitle = document.getElementById('tbSubtitle');
+      var tbEq = document.getElementById('tbEq');
+      var tbPlay = document.getElementById('tbPlay');
+      var tbPlayIcon = document.getElementById('tbPlayIcon');
+      var tbPrev = document.getElementById('tbPrev');
+      var tbNext = document.getElementById('tbNext');
+      var tbShuffle = document.getElementById('tbShuffle');
+      var tbPanelToggle = document.getElementById('tbPanelToggle');
+      var heroPlayIcon = document.getElementById('heroPlayIcon');
+      var tbProgressFill = document.getElementById('tbProgressFill');
+      var tbTimeElapsed = document.getElementById('tbTimeElapsed');
+      var tbTimeDuration = document.getElementById('tbTimeDuration');
+
+      var transportBar = document.getElementById('transportBar');
+      var heroPlay = document.getElementById('heroPlay');
+      var shuffleBtn = document.getElementById('shuffleBtn');
+      var heroStats = document.getElementById('heroStats');
+      var heroEyebrow = document.getElementById('heroEyebrow');
+      var heroTitle = document.getElementById('heroTitle');
+      var heroArtCover = document.getElementById('heroArtCover');
+      var heroBand = document.querySelector('.hero-band');
+      var ALBUM_ICONS = {Twilio: 'assets/icons/twilio-favicon.png', Stytch: 'assets/icons/stytch-favicon.png'};
+      // dominant color per cover (like Spotify's own header tinting), precomputed from
+      // each favicon's actual average pixel color (not a guessed/generic brand color).
+      // Sampling this live via canvas would be the more "real" approach, but reading
+      // pixel data back out taints the canvas for same-directory file:// images (each
+      // file:// resource is its own origin to Chrome) — exactly how this deck is
+      // actually viewed, so it'd silently break in real usage. Precomputing offline
+      // avoids that entirely and needs no async/canvas machinery at runtime.
+      var ALBUM_COLORS = {Twilio: '244,79,99', Stytch: '160,192,199'};
+      // Spotify tints its header as a diagonal light-to-dark gradient of the cover's
+      // own dominant color (not a fade to the page background) — the fade-out only
+      // happens afterward, in the separate .hero-fade block below the toolbar.
+      function shadeRgb(rgb, factor){
+        return rgb.split(',').map(function(c){
+          return Math.max(0, Math.min(255, Math.round(Number(c) * factor)));
+        }).join(',');
+      }
+      function applyHeroBandColor(company){
+        var rgb = company ? ALBUM_COLORS[company] : '109,63,209';
+        if(!rgb){ heroBand.style.background = ''; return; }
+        var light = shadeRgb(rgb, 1.35);
+        var dark = shadeRgb(rgb, 0.5);
+        heroBand.style.background =
+          'linear-gradient(135deg, rgb(' + light + ') 0%, rgb(' + dark + ') 100%)';
+      }
+      var tagPills = Array.prototype.slice.call(document.querySelectorAll('.tag-pill'));
+      var tagRow = document.getElementById('tagRow');
+      var libPortfolio = document.getElementById('lib-portfolio');
+      var libAlbumItems = Array.prototype.slice.call(document.querySelectorAll('.lib-album'));
+      var libAbout = document.getElementById('lib-about');
+      var artistHero = document.getElementById('artistHero');
+      var popularHeading = document.getElementById('popularHeading');
+      var followBtn = document.getElementById('followBtn');
+      var artistExperience = document.getElementById('artistExperience');
+      var artistBio = document.getElementById('artistBio');
+      var artistPick = document.getElementById('artistPick');
+      var artistDiscog = document.getElementById('artistDiscog');
+      var pickCard = document.getElementById('pickCard');
+      var discogCards = Array.prototype.slice.call(document.querySelectorAll('.discog-card'));
+
+      function getTrack(id){ return document.getElementById(id); }
+
+      function revealBar(){
+        transportBar.classList.add('visible');
+        document.body.classList.add('bar-visible');
+      }
+
+      function renderBar(id){
+        var t = getTrack(id);
+        tbThumb.src = t.dataset.icon || t.dataset.thumb;
+        tbThumb.alt = t.dataset.title;
+        tbTitle.textContent = t.dataset.title;
+        tbSubtitle.textContent = t.dataset.subtitle;
+      }
+
+      // fake playback progress: ticks in real time across the estimated read length,
+      // so a 6:30 track takes 6m30s of wall-clock time to fill the bar
+      var elapsedSeconds = 0;
+      var trackDuration = 0;
+      var progressTimer = null;
+      var PROGRESS_TICK_MS = 250;
+
+      function formatTime(totalSecs){
+        var s = Math.max(0, Math.round(totalSecs));
+        var m = Math.floor(s / 60);
+        var rem = s % 60;
+        return m + ':' + (rem < 10 ? '0' : '') + rem;
+      }
+
+      function updateProgressUI(){
+        var pct = trackDuration ? Math.min(100, (elapsedSeconds / trackDuration) * 100) : 0;
+        tbProgressFill.style.width = pct + '%';
+        tbTimeElapsed.textContent = formatTime(elapsedSeconds);
+        tbTimeDuration.textContent = formatTime(trackDuration);
+      }
+
+      function stopProgressTimer(){
+        if(progressTimer){ clearInterval(progressTimer); progressTimer = null; }
+      }
+
+      function startProgressTimer(){
+        stopProgressTimer();
+        progressTimer = setInterval(function(){
+          elapsedSeconds += PROGRESS_TICK_MS / 1000;
+          if(elapsedSeconds >= trackDuration){
+            elapsedSeconds = trackDuration;
+            updateProgressUI();
+            stopProgressTimer();
+            setPlaying(false);
+            return;
+          }
+          updateProgressUI();
+        }, PROGRESS_TICK_MS);
+      }
+
+      function resetProgress(id){
+        trackDuration = parseDuration(getTrack(id).dataset.duration);
+        elapsedSeconds = 0;
+        updateProgressUI();
+      }
+
+      function updateMarquee(){
+        if(previewImageWrap.hidden) return;
+        previewTitleWrap.classList.remove('marquee');
+        var overflow = previewTitle.scrollWidth - previewTitleWrap.clientWidth;
+        if(overflow > 4){
+          previewTitleWrap.style.setProperty('--marquee-distance', (-(overflow + 12)) + 'px');
+          previewTitleWrap.classList.add('marquee');
+        }
+      }
+
+      // looping re-creation of the case study's full "ask ChatGPT -> connect Owl Trade ->
+      // consent -> agent monitors -> approve by text" sequence, timed like the deck's own
+      // autoplayCgptPopover but self-restarting. Runs continuously whenever this track's
+      // panel is open, independent of the transport bar's play/pause state.
+      var sceneTimers = [];
+      function sceneAfter(fn, ms){ sceneTimers.push(setTimeout(fn, ms)); }
+      function stopCgptPhoneScene(){
+        sceneTimers.forEach(function(id){ clearTimeout(id); });
+        sceneTimers = [];
+      }
+      function switchPvPopView(view){
+        pvCgptPopViews.forEach(function(v){ v.classList.toggle('active', v.dataset.view === view); });
+      }
+      function resetCgptPhoneSceneVisual(){
+        pvCgptWrap.classList.add('pv-visible');
+        pvPhoneWrap.classList.remove('pv-visible');
+        pvCgptUser.classList.remove('pv-in');
+        pvCgptAssistant.classList.remove('pv-in');
+        pvCgptPopover.classList.remove('show');
+        switchPvPopView('menu');
+        pvCgptThread1.hidden = false;
+        pvCgptThread2.hidden = true;
+        pvCgptUser2.classList.remove('pv-in');
+        pvCgptAssistant2.classList.remove('pv-in');
+        pvCgptToolPill.classList.remove('pv-done');
+        pvCgptReply2.classList.remove('pv-in');
+        pvCgptChart2.classList.remove('pv-in');
+        pvPhoneHeader.classList.remove('pv-in');
+        pvPhoneBubble.classList.remove('pv-in');
+        pvPhoneSuggest.classList.remove('pv-in');
+        pvPhoneInputbar.classList.remove('pv-in');
+      }
+      function runCgptPhoneScene(){
+        stopCgptPhoneScene();
+        resetCgptPhoneSceneVisual();
+        // turn 1: the initial ask, ChatGPT needs access
+        sceneAfter(function(){ pvCgptUser.classList.add('pv-in'); }, 300);
+        sceneAfter(function(){ pvCgptAssistant.classList.add('pv-in'); }, 900);
+        // "+" popover: explore apps -> Owl Trade -> connect -> success, all inside
+        // the same chat window/popover rather than cutting to a separate screen
+        sceneAfter(function(){ pvCgptPopover.classList.add('show'); }, 1800);
+        sceneAfter(function(){ switchPvPopView('app'); }, 3000);
+        sceneAfter(function(){ switchPvPopView('connect'); }, 4600);
+        sceneAfter(function(){ switchPvPopView('success'); }, 8200);
+        // close the popover — otherwise it's still "open" underneath and would
+        // silently reappear when the chat window shows turn 2
+        sceneAfter(function(){ pvCgptPopover.classList.remove('show'); }, 9700);
+        sceneAfter(function(){ switchPvPopView('menu'); }, 9900);
+        // still in the same window — now asking it to monitor, which shows
+        // Owl Trade actually in use
+        sceneAfter(function(){
+          pvCgptThread1.hidden = true;
+          pvCgptThread2.hidden = false;
+        }, 10000);
+        sceneAfter(function(){ pvCgptUser2.classList.add('pv-in'); }, 10400);
+        sceneAfter(function(){ pvCgptAssistant2.classList.add('pv-in'); }, 11000);
+        sceneAfter(function(){ pvCgptToolPill.classList.add('pv-done'); }, 12000);
+        sceneAfter(function(){
+          pvCgptReply2.classList.add('pv-in');
+          pvCgptChart2.classList.add('pv-in');
+        }, 12100);
+        // cut to the phone for the human-in-the-loop SMS approval
+        sceneAfter(function(){
+          pvCgptWrap.classList.remove('pv-visible');
+          pvPhoneWrap.classList.add('pv-visible');
+        }, 14000);
+        sceneAfter(function(){ pvPhoneHeader.classList.add('pv-in'); }, 14300);
+        sceneAfter(function(){ pvPhoneInputbar.classList.add('pv-in'); }, 14500);
+        sceneAfter(function(){ pvPhoneBubble.classList.add('pv-in'); }, 14800);
+        sceneAfter(function(){ pvPhoneSuggest.classList.add('pv-in'); }, 15400);
+        sceneAfter(function(){ pvPhoneWrap.classList.remove('pv-visible'); }, 18700);
+        sceneAfter(function(){ runCgptPhoneScene(); }, 19200);
+      }
+
+      // Stytch scene — condensed re-creation of the SDK Integration Builder's real
+      // side-by-side demo: a config field flashes, then the live preview card updates
+      // to match, cycling font -> background -> radius -> button color and back
+      // (a palindrome, same as the real STYLE_DEMO_STEPS, so it loops seamlessly)
+      var stytchTimers = [];
+      function stytchAfter(fn, ms){ stytchTimers.push(setTimeout(fn, ms)); }
+      function stopStytchScene(){
+        stytchTimers.forEach(function(id){ clearTimeout(id); });
+        stytchTimers = [];
+      }
+      function resetStytchSceneVisual(){
+        pvSkCard.style.setProperty('--sk-card-font', 'system-ui');
+        pvSkCard.style.setProperty('--sk-card-bg', '#FFFFFF');
+        pvSkCard.style.setProperty('--sk-card-radius', '4px');
+        pvSkPrimaryBtn.style.setProperty('--sk-pbtn-bg', '#161616');
+        pvSkFontVal.textContent = 'system-ui';
+        pvSkBgSwatch.style.background = '#FFFFFF';
+        pvSkBgVal.textContent = 'FFFFFF';
+        pvSkRadiusVal.textContent = '4';
+        pvSkPBtnSwatch.style.background = '#161616';
+        pvSkPBtnVal.textContent = '161616';
+        [pvSkFontRow, pvSkBgRow, pvSkRadiusRow, pvSkPBtnRow].forEach(function(r){ r.classList.remove('pv-flash'); });
+      }
+      function flashStytchRow(row){
+        row.classList.add('pv-flash');
+        stytchAfter(function(){ row.classList.remove('pv-flash'); }, 900);
+      }
+      function runStytchScene(){
+        stopStytchScene();
+        resetStytchSceneVisual();
+        var steps = [
+          {row: pvSkFontRow, at: 1200, apply: function(){ pvSkCard.style.setProperty('--sk-card-font', 'Georgia'); pvSkFontVal.textContent = 'Georgia'; }},
+          {row: pvSkBgRow, at: 2900, apply: function(){ pvSkCard.style.setProperty('--sk-card-bg', '#EEF2FF'); pvSkBgSwatch.style.background = '#EEF2FF'; pvSkBgVal.textContent = 'EEF2FF'; }},
+          {row: pvSkRadiusRow, at: 4600, apply: function(){ pvSkCard.style.setProperty('--sk-card-radius', '22px'); pvSkRadiusVal.textContent = '22'; }},
+          {row: pvSkPBtnRow, at: 6300, apply: function(){ pvSkPrimaryBtn.style.setProperty('--sk-pbtn-bg', '#2563EB'); pvSkPBtnSwatch.style.background = '#2563EB'; pvSkPBtnVal.textContent = '2563EB'; }},
+          {row: pvSkPBtnRow, at: 8300, apply: function(){ pvSkPrimaryBtn.style.setProperty('--sk-pbtn-bg', '#161616'); pvSkPBtnSwatch.style.background = '#161616'; pvSkPBtnVal.textContent = '161616'; }},
+          {row: pvSkRadiusRow, at: 10000, apply: function(){ pvSkCard.style.setProperty('--sk-card-radius', '4px'); pvSkRadiusVal.textContent = '4'; }},
+          {row: pvSkBgRow, at: 11700, apply: function(){ pvSkCard.style.setProperty('--sk-card-bg', '#FFFFFF'); pvSkBgSwatch.style.background = '#FFFFFF'; pvSkBgVal.textContent = 'FFFFFF'; }},
+          {row: pvSkFontRow, at: 13400, apply: function(){ pvSkCard.style.setProperty('--sk-card-font', 'system-ui'); pvSkFontVal.textContent = 'system-ui'; }}
+        ];
+        steps.forEach(function(step){
+          stytchAfter(function(){ flashStytchRow(step.row); step.apply(); }, step.at);
+        });
+        stytchAfter(function(){ runStytchScene(); }, 15200);
+      }
+
+      function renderPanel(id){
+        var t = getTrack(id);
+        var tpl = t.querySelector('.preview-content');
+        previewEyebrow.textContent = t.dataset.eyebrow;
+
+        if(t.dataset.thumb){
+          previewImageWrap.hidden = false;
+          previewPlainTitle.hidden = true;
+          previewTitle.textContent = t.dataset.title;
+          previewImageSubtitle.textContent = t.dataset.subtitle;
+          previewImageBg.classList.toggle('variant-b', t.dataset.company === 'Stytch');
+          previewImageBg.classList.toggle('active', isPlaying);
+          previewScene.hidden = t.dataset.company !== 'Twilio';
+          if(!previewScene.hidden){ runCgptPhoneScene(); }
+          else { stopCgptPhoneScene(); }
+          pvStytchWrap.hidden = t.dataset.company !== 'Stytch';
+          if(!pvStytchWrap.hidden){ pvStytchWrap.classList.add('pv-visible'); runStytchScene(); }
+          else { pvStytchWrap.classList.remove('pv-visible'); stopStytchScene(); }
+        } else {
+          previewImageWrap.hidden = true;
+          previewPlainTitle.hidden = !t.dataset.title;
+          previewPlainTitle.textContent = t.dataset.title || '';
+        }
+
+        previewBody.innerHTML = '';
+        previewBody.appendChild(tpl.content.cloneNode(true));
+
+        if(t.dataset.ctaText){
+          previewExpandTop.hidden = false;
+          previewExpandInline.hidden = false;
+          previewExpandTop.setAttribute('href', t.dataset.href);
+          previewExpandInline.setAttribute('href', t.dataset.href);
+        } else {
+          previewExpandTop.hidden = true;
+          previewExpandInline.hidden = true;
+        }
+
+        requestAnimationFrame(updateMarquee);
+      }
+
+      function setActive(id){
+        rows.forEach(function(r){
+          var active = r.id === id;
+          r.classList.toggle('active', active);
+          r.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+      }
+
+      function updatePlayingRows(){
+        rows.forEach(function(r){ r.classList.toggle('playing', isPlaying && r.id === currentId); });
+      }
+
+      function selectTrack(id){
+        currentId = id;
+        setActive(id);
+        renderBar(id);
+        resetProgress(id);
+        updatePlayingRows();
+        if(panel.classList.contains('open')) renderPanel(id);
+      }
+
+      function openPanel(id){
+        renderPanel(id || currentId);
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+        tbPanelToggle.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('panel-open');
+      }
+      function closePanel(){
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        tbPanelToggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('panel-open');
+      }
+      function togglePanel(){
+        if(panel.classList.contains('open')) closePanel(); else openPanel();
+      }
+
+      var PLAY_PATH = 'M6 4l14 8-14 8V4z';
+      var PAUSE_PATH = 'M5 4h5v16H5zM14 4h5v16h-5z';
+
+      function setPlaying(val){
+        isPlaying = val;
+        var d = isPlaying ? PAUSE_PATH : PLAY_PATH;
+        tbPlayIcon.setAttribute('d', d);
+        tbPlay.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+        heroPlayIcon.setAttribute('d', d);
+        heroPlay.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+        tbEq.classList.toggle('active', isPlaying);
+        previewImageBg.classList.toggle('active', isPlaying);
+        updatePlayingRows();
+        if(isPlaying){
+          if(elapsedSeconds >= trackDuration) elapsedSeconds = 0;
+          startProgressTimer();
+        } else {
+          stopProgressTimer();
+        }
+      }
+      function togglePlaying(){ setPlaying(!isPlaying); }
+
+      function openTrack(id){
+        selectTrack(id);
+        openPanel();
+        revealBar();
+      }
+
+      rows.forEach(function(row){
+        row.addEventListener('click', function(){ openTrack(row.id); });
+        row.addEventListener('dblclick', function(){
+          openTrack(row.id);
+          setPlaying(true);
+        });
+        row.addEventListener('keydown', function(e){
+          if(e.key === 'Enter' || e.key === ' '){
+            e.preventDefault();
+            openTrack(row.id);
+          }
+        });
+      });
+
+      // Artist page's "Artist pick" callout and Discography grid point at the
+      // same underlying tracks as the main table — reuse openTrack so they
+      // open the same preview panel instead of duplicating that logic.
+      pickCard.addEventListener('click', function(){ openTrack('track-01'); });
+      discogCards.forEach(function(card){
+        card.addEventListener('click', function(){ openTrack(card.dataset.track); });
+      });
+
+      tbPanelToggle.addEventListener('click', togglePanel);
+      previewClose.addEventListener('click', function(){
+        closePanel();
+        previewClose.blur();
+      });
+      panelOpenBtn.addEventListener('click', function(){ openPanel(); panelOpenBtn.blur(); });
+      window.addEventListener('resize', function(){
+        if(panel.classList.contains('open')) requestAnimationFrame(updateMarquee);
+      });
+
+      tbPrev.addEventListener('click', function(){
+        var idx = trackIds.indexOf(currentId);
+        selectTrack(trackIds[(idx - 1 + trackIds.length) % trackIds.length]);
+      });
+      tbNext.addEventListener('click', function(){
+        var idx = trackIds.indexOf(currentId);
+        selectTrack(trackIds[(idx + 1) % trackIds.length]);
+      });
+
+      tbPlay.addEventListener('click', togglePlaying);
+      heroPlay.addEventListener('click', function(){
+        togglePlaying();
+        revealBar();
+      });
+
+      function shuffleTrack(){
+        var others = trackIds.filter(function(id){ return id !== currentId; });
+        var next = others.length ? others[Math.floor(Math.random() * others.length)] : currentId;
+        selectTrack(next);
+        revealBar();
+      }
+      shuffleBtn.addEventListener('click', shuffleTrack);
+      tbShuffle.addEventListener('click', shuffleTrack);
+
+      var librarySidebar = document.querySelector('.library-sidebar');
+      var libToggle = document.getElementById('libToggle');
+      libToggle.addEventListener('click', function(){
+        var expand = !librarySidebar.classList.contains('expanded');
+        librarySidebar.classList.toggle('expanded', expand);
+        var label = expand ? 'Collapse Your Library' : 'Open Your Library';
+        libToggle.setAttribute('data-tooltip', label);
+        libToggle.setAttribute('aria-label', label);
+        libToggle.setAttribute('aria-expanded', expand ? 'true' : 'false');
+        libToggle.blur();
+      });
+
+      var themeToggle = document.getElementById('themeToggle');
+      var htmlEl = document.documentElement;
+      function applyTheme(theme){
+        htmlEl.setAttribute('data-theme', theme);
+        var label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+        themeToggle.setAttribute('data-tooltip', label);
+        themeToggle.setAttribute('aria-label', label);
+        try{ localStorage.setItem('theme', theme); }catch(e){}
+      }
+      themeToggle.addEventListener('click', function(){
+        applyTheme(htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        themeToggle.blur();
+      });
+      var savedTheme = null;
+      try{ savedTheme = localStorage.getItem('theme'); }catch(e){}
+      if(!savedTheme){
+        savedTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+      applyTheme(savedTheme);
+
+      // Twilio/Stytch sidebar entries act as their own single-track "albums" —
+      // clicking one swaps the main view to just that project, same as clicking
+      // Portfolio swaps back to the full two-track view
+      function parseDuration(str){
+        var parts = str.split(':');
+        return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+      }
+      function showArtistView(){
+        heroBand.hidden = true;
+        artistHero.hidden = false;
+        tagRow.hidden = true;
+        popularHeading.hidden = false;
+        followBtn.hidden = false;
+        artistPick.hidden = false;
+        artistDiscog.hidden = false;
+        artistBio.hidden = false;
+        artistExperience.hidden = false;
+
+        activeCompanies.clear();
+        tagPills.forEach(function(pill){ pill.classList.remove('active'); });
+        rows.forEach(function(r){ r.classList.remove('hidden'); });
+
+        libPortfolio.classList.remove('active');
+        libAlbumItems.forEach(function(item){ item.classList.remove('active'); });
+        libAbout.classList.add('active');
+      }
+      libAbout.addEventListener('click', showArtistView);
+      followBtn.addEventListener('click', function(){
+        followBtn.classList.toggle('following');
+        followBtn.textContent = followBtn.classList.contains('following') ? 'Following' : 'Follow';
+      });
+
+      function showAlbumView(company){
+        heroBand.hidden = false;
+        artistHero.hidden = true;
+        popularHeading.hidden = true;
+        followBtn.hidden = true;
+        artistPick.hidden = true;
+        artistDiscog.hidden = true;
+        artistBio.hidden = true;
+        artistExperience.hidden = true;
+
+        activeCompanies.clear();
+        tagPills.forEach(function(pill){ pill.classList.remove('active'); });
+        if(company){
+          activeCompanies.add(company);
+          tagPills.forEach(function(pill){
+            if(pill.dataset.company === company) pill.classList.add('active');
+          });
+        }
+        rows.forEach(function(r){
+          var show = activeCompanies.size === 0 || activeCompanies.has(r.dataset.company);
+          r.classList.toggle('hidden', !show);
+        });
+
+        var visibleRows = rows.filter(function(r){ return !r.classList.contains('hidden'); });
+        var seconds = visibleRows.reduce(function(sum, r){ return sum + parseDuration(r.dataset.duration); }, 0);
+        var minutes = Math.round(seconds / 60);
+        heroStats.textContent = visibleRows.length + ' project' + (visibleRows.length === 1 ? '' : 's') + ', ' + minutes + ' min read';
+        heroEyebrow.textContent = company ? 'Album' : 'Work';
+        heroTitle.textContent = company || 'Portfolio';
+        tagRow.hidden = !!company;
+        if(company && ALBUM_ICONS[company]){
+          heroArtCover.src = ALBUM_ICONS[company];
+          heroArtCover.hidden = false;
+        } else {
+          heroArtCover.hidden = true;
+        }
+        applyHeroBandColor(company);
+
+        libPortfolio.classList.toggle('active', !company);
+        libAlbumItems.forEach(function(item){
+          item.classList.toggle('active', item.dataset.company === company);
+        });
+        libAbout.classList.remove('active');
+      }
+      libPortfolio.addEventListener('click', function(){ showAlbumView(null); });
+      libAlbumItems.forEach(function(item){
+        item.addEventListener('click', function(){ showAlbumView(item.dataset.company); });
+      });
+      showArtistView();
+
+      tagPills.forEach(function(pill){
+        pill.addEventListener('click', function(){
+          var company = pill.dataset.company;
+          if(activeCompanies.has(company)){
+            activeCompanies.delete(company);
+            pill.classList.remove('active');
+          } else {
+            activeCompanies.add(company);
+            pill.classList.add('active');
+          }
+          rows.forEach(function(r){
+            var show = activeCompanies.size === 0 || activeCompanies.has(r.dataset.company);
+            r.classList.toggle('hidden', !show);
+          });
+        });
+      });
+
+      renderBar(currentId);
+      setActive(currentId);
+      resetProgress(currentId);
+    })();
+  </script>
 </body>
 </html>
