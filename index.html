@@ -113,7 +113,28 @@
   /* theme toggle is a standalone utility, not the header-row's hover-revealed collapse
      icon — stays visible regardless of expand state (overrides the rule above) */
   .library-sidebar.expanded #themeToggle{opacity:1; pointer-events:auto;}
-  #themeToggle{margin:0 0 14px;}
+  .lib-utility-row{display:flex; align-items:center; gap:8px; margin:0 0 14px;}
+  /* "Plain view" toggle carries a visible label (matching the "Listening mode"
+     one in Plain view's own sidebar) rather than an icon+tooltip, so it isn't
+     part of .lib-toggle-btn and needs its own sizing here */
+  .lib-utility-row .mode-toggle{padding:8px 12px 8px 10px; font-size:12px; height:34px; box-sizing:border-box;}
+  /* collapsed rail is only 40px of content width (64px - padding) — a text
+     pill doesn't fit, so stack the two buttons and shrink this one back down
+     to an icon-only circle with a hover tooltip, matching #themeToggle */
+  .library-sidebar:not(.expanded) .lib-utility-row{flex-direction:column;}
+  .library-sidebar:not(.expanded) .lib-utility-row .mode-toggle{
+    position:relative; width:38px; height:38px; padding:0; justify-content:center; border-radius:50%;
+  }
+  .library-sidebar:not(.expanded) .lib-utility-row .mode-toggle svg{width:22px; height:22px;}
+  .library-sidebar:not(.expanded) .lib-utility-row .mode-toggle span{display:none;}
+  .library-sidebar:not(.expanded) .lib-utility-row .mode-toggle::after{
+    content:attr(data-tooltip); position:absolute; top:50%; left:calc(100% + 10px); transform:translateY(-50%);
+    background:var(--ink); color:var(--cream); font-size:11.5px; font-weight:600;
+    padding:6px 10px; border-radius:6px; white-space:nowrap;
+    opacity:0; pointer-events:none; transition:opacity .12s ease .1s; z-index:40;
+  }
+  .library-sidebar:not(.expanded) .lib-utility-row .mode-toggle:hover::after,
+  .library-sidebar:not(.expanded) .lib-utility-row .mode-toggle:focus-visible::after{opacity:1;}
   #themeToggle .theme-icon-moon{display:none;}
   html[data-theme="dark"] #themeToggle .theme-icon-sun{display:none;}
   html[data-theme="dark"] #themeToggle .theme-icon-moon{display:block;}
@@ -316,7 +337,10 @@
     background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
   }
   .discog-thumb{width:100%; aspect-ratio:1/1; border-radius:8px; overflow:hidden; box-shadow:0 8px 20px rgba(23,22,27,.14);}
-  .discog-thumb img{width:100%; height:100%; object-fit:cover; transition:transform .2s ease;}
+  /* real vector logo files (not the 180x180 raster favicons) — those went
+     visibly soft once upscaled to fill a grid tile, especially at 2x pixel
+     density; an actual SVG source stays crisp at any size */
+  .discog-thumb img{width:100%; height:100%; display:block; object-fit:cover; transition:transform .2s ease;}
   .discog-card:hover .discog-thumb img{transform:scale(1.03);}
   .discog-title{font-size:14px; font-weight:700; color:var(--ink); line-height:1.3;}
   .discog-meta{font-size:12px; color:var(--ink-45);}
@@ -897,6 +921,159 @@
   .tb-play:hover{opacity:.85; color:var(--cream);}
   .tb-actions{justify-self:end;}
   .tb-actions .tb-btn[aria-expanded="true"]{background:var(--hover-tint); color:var(--ink);}
+
+  /* --- mode toggle switches between the Spotify-style "Listening mode" shell
+     and the calmer, traditional "Plain view" page. Each mode gets its own
+     copy of the toggle, living in that mode's own left panel (Listening
+     mode's library sidebar; Plain view's sidebar body) rather than one
+     shared button floating over both — each one only ever needs to say
+     "switch to the other mode," so the label doesn't need to change. --- */
+  .static-toggle-row{display:flex; align-items:center; gap:10px; margin:0 0 24px;}
+  .mode-toggle{
+    display:flex; align-items:center; gap:7px;
+    background:var(--cream); border:1px solid var(--line); color:var(--ink-70);
+    padding:9px 14px 9px 12px; border-radius:20px; cursor:pointer;
+    font-family:var(--sans); font-size:12.5px; font-weight:600;
+    box-shadow:0 4px 14px rgba(23,22,27,.12);
+    transition:color .15s ease, border-color .15s ease, background-color .15s ease;
+  }
+  .mode-toggle:hover{color:var(--ink); border-color:var(--ink-45);}
+  .mode-toggle svg{flex-shrink:0;}
+  .static-theme-toggle{
+    position:relative; display:flex; align-items:center; justify-content:center; width:34px; height:34px;
+    background:var(--cream); border:1px solid var(--line); color:var(--ink-70);
+    border-radius:50%; cursor:pointer; box-shadow:0 4px 14px rgba(23,22,27,.12);
+    transition:color .15s ease, border-color .15s ease, background-color .15s ease;
+  }
+  .static-theme-toggle:hover{color:var(--ink); border-color:var(--ink-45);}
+  /* anchored to the button's left edge, not centered — .static-sidebar needs
+     overflow-y:auto for its own internal scroll (see static-sidebar comment),
+     which per spec forces overflow-x to clip too, so a centered tooltip here
+     (sitting close to the sidebar's left padding edge) got its left half cut
+     off; extending rightward instead keeps it inside the sidebar's own bounds */
+  .static-theme-toggle::after{
+    content:attr(data-tooltip);
+    position:absolute; top:calc(100% + 10px); left:0;
+    background:var(--ink); color:var(--cream); font-size:11.5px; font-weight:600;
+    padding:6px 10px; border-radius:6px; white-space:nowrap;
+    opacity:0; pointer-events:none; transition:opacity .12s ease .1s; z-index:40;
+  }
+  .static-theme-toggle:hover::after, .static-theme-toggle:focus-visible::after{opacity:1;}
+  .static-theme-toggle .theme-icon-moon{display:none;}
+  html[data-theme="dark"] .static-theme-toggle .theme-icon-sun{display:none;}
+  html[data-theme="dark"] .static-theme-toggle .theme-icon-moon{display:block;}
+
+  /* --- static mode: a calmer, traditional two-column page instead of the
+     Spotify shell, but structurally the same idea as .app-shell — two fixed-
+     height panes that each scroll independently, rather than one shared
+     page-level scroll. Left is a persistent identity sidebar (photo/name/
+     role/bio/experience, cloned from the same About-page content, one
+     source of truth); right is the project write-ups, each with a full-
+     bleed banner matching how .hero-band/.artist-hero sit flush in
+     listening mode instead of a rounded inset card. */
+  .static-mode{position:fixed; inset:0; z-index:100; background:var(--page-bg);}
+  .static-shell{display:flex; align-items:stretch; justify-content:center; height:100%;}
+  /* same floating-card chrome as .library-sidebar/.page in listening mode —
+     rounded corners + margin gap revealing the page's own gutter color
+     between/around the two containers, instead of a flush edge-to-edge
+     layout with just a hairline divider. Height is intentionally NOT set here —
+     .static-shell's align-items:stretch already sizes these to fill it while
+     correctly subtracting the vertical margin; setting height:100% instead (as a
+     percentage of the parent's content box) ignores that margin and pushes the
+     container 16px past the viewport, forcing an outer page scroll (same trap
+     as .library-sidebar/.page, which rely on stretch for the same reason). */
+  .static-sidebar{
+    width:420px; flex-shrink:0; overflow-y:auto; box-sizing:border-box;
+    background:var(--cream); border-radius:20px; margin:8px 8px 8px 8px;
+  }
+  /* left container's "About" header — same full-bleed photo + grain + mute
+     treatment as the About page's own artist-hero banner, just scaled to
+     the sidebar's width, so "the image" reads as a header banner here too
+     instead of a small circular avatar. */
+  .static-sidebar-banner{position:relative; width:100%; height:260px; overflow:hidden; background:var(--line);}
+  .static-sidebar-banner-img{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 60%;
+    filter:saturate(.55) brightness(.8) contrast(1.05);
+  }
+  .static-sidebar-banner-grain{
+    position:absolute; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:.35; mix-blend-mode:overlay;
+  }
+  .static-sidebar-banner-scrim{
+    position:absolute; inset:0;
+    background:linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.2) 55%, rgba(0,0,0,0) 100%);
+  }
+  .static-sidebar-banner-text{position:absolute; left:22px; right:22px; bottom:18px;}
+  .static-name{font-size:22px; font-weight:800; letter-spacing:-.01em; margin:0 0 4px; color:#fff;}
+  .static-role{font-size:12.5px; color:rgba(255,255,255,.85); margin:0;}
+  .static-sidebar-body{padding:36px 36px 56px;}
+  .static-desc{font-size:13.5px; line-height:1.65; color:var(--ink-70); margin:0 0 32px;}
+  .static-sidebar-label{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-45); margin:0 0 16px;}
+  .static-exp-list{display:flex; flex-direction:column; gap:18px;}
+  .static-exp-list .exp-logo{width:36px; height:36px;}
+  .static-exp-list .exp-role{font-size:13px;}
+  .static-exp-list .exp-company, .static-exp-list .exp-dates{font-size:11.5px;}
+  /* narrower than "fill remaining space" on purpose — sized to hug the
+     project content's own max-width (680px, see .static-project-cards)
+     plus its padding, rather than stretching wide and leaving the cards
+     floating in unused space on wider screens. */
+  .static-main{
+    flex:0 1 792px; width:792px; overflow-y:auto; overflow-x:hidden;
+    background:var(--cream); border-radius:20px; margin:8px 8px 8px 0;
+  }
+  .static-projects{display:flex; flex-direction:column;}
+  .static-project{padding:48px 56px;}
+  .static-project + .static-project{border-top:1px solid var(--line);}
+  /* the media card + overlaid title/expand button + bordered Overview/Credits
+     cards below all reuse the listening-mode preview panel's own visual
+     language (.preview-image-overlay, .preview-card, etc.) at a larger
+     scale, rather than the earlier full-bleed banner + plain-text layout —
+     "still look like this UI" per Kelly's reference. */
+  .static-project-media{
+    position:relative; width:100%; height:380px; border-radius:16px; overflow:hidden;
+    background:var(--line); box-shadow:0 14px 34px rgba(23,22,27,.14);
+  }
+  .static-project-media img{width:100%; height:100%; object-fit:cover;}
+  /* the cloned ChatGPT/Stytch scenes size themselves with a fixed px width +
+     zoom (see .pv-cgpt-wrap etc.) rather than scaling to their container, so
+     bump the zoom up for the larger static card vs. the narrower side
+     panel it was originally tuned for. */
+  .static-project-media-scene .pv-cgpt-wrap{zoom:.72;}
+  .static-project-media-scene .pv-phone-wrap{zoom:.62;}
+  .static-project-media-scene .pv-stytch-wrap{zoom:.64;}
+  .static-project-overlay{
+    position:absolute; left:0; right:0; bottom:0; padding:20px 24px;
+    background:linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.3) 60%, rgba(0,0,0,0) 100%);
+    display:flex; align-items:flex-end; justify-content:space-between; gap:14px;
+  }
+  .static-project-overlay-text{min-width:0; flex:1;}
+  .static-project-title{font-size:26px; font-weight:800; letter-spacing:-.01em; color:#fff; margin:0 0 4px;}
+  .static-project-subtitle{font-size:14px; color:rgba(255,255,255,.8); margin:0;}
+  .static-project-expand{
+    width:40px; height:40px; border-radius:50%; flex-shrink:0;
+    background:var(--accent); color:#fff; text-decoration:none;
+    display:flex; align-items:center; justify-content:center;
+    transition:background-color .15s ease, transform .15s ease;
+  }
+  .static-project-expand:hover{background:var(--accent-hover); transform:scale(1.06);}
+  .static-project-cards{display:flex; flex-direction:column; gap:20px; max-width:680px; margin:24px 0 0;}
+  .static-project-cards .preview-card{
+    background:var(--cream); border:1px solid var(--line); border-radius:14px; padding:22px 24px; margin:0;
+  }
+  .static-project-cards .preview-card-label{font-size:16px;}
+  .static-project-cards .preview-desc{font-size:14.5px;}
+  .static-project-cards .preview-callout{margin:0;}
+  @media (max-width:900px){
+    .static-shell{flex-direction:column; height:auto;}
+    .static-mode{overflow-y:auto;}
+    .static-sidebar{width:auto; height:auto; overflow-y:visible; margin:8px 8px 0; border-radius:16px;}
+    .static-sidebar-banner{height:200px;}
+    .static-sidebar-body{padding:24px 20px 40px;}
+    .static-main{width:auto; flex:1; height:auto; overflow-y:visible; margin:8px; border-radius:16px;}
+    .static-project{padding:24px 20px;}
+    .static-project-media{height:280px;}
+  }
 </style>
 </head>
 <body>
@@ -912,10 +1089,16 @@
         </button>
         <p class="lib-title">Your Library</p>
       </div>
-      <button class="lib-toggle-btn" id="themeToggle" data-tooltip="Switch to dark mode" aria-label="Switch to dark mode">
-        <svg class="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
-        <svg class="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-      </button>
+      <div class="lib-utility-row">
+        <button class="lib-toggle-btn" id="themeToggle" data-tooltip="Switch to dark mode" aria-label="Switch to dark mode">
+          <svg class="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+          <svg class="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+        <button class="mode-toggle" id="modeToggleListening" type="button" data-tooltip="Switch to Plain view" aria-label="Switch to Plain view">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
+          <span>Plain view</span>
+        </button>
+      </div>
       <div class="lib-list">
         <button class="lib-item pinned" id="lib-about" type="button">
           <span class="lib-item-icon" aria-hidden="true">
@@ -960,7 +1143,7 @@
 
         <button class="lib-item lib-album" id="lib-twilio" type="button" data-company="Twilio">
           <span class="lib-item-icon" aria-hidden="true">
-            <span class="lib-item-icon-glyph"><img src="assets/icons/twilio-favicon.png" alt=""></span>
+            <span class="lib-item-icon-glyph"><img src="assets/icons/twilio-logo.svg" alt=""></span>
           </span>
           <span class="lib-item-tooltip" aria-hidden="true">
             <span class="lib-item-tooltip-title">Twilio</span>
@@ -974,7 +1157,7 @@
 
         <button class="lib-item lib-album" id="lib-stytch" type="button" data-company="Stytch">
           <span class="lib-item-icon" aria-hidden="true">
-            <span class="lib-item-icon-glyph"><img src="assets/icons/stytch-favicon.png" alt=""></span>
+            <span class="lib-item-icon-glyph"><img src="assets/icons/stytch-logo.svg" alt=""></span>
           </span>
           <span class="lib-item-tooltip" aria-hidden="true">
             <span class="lib-item-tooltip-title">Stytch</span>
@@ -1052,7 +1235,7 @@
         <div class="artist-pick" id="artistPick" hidden>
           <h2 class="section-heading">Artist pick</h2>
           <button class="pick-card" id="pickCard" type="button">
-            <span class="pick-thumb"><img src="assets/icons/twilio-favicon.png" alt=""></span>
+            <span class="pick-thumb"><img src="assets/icons/twilio-logo.svg" alt=""></span>
             <span class="pick-body">
               <span class="pick-posted"><span class="hero-avatar" aria-hidden="true"><img src="assets/photos/kelly.jpg" alt=""></span> Posted by Kelly Lim</span>
               <span class="pick-title">Building Trust in the Age of AI</span>
@@ -1083,7 +1266,7 @@
               data-title="Building Trust in the Age of AI"
               data-subtitle="Kelly Lim"
               data-thumb="agent-identity/thumbnail.png"
-              data-icon="assets/icons/twilio-favicon.png"
+              data-icon="assets/icons/twilio-logo.svg"
               data-cta-text="Open case study"
               data-href="agent-identity/">
             <span class="tt-col-num">
@@ -1094,7 +1277,7 @@
               </span>
             </span>
             <span class="tt-col-title">
-              <img class="tt-thumb" src="assets/icons/twilio-favicon.png" alt="">
+              <img class="tt-thumb" src="assets/icons/twilio-logo.svg" alt="">
               <span class="tt-title-text">
                 <span class="tt-title-main">Building Trust in the Age of AI</span>
                 <span class="tt-title-sub">Kelly Lim</span>
@@ -1123,7 +1306,7 @@
               data-title="Driving SDK Adoption"
               data-subtitle="Kelly Lim"
               data-thumb="stytch-sdk-integration-builder/thumbnail.png"
-              data-icon="assets/icons/stytch-favicon.png"
+              data-icon="assets/icons/stytch-logo.svg"
               data-cta-text="Open case study"
               data-href="stytch-sdk-integration-builder/">
             <span class="tt-col-num">
@@ -1134,7 +1317,7 @@
               </span>
             </span>
             <span class="tt-col-title">
-              <img class="tt-thumb" src="assets/icons/stytch-favicon.png" alt="">
+              <img class="tt-thumb" src="assets/icons/stytch-logo.svg" alt="">
               <span class="tt-title-text">
                 <span class="tt-title-main">Driving SDK Adoption</span>
                 <span class="tt-title-sub">Kelly Lim</span>
@@ -1166,12 +1349,12 @@
           <h2 class="section-heading">Discography</h2>
           <div class="discog-grid">
             <button class="discog-card" data-track="track-01" type="button">
-              <span class="discog-thumb"><img src="assets/icons/twilio-favicon.png" alt=""></span>
+              <span class="discog-thumb"><img src="assets/icons/twilio-logo.svg" alt=""></span>
               <span class="discog-title">Building Trust in the Age of AI</span>
               <span class="discog-meta">Twilio · Case study</span>
             </button>
             <button class="discog-card" data-track="track-02" type="button">
-              <span class="discog-thumb"><img src="assets/icons/stytch-favicon.png" alt=""></span>
+              <span class="discog-thumb"><img src="assets/icons/stytch-logo.svg" alt=""></span>
               <span class="discog-title">Driving SDK Adoption</span>
               <span class="discog-meta">Stytch · Case study</span>
             </button>
@@ -1184,7 +1367,7 @@
             <img class="about-photo-img" src="assets/photos/kelly.jpg" alt="Kelly Lim">
             <div class="about-photo-overlay">
               <p class="about-stat">Senior Product Designer @ Twilio</p>
-              <p class="about-desc">Currently building identity for both human users and AI agents.<br><br>Previously at Stytch (acquired by Twilio), designing scalable and secure identity solutions that integrate seamlessly into customers' applications.</p>
+              <p class="about-desc" id="artistBioText">Currently building identity for both human users and AI agents.<br><br>Previously at Stytch (acquired by Twilio), designing scalable and secure identity solutions that integrate seamlessly into customers' applications.</p>
             </div>
           </div>
         </div>
@@ -1193,7 +1376,7 @@
           <h2 class="section-heading">Experience</h2>
           <div class="exp-list">
             <div class="exp-row">
-              <div class="exp-logo"><img src="assets/icons/twilio-favicon.png" alt="Twilio"></div>
+              <div class="exp-logo"><img src="assets/icons/twilio-logo.svg" alt="Twilio"></div>
               <div class="exp-text">
                 <p class="exp-role">Senior Product Designer</p>
                 <p class="exp-company">Twilio</p>
@@ -1201,7 +1384,7 @@
               </div>
             </div>
             <div class="exp-row">
-              <div class="exp-logo"><img src="assets/icons/stytch-favicon.png" alt="Stytch"></div>
+              <div class="exp-logo"><img src="assets/icons/stytch-logo.svg" alt="Stytch"></div>
               <div class="exp-text">
                 <p class="exp-role">Product Designer</p>
                 <p class="exp-company">Stytch (acquired by Twilio)</p>
@@ -1484,6 +1667,247 @@
               </div>
             </div>
           </div>
+          <template id="staticCgptSceneTpl">
+            <div class="preview-image-bg active">
+              <div class="mesh-blob mesh-blob-a"></div>
+              <div class="mesh-blob mesh-blob-b"></div>
+              <div class="mesh-blob mesh-blob-c"></div>
+            </div>
+            <div class="preview-scene">
+<div class="pv-cgpt-wrap" id="pvCgptWrapS">
+                <div class="cgpt-window">
+                  <div class="cgpt-titlebar">
+                    <div class="cgpt-dots"><span></span><span></span><span></span></div>
+                    <div class="cgpt-tab">
+                      <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
+                      <span class="cgpt-tab-label">ChatGPT</span>
+                      <svg class="cgpt-tab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                    </div>
+                    <span class="cgpt-tab-plus">+</span>
+                  </div>
+                  <div class="cgpt-urlbar">
+                    <div class="cgpt-urlbar-icons cgpt-urlbar-left">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
+                    </div>
+                    <div class="cgpt-url">
+                      <span class="cgpt-url-tune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8H9.3M13.7 8H20"/><circle cx="11.5" cy="8" r="2.2"/><path d="M4 16H6.8M11.2 16H20"/><circle cx="9" cy="16" r="2.2"/></svg></span>
+                      <span class="cgpt-url-text">chatgpt.com</span>
+                      <svg class="cgpt-url-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 17.3l-6.2 3.6 1.6-7-5.4-4.7 7.1-.6L12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7z"/></svg>
+                    </div>
+                    <div class="cgpt-urlbar-icons cgpt-urlbar-right">
+                      <span class="cgpt-url-avatar"></span>
+                      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+                    </div>
+                  </div>
+                  <div class="cgpt-body">
+                    <div class="cgpt-sidebar">
+                      <div class="cgpt-sidebar-head">
+                        <span class="cgpt-logo">ChatGPT</span>
+                        <div class="cgpt-sidebar-head-icons">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
+                        </div>
+                      </div>
+                      <div class="cgpt-nav-item cgpt-nav-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>New chat</div>
+                      <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7.5" height="16" rx="2"/><rect x="13.5" y="4" width="7.5" height="16" rx="2"/></svg>Library</div>
+                      <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Projects</div>
+                      <p class="cgpt-recents-label">Recents</p>
+                      <div class="cgpt-recent-item">Plan my next vacation</div>
+                      <div class="cgpt-recent-item">Help me organize my week</div>
+                      <div class="cgpt-recent-item cgpt-recent-active">Monitor my trading account</div>
+                    </div>
+                    <div class="cgpt-main">
+                      <div class="cgpt-thread">
+                        <div id="pvCgptThread1S">
+                          <div class="cgpt-msg-user" id="pvCgptUserS">Monitor my Owl Trade account and notify me when I should buy or sell.</div>
+                          <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistantS">
+                            <div class="cgpt-msg-assistant">I can help with that — first I'll need access to your Owl Trade account.</div>
+                            <div class="cgpt-msg-actions">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3zm0 0l4.5-8a2 2 0 0 1 3.6 1.4L14 10h5a2 2 0 0 1 2 2.3l-1.3 7A2 2 0 0 1 17.7 21H7"/></svg>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+                            </div>
+                          </div>
+                        </div>
+                        <div id="pvCgptThread2S" hidden>
+                          <div class="cgpt-msg-user" id="pvCgptUser2S">Any updates on OJ?</div>
+                          <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistant2S">
+                            <div class="cgpt-tool-pill" id="pvCgptToolPillS">
+                              <span class="cgpt-tool-pill-loading">
+                                <span class="cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span>Using Owl Trade&hellip;</span>
+                              </span>
+                              <span class="cgpt-tool-pill-done">
+                                <span class="cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span>Used Owl Trade</span>
+                              </span>
+                            </div>
+                            <p class="cgpt-msg-assistant cgpt-msg-assistant-delayed" id="pvCgptReply2S">Not yet — OJ is at $3.42, three cents below your $3.45 alert threshold. I'll keep watching and let you know the moment it crosses.</p>
+                            <div class="cgpt-pop-preview-chart cgpt-msg-assistant-delayed" id="pvCgptChart2S" style="margin-top:10px;">
+                              <span class="cgpt-pop-ticker">OJ <b>+0.08</b> (2.4%)</span>
+                              <svg class="cgpt-pop-spark" viewBox="0 0 100 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M0 10 L10 14 L20 6 L30 16 L40 12 L50 15 L60 9 L70 13 L80 8 L90 11 L100 5"/></svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="cgpt-input">
+                        <span class="cgpt-plus-wrap"><button class="cgpt-input-plus" tabindex="-1">+</button></span>
+                        <span class="cgpt-input-ph">Ask anything</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+                        <span class="cgpt-input-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span>
+                      </div>
+                      <div class="cgpt-popover" id="pvCgptPopoverS">
+                        <div class="cgpt-pop-view active" data-view="menu">
+                          <div class="cgpt-pop-quick">
+                            <div class="cgpt-pop-quick-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="14" r="3.3"/></svg><span>Camera</span></div>
+                            <div class="cgpt-pop-quick-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Photos</span></div>
+                            <div class="cgpt-pop-quick-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg><span>Files</span></div>
+                          </div>
+                          <div class="cgpt-pop-list">
+                            <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="cgpt-pop-item-text"><p>Create image</p><span>Visualize anything</span></span></div>
+                            <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span class="cgpt-pop-item-text"><p>Web search</p><span>Find real-time news and info</span></span></div>
+                            <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="cgpt-pop-item-text"><p>Explore apps</p><span>Chat with apps in ChatGPT</span></span><svg class="cgpt-pop-item-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+                          </div>
+                        </div>
+                        <div class="cgpt-pop-view" data-view="app">
+                          <div class="cgpt-pop-app-head">
+                            <button class="cgpt-pop-back" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                            <span>Apps</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+                          </div>
+                          <div class="cgpt-pop-app-card">
+                            <div class="cgpt-owl-icon"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                            <div class="cgpt-pop-app-meta"><p class="cgpt-pop-app-name">Owl Trade</p><button class="cgpt-pop-connect" tabindex="-1">Connect</button></div>
+                          </div>
+                          <p class="cgpt-pop-app-tagline">Invest, buy, trade</p>
+                        </div>
+                        <div class="cgpt-pop-view" data-view="connect">
+                          <button class="cgpt-pop-close" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                          <div class="cgpt-pop-connect-icons">
+                            <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
+                            <span class="cgpt-pop-connect-dots"><span></span><span></span><span></span></span>
+                            <div class="cgpt-owl-icon cgpt-owl-icon-sm"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                          </div>
+                          <p class="cgpt-pop-connect-heading">Connect Owl Trade</p>
+                          <div class="cgpt-pop-warning-box">
+                            <p><strong>You're in control.</strong> ChatGPT always respects your training data preferences.</p>
+                            <p><strong>Data shared with this app.</strong> By connecting, you allow it to access basic account info and a summary of your recent context and intent within ChatGPT.</p>
+                            <div class="cgpt-pop-toggle-row"><strong>Reference memories and chats</strong><span class="cgpt-pop-toggle"></span></div>
+                          </div>
+                          <button class="cgpt-pop-continue" tabindex="-1">Continue to Owl Trade</button>
+                        </div>
+                        <div class="cgpt-pop-view" data-view="success">
+                          <div class="cgpt-pop-success">
+                            <div class="cgpt-pop-success-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cream)" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg></div>
+                            <p class="cgpt-pop-success-text">Owl Trade connected</p>
+                          </div>
+                        </div>
+                      </div>
+                      <p class="cgpt-disclaimer">ChatGPT can make mistakes. Check important info.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+<div class="pv-phone-wrap" id="pvPhoneWrapS">
+                <div class="phone-frame phone-frame-fit">
+                  <span class="phone-btn phone-btn-mute"></span>
+                  <span class="phone-btn phone-btn-vol-up"></span>
+                  <span class="phone-btn phone-btn-vol-down"></span>
+                  <span class="phone-btn phone-btn-power"></span>
+                  <div class="frame">
+                    <div class="step-phone-peek">
+                      <div class="ui-phone-status">
+                        <span>9:41</span>
+                        <div class="ui-phone-icons">
+                          <div class="ui-signal"><span></span><span></span><span></span><span></span></div>
+                          <svg class="ui-wifi" viewBox="0 0 24 18" fill="var(--ink)"><path d="M12 3.2C7.9 3.2 4.1 4.8 1.3 7.6l1.6 1.6C5.3 6.8 8.5 5.5 12 5.5s6.7 1.3 9.1 3.7l1.6-1.6C19.9 4.8 16.1 3.2 12 3.2z"/><path d="M12 8.3c-2.6 0-5 1-6.8 2.7l1.6 1.6C8.2 11.3 10 10.6 12 10.6s3.8.7 5.2 2l1.6-1.6C17 9.3 14.6 8.3 12 8.3z"/><path d="M12 13.3c-1.2 0-2.3.4-3.2 1.2l3.2 3.2 3.2-3.2c-.9-.8-2-1.2-3.2-1.2z"/></svg>
+                          <div class="ui-battery"><span></span></div>
+                        </div>
+                      </div>
+                      <div class="ui-phone-header" id="pvPhoneHeaderS">
+                        <button class="ui-phone-navbtn" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M15 18l-6-6 6-6"/></svg></button>
+                        <div class="ui-phone-contact">
+                          <div class="ui-phone-avatar-wrap">
+                            <div class="ui-phone-avatar"><img src="agent-identity/assets/owltrade-logo.png" alt="OwlTrade logo"></div>
+                            <span class="ui-verified-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
+                          </div>
+                          <p class="ui-phone-sender">OwlTrade</p>
+                        </div>
+                        <button class="ui-phone-navbtn ui-phone-navbtn-facetime" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1.5" y="6" width="14" height="12" rx="2.5"/><path d="M15.5 10.2l6-3.7v11l-6-3.7"/></svg></button>
+                      </div>
+                      <div class="ui-phone-body">
+                        <p class="ui-phone-timestamp">iMessage · Today 9:41 AM</p>
+                        <div class="ui-bubble" id="pvPhoneBubbleS">Your agent wants to close your OJ futures position — about $12,800. Approve this trade?</div>
+                        <div class="ui-suggest-wrap" id="pvPhoneSuggestS">
+                          <div class="ui-suggest-stack">
+                            <button class="ui-suggest-item" tabindex="-1">Approve</button>
+                            <button class="ui-suggest-item" tabindex="-1">Decline</button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="ui-phone-inputbar" id="pvPhoneInputbarS">
+                        <span class="ui-phone-inputbar-plus">+</span>
+                        <div class="ui-phone-inputbar-field"><span>iMessage</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+          <template id="staticStytchSceneTpl">
+            <div class="preview-image-bg active variant-b">
+              <div class="mesh-blob mesh-blob-a"></div>
+              <div class="mesh-blob mesh-blob-b"></div>
+              <div class="mesh-blob mesh-blob-c"></div>
+            </div>
+<div class="pv-stytch-wrap pv-visible" id="pvStytchWrapS">
+              <div class="sk-tool">
+                <div class="sk-pane sk-pane-preview">
+                  <div class="sk-preview-bar"><span></span><span></span><span></span></div>
+                  <div class="sk-preview-body">
+                    <div class="sk-card" id="pvSkCardS">
+                      <div class="sk-card-brand">Stytch</div>
+                      <h3 class="sk-card-heading">Sign up or log in</h3>
+                      <input class="sk-input" type="email" placeholder="example@email.com" readonly tabindex="-1">
+                      <button class="sk-primary-btn" id="pvSkPrimaryBtnS" tabindex="-1">Continue with email</button>
+                      <div class="sk-divider">or</div>
+                      <button class="sk-oauth-btn" tabindex="-1"><span class="sk-oauth-dot"></span>Continue with Google</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="sk-pane sk-pane-config">
+                  <div class="sk-config-scroll">
+                    <p class="sk-subsection-label">Styling</p>
+                    <div class="sk-field-row" id="pvSkFontRowS">
+                      <label>Font</label>
+                      <div class="sk-field-control"><span class="sk-field-value" id="pvSkFontValS">system-ui</span></div>
+                    </div>
+                    <div class="sk-field-row" id="pvSkBgRowS">
+                      <label>Background Color</label>
+                      <div class="sk-field-control">
+                        <span class="sk-swatch" id="pvSkBgSwatchS" style="background:#FFFFFF"></span>
+                        <span class="sk-hex-prefix">#</span><span class="sk-field-value" id="pvSkBgValS">FFFFFF</span>
+                      </div>
+                    </div>
+                    <div class="sk-field-row" id="pvSkRadiusRowS">
+                      <label>Border radius</label>
+                      <div class="sk-field-control"><span class="sk-field-value" id="pvSkRadiusValS">4</span><span class="sk-suffix">px</span></div>
+                    </div>
+                    <div class="sk-field-row" id="pvSkPBtnRowS">
+                      <label>Primary Button</label>
+                      <div class="sk-field-control">
+                        <span class="sk-swatch" id="pvSkPBtnSwatchS" style="background:#161616"></span>
+                        <span class="sk-hex-prefix">#</span><span class="sk-field-value" id="pvSkPBtnValS">161616</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
           <div class="preview-image-overlay">
             <div class="preview-image-overlay-text">
               <div class="preview-image-title" id="previewImageTitleWrap">
@@ -1504,10 +1928,44 @@
     </aside>
   </div>
 
+  <div class="static-mode" id="staticMode" hidden>
+    <div class="static-shell">
+      <aside class="static-sidebar">
+        <div class="static-sidebar-banner">
+          <img class="static-sidebar-banner-img" src="assets/photos/kelly.jpg" alt="">
+          <div class="static-sidebar-banner-grain" aria-hidden="true"></div>
+          <div class="static-sidebar-banner-scrim"></div>
+          <div class="static-sidebar-banner-text">
+            <h1 class="static-name">Kelly Lim</h1>
+            <p class="static-role">Senior Product Designer @ Twilio</p>
+          </div>
+        </div>
+        <div class="static-sidebar-body">
+          <div class="static-toggle-row">
+            <button class="static-theme-toggle" id="staticThemeToggle" type="button" data-tooltip="Switch to dark mode" aria-label="Switch to dark mode">
+              <svg class="theme-icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+              <svg class="theme-icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+            <button class="mode-toggle" id="modeToggleStatic" type="button" aria-label="Switch to Listening mode">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+              <span>Listening mode</span>
+            </button>
+          </div>
+          <p class="static-desc" id="staticBioText"></p>
+          <p class="static-sidebar-label">Experience</p>
+          <div class="static-exp-list" id="staticExpList"></div>
+        </div>
+      </aside>
+      <main class="static-main">
+        <div class="static-projects" id="staticProjects"></div>
+      </main>
+    </div>
+  </div>
+
   <div id="transportBar">
     <div class="tb-track">
       <div class="tb-thumb-wrap">
-        <img class="tb-thumb" id="tbThumb" src="assets/icons/twilio-favicon.png" alt="">
+        <img class="tb-thumb" id="tbThumb" src="assets/icons/twilio-logo.svg" alt="">
         <div class="tb-eq" id="tbEq" aria-hidden="true"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></div>
       </div>
       <div class="tb-meta">
@@ -1624,7 +2082,7 @@
       var heroTitle = document.getElementById('heroTitle');
       var heroArtCover = document.getElementById('heroArtCover');
       var heroBand = document.querySelector('.hero-band');
-      var ALBUM_ICONS = {Twilio: 'assets/icons/twilio-favicon.png', Stytch: 'assets/icons/stytch-favicon.png'};
+      var ALBUM_ICONS = {Twilio: 'assets/icons/twilio-logo.svg', Stytch: 'assets/icons/stytch-logo.svg'};
       // dominant color per cover (like Spotify's own header tinting), precomputed from
       // each favicon's actual average pixel color (not a guessed/generic brand color).
       // Sampling this live via canvas would be the more "real" approach, but reading
@@ -1735,125 +2193,156 @@
         }
       }
 
-      // looping re-creation of the case study's full "ask ChatGPT -> connect Owl Trade ->
-      // consent -> agent monitors -> approve by text" sequence, timed like the deck's own
-      // autoplayCgptPopover but self-restarting. Runs continuously whenever this track's
-      // panel is open, independent of the transport bar's play/pause state.
-      var sceneTimers = [];
-      function sceneAfter(fn, ms){ sceneTimers.push(setTimeout(fn, ms)); }
-      function stopCgptPhoneScene(){
-        sceneTimers.forEach(function(id){ clearTimeout(id); });
-        sceneTimers = [];
-      }
-      function switchPvPopView(view){
-        pvCgptPopViews.forEach(function(v){ v.classList.toggle('active', v.dataset.view === view); });
-      }
-      function resetCgptPhoneSceneVisual(){
-        pvCgptWrap.classList.add('pv-visible');
-        pvPhoneWrap.classList.remove('pv-visible');
-        pvCgptUser.classList.remove('pv-in');
-        pvCgptAssistant.classList.remove('pv-in');
-        pvCgptPopover.classList.remove('show');
-        switchPvPopView('menu');
-        pvCgptThread1.hidden = false;
-        pvCgptThread2.hidden = true;
-        pvCgptUser2.classList.remove('pv-in');
-        pvCgptAssistant2.classList.remove('pv-in');
-        pvCgptToolPill.classList.remove('pv-done');
-        pvCgptReply2.classList.remove('pv-in');
-        pvCgptChart2.classList.remove('pv-in');
-        pvPhoneHeader.classList.remove('pv-in');
-        pvPhoneBubble.classList.remove('pv-in');
-        pvPhoneSuggest.classList.remove('pv-in');
-        pvPhoneInputbar.classList.remove('pv-in');
-      }
-      function runCgptPhoneScene(){
-        stopCgptPhoneScene();
-        resetCgptPhoneSceneVisual();
-        // turn 1: the initial ask, ChatGPT needs access
-        sceneAfter(function(){ pvCgptUser.classList.add('pv-in'); }, 300);
-        sceneAfter(function(){ pvCgptAssistant.classList.add('pv-in'); }, 900);
-        // "+" popover: explore apps -> Owl Trade -> connect -> success, all inside
-        // the same chat window/popover rather than cutting to a separate screen
-        sceneAfter(function(){ pvCgptPopover.classList.add('show'); }, 1800);
-        sceneAfter(function(){ switchPvPopView('app'); }, 3000);
-        sceneAfter(function(){ switchPvPopView('connect'); }, 4600);
-        sceneAfter(function(){ switchPvPopView('success'); }, 8200);
-        // close the popover — otherwise it's still "open" underneath and would
-        // silently reappear when the chat window shows turn 2
-        sceneAfter(function(){ pvCgptPopover.classList.remove('show'); }, 9700);
-        sceneAfter(function(){ switchPvPopView('menu'); }, 9900);
-        // still in the same window — now asking it to monitor, which shows
-        // Owl Trade actually in use
-        sceneAfter(function(){
-          pvCgptThread1.hidden = true;
-          pvCgptThread2.hidden = false;
-        }, 10000);
-        sceneAfter(function(){ pvCgptUser2.classList.add('pv-in'); }, 10400);
-        sceneAfter(function(){ pvCgptAssistant2.classList.add('pv-in'); }, 11000);
-        sceneAfter(function(){ pvCgptToolPill.classList.add('pv-done'); }, 12000);
-        sceneAfter(function(){
-          pvCgptReply2.classList.add('pv-in');
-          pvCgptChart2.classList.add('pv-in');
-        }, 12100);
-        // cut to the phone for the human-in-the-loop SMS approval
-        sceneAfter(function(){
-          pvCgptWrap.classList.remove('pv-visible');
-          pvPhoneWrap.classList.add('pv-visible');
-        }, 14000);
-        sceneAfter(function(){ pvPhoneHeader.classList.add('pv-in'); }, 14300);
-        sceneAfter(function(){ pvPhoneInputbar.classList.add('pv-in'); }, 14500);
-        sceneAfter(function(){ pvPhoneBubble.classList.add('pv-in'); }, 14800);
-        sceneAfter(function(){ pvPhoneSuggest.classList.add('pv-in'); }, 15400);
-        sceneAfter(function(){ pvPhoneWrap.classList.remove('pv-visible'); }, 18700);
-        sceneAfter(function(){ runCgptPhoneScene(); }, 19200);
+      // Both scenes below are built as factories (makeCgptScene/makeStytchScene)
+      // parameterized by a refs object, rather than closing over module-level
+      // element variables directly — static mode needs a second, independent,
+      // simultaneously-running copy of each scene (both projects are visible
+      // at once there, unlike the single-track side panel), and a factory lets
+      // both instances share one copy of the timing/logic instead of forking
+      // it into two copies that could quietly drift apart later.
+      //
+      // Panel scene: looping re-creation of the case study's full "ask ChatGPT
+      // -> connect Owl Trade -> consent -> agent monitors -> approve by text"
+      // sequence, timed like the deck's own autoplayCgptPopover but
+      // self-restarting. Runs continuously whenever this track's panel is
+      // open, independent of the transport bar's play/pause state.
+      function makeCgptScene(r){
+        var timers = [];
+        function after(fn, ms){ timers.push(setTimeout(fn, ms)); }
+        function stop(){ timers.forEach(function(id){ clearTimeout(id); }); timers = []; }
+        function switchPopView(view){
+          r.popViews.forEach(function(v){ v.classList.toggle('active', v.dataset.view === view); });
+        }
+        function resetVisual(){
+          r.wrap.classList.add('pv-visible');
+          r.phoneWrap.classList.remove('pv-visible');
+          r.user.classList.remove('pv-in');
+          r.assistant.classList.remove('pv-in');
+          r.popover.classList.remove('show');
+          switchPopView('menu');
+          r.thread1.hidden = false;
+          r.thread2.hidden = true;
+          r.user2.classList.remove('pv-in');
+          r.assistant2.classList.remove('pv-in');
+          r.toolPill.classList.remove('pv-done');
+          r.reply2.classList.remove('pv-in');
+          r.chart2.classList.remove('pv-in');
+          r.phoneHeader.classList.remove('pv-in');
+          r.phoneBubble.classList.remove('pv-in');
+          r.phoneSuggest.classList.remove('pv-in');
+          r.phoneInputbar.classList.remove('pv-in');
+        }
+        function run(){
+          stop();
+          resetVisual();
+          // turn 1: the initial ask, ChatGPT needs access
+          after(function(){ r.user.classList.add('pv-in'); }, 300);
+          after(function(){ r.assistant.classList.add('pv-in'); }, 900);
+          // "+" popover: explore apps -> Owl Trade -> connect -> success, all inside
+          // the same chat window/popover rather than cutting to a separate screen
+          after(function(){ r.popover.classList.add('show'); }, 1800);
+          after(function(){ switchPopView('app'); }, 3000);
+          after(function(){ switchPopView('connect'); }, 4600);
+          after(function(){ switchPopView('success'); }, 8200);
+          // close the popover — otherwise it's still "open" underneath and would
+          // silently reappear when the chat window shows turn 2
+          after(function(){ r.popover.classList.remove('show'); }, 9700);
+          after(function(){ switchPopView('menu'); }, 9900);
+          // still in the same window — now asking it to monitor, which shows
+          // Owl Trade actually in use
+          after(function(){
+            r.thread1.hidden = true;
+            r.thread2.hidden = false;
+          }, 10000);
+          after(function(){ r.user2.classList.add('pv-in'); }, 10400);
+          after(function(){ r.assistant2.classList.add('pv-in'); }, 11000);
+          after(function(){ r.toolPill.classList.add('pv-done'); }, 12000);
+          after(function(){
+            r.reply2.classList.add('pv-in');
+            r.chart2.classList.add('pv-in');
+          }, 12100);
+          // cut to the phone for the human-in-the-loop SMS approval
+          after(function(){
+            r.wrap.classList.remove('pv-visible');
+            r.phoneWrap.classList.add('pv-visible');
+          }, 14000);
+          after(function(){ r.phoneHeader.classList.add('pv-in'); }, 14300);
+          after(function(){ r.phoneInputbar.classList.add('pv-in'); }, 14500);
+          after(function(){ r.phoneBubble.classList.add('pv-in'); }, 14800);
+          after(function(){ r.phoneSuggest.classList.add('pv-in'); }, 15400);
+          after(function(){ r.phoneWrap.classList.remove('pv-visible'); }, 18700);
+          after(function(){ run(); }, 19200);
+        }
+        return {run: run, stop: stop};
       }
 
       // Stytch scene — condensed re-creation of the SDK Integration Builder's real
       // side-by-side demo: a config field flashes, then the live preview card updates
       // to match, cycling font -> background -> radius -> button color and back
       // (a palindrome, same as the real STYLE_DEMO_STEPS, so it loops seamlessly)
-      var stytchTimers = [];
-      function stytchAfter(fn, ms){ stytchTimers.push(setTimeout(fn, ms)); }
-      function stopStytchScene(){
-        stytchTimers.forEach(function(id){ clearTimeout(id); });
-        stytchTimers = [];
+      function makeStytchScene(r){
+        var timers = [];
+        function after(fn, ms){ timers.push(setTimeout(fn, ms)); }
+        function stop(){ timers.forEach(function(id){ clearTimeout(id); }); timers = []; }
+        function resetVisual(){
+          r.card.style.setProperty('--sk-card-font', 'system-ui');
+          r.card.style.setProperty('--sk-card-bg', '#FFFFFF');
+          r.card.style.setProperty('--sk-card-radius', '4px');
+          r.primaryBtn.style.setProperty('--sk-pbtn-bg', '#161616');
+          r.fontVal.textContent = 'system-ui';
+          r.bgSwatch.style.background = '#FFFFFF';
+          r.bgVal.textContent = 'FFFFFF';
+          r.radiusVal.textContent = '4';
+          r.pBtnSwatch.style.background = '#161616';
+          r.pBtnVal.textContent = '161616';
+          [r.fontRow, r.bgRow, r.radiusRow, r.pBtnRow].forEach(function(row){ row.classList.remove('pv-flash'); });
+        }
+        function flashRow(row){
+          row.classList.add('pv-flash');
+          after(function(){ row.classList.remove('pv-flash'); }, 900);
+        }
+        function run(){
+          stop();
+          resetVisual();
+          var steps = [
+            {row: r.fontRow, at: 1200, apply: function(){ r.card.style.setProperty('--sk-card-font', 'Georgia'); r.fontVal.textContent = 'Georgia'; }},
+            {row: r.bgRow, at: 2900, apply: function(){ r.card.style.setProperty('--sk-card-bg', '#EEF2FF'); r.bgSwatch.style.background = '#EEF2FF'; r.bgVal.textContent = 'EEF2FF'; }},
+            {row: r.radiusRow, at: 4600, apply: function(){ r.card.style.setProperty('--sk-card-radius', '22px'); r.radiusVal.textContent = '22'; }},
+            {row: r.pBtnRow, at: 6300, apply: function(){ r.primaryBtn.style.setProperty('--sk-pbtn-bg', '#2563EB'); r.pBtnSwatch.style.background = '#2563EB'; r.pBtnVal.textContent = '2563EB'; }},
+            {row: r.pBtnRow, at: 8300, apply: function(){ r.primaryBtn.style.setProperty('--sk-pbtn-bg', '#161616'); r.pBtnSwatch.style.background = '#161616'; r.pBtnVal.textContent = '161616'; }},
+            {row: r.radiusRow, at: 10000, apply: function(){ r.card.style.setProperty('--sk-card-radius', '4px'); r.radiusVal.textContent = '4'; }},
+            {row: r.bgRow, at: 11700, apply: function(){ r.card.style.setProperty('--sk-card-bg', '#FFFFFF'); r.bgSwatch.style.background = '#FFFFFF'; r.bgVal.textContent = 'FFFFFF'; }},
+            {row: r.fontRow, at: 13400, apply: function(){ r.card.style.setProperty('--sk-card-font', 'system-ui'); r.fontVal.textContent = 'system-ui'; }}
+          ];
+          steps.forEach(function(step){
+            after(function(){ flashRow(step.row); step.apply(); }, step.at);
+          });
+          after(function(){ run(); }, 15200);
+        }
+        return {run: run, stop: stop};
       }
-      function resetStytchSceneVisual(){
-        pvSkCard.style.setProperty('--sk-card-font', 'system-ui');
-        pvSkCard.style.setProperty('--sk-card-bg', '#FFFFFF');
-        pvSkCard.style.setProperty('--sk-card-radius', '4px');
-        pvSkPrimaryBtn.style.setProperty('--sk-pbtn-bg', '#161616');
-        pvSkFontVal.textContent = 'system-ui';
-        pvSkBgSwatch.style.background = '#FFFFFF';
-        pvSkBgVal.textContent = 'FFFFFF';
-        pvSkRadiusVal.textContent = '4';
-        pvSkPBtnSwatch.style.background = '#161616';
-        pvSkPBtnVal.textContent = '161616';
-        [pvSkFontRow, pvSkBgRow, pvSkRadiusRow, pvSkPBtnRow].forEach(function(r){ r.classList.remove('pv-flash'); });
-      }
-      function flashStytchRow(row){
-        row.classList.add('pv-flash');
-        stytchAfter(function(){ row.classList.remove('pv-flash'); }, 900);
-      }
-      function runStytchScene(){
-        stopStytchScene();
-        resetStytchSceneVisual();
-        var steps = [
-          {row: pvSkFontRow, at: 1200, apply: function(){ pvSkCard.style.setProperty('--sk-card-font', 'Georgia'); pvSkFontVal.textContent = 'Georgia'; }},
-          {row: pvSkBgRow, at: 2900, apply: function(){ pvSkCard.style.setProperty('--sk-card-bg', '#EEF2FF'); pvSkBgSwatch.style.background = '#EEF2FF'; pvSkBgVal.textContent = 'EEF2FF'; }},
-          {row: pvSkRadiusRow, at: 4600, apply: function(){ pvSkCard.style.setProperty('--sk-card-radius', '22px'); pvSkRadiusVal.textContent = '22'; }},
-          {row: pvSkPBtnRow, at: 6300, apply: function(){ pvSkPrimaryBtn.style.setProperty('--sk-pbtn-bg', '#2563EB'); pvSkPBtnSwatch.style.background = '#2563EB'; pvSkPBtnVal.textContent = '2563EB'; }},
-          {row: pvSkPBtnRow, at: 8300, apply: function(){ pvSkPrimaryBtn.style.setProperty('--sk-pbtn-bg', '#161616'); pvSkPBtnSwatch.style.background = '#161616'; pvSkPBtnVal.textContent = '161616'; }},
-          {row: pvSkRadiusRow, at: 10000, apply: function(){ pvSkCard.style.setProperty('--sk-card-radius', '4px'); pvSkRadiusVal.textContent = '4'; }},
-          {row: pvSkBgRow, at: 11700, apply: function(){ pvSkCard.style.setProperty('--sk-card-bg', '#FFFFFF'); pvSkBgSwatch.style.background = '#FFFFFF'; pvSkBgVal.textContent = 'FFFFFF'; }},
-          {row: pvSkFontRow, at: 13400, apply: function(){ pvSkCard.style.setProperty('--sk-card-font', 'system-ui'); pvSkFontVal.textContent = 'system-ui'; }}
-        ];
-        steps.forEach(function(step){
-          stytchAfter(function(){ flashStytchRow(step.row); step.apply(); }, step.at);
-        });
-        stytchAfter(function(){ runStytchScene(); }, 15200);
-      }
+
+      // panel instance — same behavior/element refs as before the factory
+      // refactor, just wired through it instead of closing over the vars
+      // directly. runCgptPhoneScene/stopCgptPhoneScene/runStytchScene/
+      // stopStytchScene are kept as thin wrappers so renderPanel() below
+      // doesn't need to change.
+      var panelCgptScene = makeCgptScene({
+        wrap: pvCgptWrap, phoneWrap: pvPhoneWrap, user: pvCgptUser, assistant: pvCgptAssistant,
+        popover: pvCgptPopover, popViews: pvCgptPopViews, thread1: pvCgptThread1, thread2: pvCgptThread2,
+        user2: pvCgptUser2, assistant2: pvCgptAssistant2, toolPill: pvCgptToolPill, reply2: pvCgptReply2, chart2: pvCgptChart2,
+        phoneHeader: pvPhoneHeader, phoneBubble: pvPhoneBubble, phoneSuggest: pvPhoneSuggest, phoneInputbar: pvPhoneInputbar
+      });
+      function runCgptPhoneScene(){ panelCgptScene.run(); }
+      function stopCgptPhoneScene(){ panelCgptScene.stop(); }
+
+      var panelStytchScene = makeStytchScene({
+        card: pvSkCard, primaryBtn: pvSkPrimaryBtn, fontRow: pvSkFontRow, fontVal: pvSkFontVal,
+        bgRow: pvSkBgRow, bgSwatch: pvSkBgSwatch, bgVal: pvSkBgVal, radiusRow: pvSkRadiusRow, radiusVal: pvSkRadiusVal,
+        pBtnRow: pvSkPBtnRow, pBtnSwatch: pvSkPBtnSwatch, pBtnVal: pvSkPBtnVal
+      });
+      function runStytchScene(){ panelStytchScene.run(); }
+      function stopStytchScene(){ panelStytchScene.stop(); }
 
       function renderPanel(id){
         var t = getTrack(id);
@@ -2030,24 +2519,25 @@
       });
 
       var themeToggle = document.getElementById('themeToggle');
+      var staticThemeToggle = document.getElementById('staticThemeToggle');
       var htmlEl = document.documentElement;
       function applyTheme(theme){
         htmlEl.setAttribute('data-theme', theme);
         var label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
         themeToggle.setAttribute('data-tooltip', label);
         themeToggle.setAttribute('aria-label', label);
+        staticThemeToggle.setAttribute('data-tooltip', label);
+        staticThemeToggle.setAttribute('aria-label', label);
         try{ localStorage.setItem('theme', theme); }catch(e){}
       }
-      themeToggle.addEventListener('click', function(){
+      function toggleTheme(){
         applyTheme(htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-        themeToggle.blur();
-      });
+      }
+      themeToggle.addEventListener('click', function(){ toggleTheme(); themeToggle.blur(); });
+      staticThemeToggle.addEventListener('click', function(){ toggleTheme(); staticThemeToggle.blur(); });
       var savedTheme = null;
       try{ savedTheme = localStorage.getItem('theme'); }catch(e){}
-      if(!savedTheme){
-        savedTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-      }
-      applyTheme(savedTheme);
+      applyTheme(savedTheme || 'dark');
 
       // Twilio/Stytch sidebar entries act as their own single-track "albums" —
       // clicking one swaps the main view to just that project, same as clicking
@@ -2131,6 +2621,108 @@
       });
       showArtistView();
 
+      // --- static mode: builds each project's section from the same
+      // .tt-row data/template the listening-mode track table and preview
+      // panel already use, so this content only has to be authored once.
+      // The sidebar's bio and experience list are cloned from the About
+      // page's own content for the same reason.
+      document.getElementById('staticBioText').innerHTML = document.getElementById('artistBioText').innerHTML;
+      document.getElementById('staticExpList').appendChild(
+        document.querySelector('#artistExperience .exp-list').cloneNode(true)
+      );
+      var staticProjects = document.getElementById('staticProjects');
+      var staticSceneRunners = [];
+      var SCENE_TEMPLATES = {Twilio: 'staticCgptSceneTpl', Stytch: 'staticStytchSceneTpl'};
+      rows.forEach(function(row){
+        var tpl = row.querySelector('.preview-content');
+        var section = document.createElement('section');
+        section.className = 'static-project';
+        var mediaEl = document.createElement('div');
+        mediaEl.className = 'static-project-media';
+        var sceneTplId = SCENE_TEMPLATES[row.dataset.company];
+        if(sceneTplId){
+          mediaEl.classList.add('static-project-media-scene');
+          mediaEl.appendChild(document.getElementById(sceneTplId).content.cloneNode(true));
+        } else if(row.dataset.thumb){
+          var img = document.createElement('img');
+          img.src = row.dataset.thumb;
+          mediaEl.appendChild(img);
+        }
+        var overlayEl = document.createElement('div');
+        overlayEl.className = 'static-project-overlay';
+        var expandHtml = row.dataset.href
+          ? '<a class="static-project-expand" href="' + row.dataset.href + '" title="' + (row.dataset.ctaText || 'Open case study') + '"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg></a>'
+          : '';
+        overlayEl.innerHTML =
+          '<div class="static-project-overlay-text">' +
+            '<p class="static-project-title">' + row.dataset.title + '</p>' +
+            '<p class="static-project-subtitle">' + row.dataset.subtitle + '</p>' +
+          '</div>' +
+          expandHtml;
+        mediaEl.appendChild(overlayEl);
+        var cardsEl = document.createElement('div');
+        cardsEl.className = 'static-project-cards';
+        cardsEl.appendChild(tpl.content.cloneNode(true));
+        section.appendChild(mediaEl);
+        section.appendChild(cardsEl);
+        staticProjects.appendChild(section);
+
+        // start the cloned scene running, using the "S"-suffixed ids the
+        // template's elements got (so they don't collide with the panel's
+        // own copy of the same ids)
+        if(row.dataset.company === 'Twilio'){
+          staticSceneRunners.push(function(){
+            makeCgptScene({
+              wrap: mediaEl.querySelector('#pvCgptWrapS'), phoneWrap: mediaEl.querySelector('#pvPhoneWrapS'),
+              user: mediaEl.querySelector('#pvCgptUserS'), assistant: mediaEl.querySelector('#pvCgptAssistantS'),
+              popover: mediaEl.querySelector('#pvCgptPopoverS'), popViews: mediaEl.querySelectorAll('.cgpt-pop-view'),
+              thread1: mediaEl.querySelector('#pvCgptThread1S'), thread2: mediaEl.querySelector('#pvCgptThread2S'),
+              user2: mediaEl.querySelector('#pvCgptUser2S'), assistant2: mediaEl.querySelector('#pvCgptAssistant2S'),
+              toolPill: mediaEl.querySelector('#pvCgptToolPillS'), reply2: mediaEl.querySelector('#pvCgptReply2S'),
+              chart2: mediaEl.querySelector('#pvCgptChart2S'), phoneHeader: mediaEl.querySelector('#pvPhoneHeaderS'),
+              phoneBubble: mediaEl.querySelector('#pvPhoneBubbleS'), phoneSuggest: mediaEl.querySelector('#pvPhoneSuggestS'),
+              phoneInputbar: mediaEl.querySelector('#pvPhoneInputbarS')
+            }).run();
+          });
+        } else if(row.dataset.company === 'Stytch'){
+          staticSceneRunners.push(function(){
+            makeStytchScene({
+              card: mediaEl.querySelector('#pvSkCardS'), primaryBtn: mediaEl.querySelector('#pvSkPrimaryBtnS'),
+              fontRow: mediaEl.querySelector('#pvSkFontRowS'), fontVal: mediaEl.querySelector('#pvSkFontValS'),
+              bgRow: mediaEl.querySelector('#pvSkBgRowS'), bgSwatch: mediaEl.querySelector('#pvSkBgSwatchS'),
+              bgVal: mediaEl.querySelector('#pvSkBgValS'), radiusRow: mediaEl.querySelector('#pvSkRadiusRowS'),
+              radiusVal: mediaEl.querySelector('#pvSkRadiusValS'), pBtnRow: mediaEl.querySelector('#pvSkPBtnRowS'),
+              pBtnSwatch: mediaEl.querySelector('#pvSkPBtnSwatchS'), pBtnVal: mediaEl.querySelector('#pvSkPBtnValS')
+            }).run();
+          });
+        }
+      });
+      // kick off once static mode is first opened, not on page load, so these
+      // timers aren't silently running in the background the whole time a
+      // visitor stays in listening mode
+      var staticScenesStarted = false;
+      function startStaticScenesOnce(){
+        if(staticScenesStarted) return;
+        staticScenesStarted = true;
+        staticSceneRunners.forEach(function(start){ start(); });
+      }
+
+      var modeToggleListening = document.getElementById('modeToggleListening');
+      var modeToggleStatic = document.getElementById('modeToggleStatic');
+      var staticMode = document.getElementById('staticMode');
+      var appShell = document.querySelector('.app-shell');
+      function setStaticMode(isStatic){
+        staticMode.hidden = !isStatic;
+        appShell.hidden = isStatic;
+        if(isStatic){
+          closePanel();
+          document.body.classList.remove('bar-visible');
+          startStaticScenesOnce();
+        }
+      }
+      modeToggleListening.addEventListener('click', function(){ setStaticMode(true); modeToggleListening.blur(); });
+      modeToggleStatic.addEventListener('click', function(){ setStaticMode(false); modeToggleStatic.blur(); });
+
       tagPills.forEach(function(pill){
         pill.addEventListener('click', function(){
           var company = pill.dataset.company;
@@ -2151,6 +2743,11 @@
       renderBar(currentId);
       setActive(currentId);
       resetProgress(currentId);
+
+      // default landing state is Plain view, not the Spotify-style shell —
+      // set last so it flips visibility only after everything else above has
+      // finished initializing against the (still on-screen) Listening mode markup
+      setStaticMode(true);
     })();
   </script>
 </body>
