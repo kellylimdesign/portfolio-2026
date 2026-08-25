@@ -577,7 +577,13 @@
      SMS-approval mocks (ported from agent-identity/index.html's .cgpt-window/.phone-frame),
      scaled down via zoom (same technique the case study itself uses for embeds) so the
      original component markup/CSS renders faithfully instead of a re-drawn simplification. */
-  .preview-scene{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  /* z-index:0 (not just position:absolute) so this establishes its own
+     stacking context — without it, the mock's internal z-index:22 (see
+     .cgpt-app-page, the "Install plugin" full-page screen) has nothing
+     containing it and escapes past .preview-image-overlay/.static-project-overlay
+     below (both z-index:auto), rendering the mock on top of the title
+     instead of behind it */
+  .preview-scene{position:absolute; inset:0; z-index:0; display:flex; align-items:center; justify-content:center; overflow:hidden;}
   .pv-cgpt-wrap, .pv-phone-wrap{position:absolute; inset:0; margin:auto; opacity:0; transition:opacity .5s ease;}
   .pv-cgpt-wrap.pv-visible, .pv-phone-wrap.pv-visible{opacity:1;}
   .pv-cgpt-wrap{width:640px; aspect-ratio:736/460; zoom:.5;}
