@@ -624,6 +624,13 @@
   .cgpt-recent-active{background:rgba(23,22,27,.05); color:var(--ink);}
   .cgpt-main{position:relative; flex:1; min-width:0; display:flex; flex-direction:column; padding:20px 26px 12px; box-sizing:border-box;}
   .cgpt-thread{flex:1; min-height:0; display:flex; flex-direction:column; gap:10px; overflow:hidden;}
+  /* each turn (#pvCgptThread1/2) is its own toggleable wrapper so the scene
+     can swap conversations via `hidden` — but that wrapper sat between
+     .cgpt-thread and the message bubbles, and align-self only works on a
+     direct flex child, so user/assistant bubbles were silently losing their
+     right/left alignment (both just stacked flush left) until this made the
+     wrapper itself a flex column too */
+  .cgpt-thread-turn{display:flex; flex-direction:column; gap:10px;}
   .cgpt-msg-user{align-self:flex-end; background:#EFEFF1; border-radius:16px; padding:11px 15px; font-family:var(--sans); font-size:12px; line-height:1.5; color:var(--ink); max-width:75%; opacity:0; transform:translateY(8px);}
   .cgpt-msg-assistant-wrap{align-self:flex-start; max-width:80%; opacity:0; transform:translateY(8px);}
   .cgpt-msg-assistant{font-family:var(--sans); font-size:12px; line-height:1.55; color:var(--ink); margin:0;}
@@ -685,15 +692,123 @@
   .cgpt-pop-connect-icons .cgpt-tab-fav{width:24px; height:24px; color:var(--ink);}
   .cgpt-pop-connect-dots{display:flex; gap:3px;}
   .cgpt-pop-connect-dots span{width:3px; height:3px; border-radius:50%; background:var(--ink-45); display:block;}
-  .cgpt-pop-connect-heading{font-family:var(--sans); font-weight:700; font-size:14.5px; text-align:center; color:var(--ink); margin:0 0 14px;}
-  .cgpt-pop-warning-box{border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:14px;}
-  .cgpt-pop-warning-box p{font-family:var(--sans); font-size:9.5px; line-height:1.5; color:var(--ink-70); margin:0 0 9px;}
-  .cgpt-pop-warning-box p strong{color:var(--ink); font-weight:700;}
-  .cgpt-pop-toggle-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:9px; border-top:1px solid var(--line);}
-  .cgpt-pop-toggle-row strong{font-family:var(--sans); font-size:9.5px; font-weight:700; color:var(--ink); line-height:1.4;}
-  .cgpt-pop-toggle{width:28px; height:16px; border-radius:10px; background:var(--line); position:relative; flex-shrink:0;}
-  .cgpt-pop-toggle::after{content:''; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:var(--cream);}
-  .cgpt-pop-continue{appearance:none; width:100%; background:var(--ink); color:var(--cream); border:none; border-radius:20px; padding:11px; font-family:var(--sans); font-size:11.5px; font-weight:600;}
+  .cgpt-pop-connect-heading{font-family:var(--sans); font-weight:700; font-size:13.5px; line-height:1.3; text-align:center; color:var(--ink); margin:0 0 12px;}
+  /* matches the real redesigned consent screen (.consent-mobile-* in the
+     case study) at popover scale — heading/bullets/terms/Allow-Deny copy
+     ported verbatim, not the generic "training data preferences" ChatGPT
+     boilerplate this popover showed before that screen was rebuilt */
+  .cgpt-pop-consent-divider{height:1px; background:var(--line); margin:0 0 10px;}
+  .cgpt-pop-consent-label{font-family:var(--sans); font-weight:700; font-size:10.5px; color:var(--ink); margin:0 0 8px;}
+  .cgpt-pop-consent-list{list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:5px;}
+  .cgpt-pop-consent-list li{position:relative; padding-left:13px; font-family:var(--sans); font-size:10px; line-height:1.4; color:var(--ink);}
+  .cgpt-pop-consent-list li::before{content:''; position:absolute; left:1px; top:5px; width:3px; height:3px; border-radius:50%; background:var(--ink);}
+  .cgpt-pop-consent-terms{font-family:var(--sans); font-size:8.5px; line-height:1.4; color:var(--ink-45); text-align:center; margin:0 0 10px;}
+  .cgpt-pop-consent-actions{display:flex; gap:8px;}
+  .cgpt-pop-consent-allow, .cgpt-pop-consent-deny{
+    flex:1; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-family:var(--sans); font-weight:600; font-size:10.5px; appearance:none; border:none;
+  }
+  .cgpt-pop-consent-allow{background:var(--ink); color:var(--cream);}
+  .cgpt-pop-consent-deny{border:1.3px solid var(--line); color:var(--ink); background:none;}
+
+  /* --- full-page app install + hosted login/consent, ported from the real
+     case study's Customer/End User Journey slides so this ambient preview
+     matches what those slides actually show (menu -> full install page ->
+     a genuine new-tab login -> new-tab hosted consent -> redirect), not the
+     small in-popover connect card this replaces. --- */
+  .cgpt-owl-icon-tab{width:13px; height:13px; border-radius:50%; overflow:hidden; flex-shrink:0; display:block;}
+  .cgpt-owl-icon-tab img{width:100%; height:100%; object-fit:cover; display:block;}
+  .cgpt-app-page{
+    position:absolute; inset:0; z-index:22; background:var(--cream);
+    display:flex; flex-direction:column; opacity:0; pointer-events:none;
+    transition:opacity .22s ease; padding:18px 22px 20px; box-sizing:border-box;
+  }
+  .cgpt-app-page.show{opacity:1;}
+  .cgpt-app-page-icon{width:44px; height:44px; margin-bottom:12px;}
+  .cgpt-app-page-title-row{display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:6px;}
+  .cgpt-app-page-name{font-family:var(--sans); font-size:16px; font-weight:700; color:var(--ink); margin:0;}
+  .cgpt-app-page-connect{
+    appearance:none; background:var(--ink); color:var(--cream); border:none;
+    border-radius:14px; padding:6px 13px; font-family:var(--sans); font-size:10.5px; font-weight:600; flex-shrink:0;
+  }
+  .cgpt-app-page-tagline{font-family:var(--sans); font-size:11px; color:var(--ink-45); margin:0;}
+  /* real preview content (message + chart) from the app page, ported
+     verbatim so the page doesn't read as mostly empty at this small scale */
+  .cgpt-app-page-preview-card{
+    display:flex; flex-direction:column; background:#E7CB8D; border-radius:12px;
+    padding:13px; margin-top:14px; max-width:340px;
+  }
+  .cgpt-app-page-preview-card .cgpt-pop-preview-msg{align-self:flex-end; max-width:80%; background:#F7EFDA; margin:0 0 9px;}
+  .cgpt-app-page-preview-card .cgpt-pop-preview-chart{padding:9px 10px 7px;}
+  .cgpt-app-page-preview-card .cgpt-chart-head{margin-bottom:5px;}
+  .cgpt-app-page-preview-card .cgpt-chart-svg{height:40px;}
+  .cgpt-app-page-preview-card .cgpt-chart-foot{margin-top:4px;}
+  .cgpt-pop-preview-msg{
+    font-family:var(--sans); font-size:10px; line-height:1.45; color:var(--ink-70);
+    background:rgba(23,22,27,.04); border-radius:10px; padding:8px 10px;
+  }
+  /* "@Owl Trade" as a rich inline chip, matching how the real deck renders a
+     connected app mention in a sent message (not plain text) */
+  .cgpt-mention-chip{
+    display:inline-flex; align-items:center; gap:5px; background:#fff; border-radius:999px;
+    padding:2px 9px 2px 2px; margin-right:3px; font-weight:600; color:var(--ink); vertical-align:middle;
+  }
+  .cgpt-mention-chip .cgpt-owl-icon{width:16px; height:16px;}
+
+  /* window body swaps to this (no sidebar, just centered page content) for
+     the hosted login/consent tabs — same shell, different "page" inside,
+     matching the real deck's own .cgpt-body-plain convention exactly */
+  .cgpt-body-plain{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto; position:relative;}
+
+  .ui-mock{
+    width:210px; max-width:100%; padding:24px 20px; box-sizing:border-box;
+    background:var(--cream); border-radius:14px;
+    box-shadow:0 10px 26px rgba(23,22,27,.08), 0 2px 8px rgba(23,22,27,.05);
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+  }
+  .ui-avatar{width:34px; height:34px; border-radius:50%; background:var(--ink); display:flex; align-items:center; justify-content:center; margin-bottom:11px; flex-shrink:0; overflow:hidden;}
+  .ui-avatar img{width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;}
+  .ui-title{font-family:var(--sans); font-weight:600; font-size:13px; color:var(--ink); margin:0 0 13px;}
+  .ui-input{width:100%; max-width:160px; height:29px; border:1.3px solid var(--line); border-radius:7px; display:flex; align-items:center; padding:0 10px; box-sizing:border-box; margin-bottom:9px;}
+  .ui-input-text{font-family:var(--sans); font-size:10.5px; color:var(--ink-45);}
+  .ui-input-dots{font-family:var(--sans); font-size:12.5px; letter-spacing:2px; color:var(--ink-45); line-height:1;}
+  .ui-btn{width:100%; max-width:160px; height:31px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--sans); font-size:11.5px; font-weight:600;}
+  .ui-btn-primary{background:var(--ink); color:var(--cream);}
+  .ui-mock-divider{width:100%; max-width:160px; height:1px; background:var(--line); margin:11px 0 0;}
+  .ui-signup-row{font-family:var(--sans); font-size:9.5px; color:var(--ink-45); margin:11px 0 0;}
+  .ui-signup-link{color:var(--ink); font-weight:600; text-decoration:underline; margin-left:2px;}
+
+  .consent-mobile{
+    width:226px; max-width:100%; display:flex; flex-direction:column;
+    background:var(--cream); border-radius:14px; padding:15px 17px;
+    box-shadow:0 10px 26px rgba(23,22,27,.08), 0 2px 8px rgba(23,22,27,.05);
+    box-sizing:border-box;
+  }
+  .consent-mobile-icon{width:36px; height:36px; border-radius:50%; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; margin:0 auto 10px; overflow:hidden; position:relative;}
+  .consent-mobile-icon-logo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:50%;}
+  .consent-mobile-heading{font-family:var(--sans); font-weight:700; font-size:12.5px; line-height:1.3; color:var(--ink); text-align:center; margin:0 0 10px;}
+  .consent-mobile-divider{height:1px; background:var(--line); margin:0 0 9px;}
+  .consent-mobile-label{font-family:var(--sans); font-weight:700; font-size:10px; color:var(--ink); margin:0 0 7px;}
+  .consent-mobile-list{list-style:none; margin:0 0 9px; padding:0; display:flex; flex-direction:column; gap:5px;}
+  .consent-mobile-list li{position:relative; padding-left:12px; font-family:var(--sans); font-size:9.5px; line-height:1.4; color:var(--ink);}
+  .consent-mobile-list li::before{content:''; position:absolute; left:1px; top:5px; width:3px; height:3px; border-radius:50%; background:var(--ink);}
+  .consent-mobile-terms{font-family:var(--sans); font-size:8px; line-height:1.4; color:var(--ink-45); text-align:center; margin:0 0 9px;}
+  .consent-mobile-actions{display:flex; gap:7px;}
+  .consent-mobile-allow, .consent-mobile-deny{flex:1; height:27px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:var(--sans); font-weight:600; font-size:10px;}
+  .consent-mobile-allow{background:var(--ink); color:var(--cream);}
+  .consent-mobile-deny{border:1.3px solid var(--line); color:var(--ink);}
+
+  /* brief confirmation before redirecting back to ChatGPT — same
+     success-checkmark language the small popover used to show, now floating
+     above the full hosted consent card instead */
+  .pv-toast{
+    position:absolute; top:10px; left:50%; transform:translate(-50%,-8px); display:flex; align-items:center; gap:7px;
+    background:var(--ink); color:var(--cream); padding:7px 13px; border-radius:20px;
+    font-family:var(--sans); font-size:10.5px; font-weight:600; white-space:nowrap;
+    opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:5;
+  }
+  .pv-toast.show{opacity:1; transform:translate(-50%,0);}
+  .pv-toast svg{width:12px; height:12px; flex-shrink:0;}
 
   /* --- phone-frame + iMessage SMS approval, ported verbatim from agent-identity --- */
   .phone-frame{position:relative; box-sizing:border-box; background:var(--bezel); border-radius:52px; box-shadow:0 0 0 2px #C7C7CC;}
@@ -1528,8 +1643,9 @@
                   <div class="cgpt-titlebar">
                     <div class="cgpt-dots"><span></span><span></span><span></span></div>
                     <div class="cgpt-tab">
-                      <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
-                      <span class="cgpt-tab-label">ChatGPT</span>
+                      <span class="cgpt-tab-fav" id="pvCgptTabFavChatgpt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
+                      <span class="cgpt-owl-icon-tab" id="pvCgptTabFavOwl" hidden><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></span>
+                      <span class="cgpt-tab-label" id="pvCgptTabLabel">ChatGPT</span>
                       <svg class="cgpt-tab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
                     </div>
                     <span class="cgpt-tab-plus">+</span>
@@ -1542,7 +1658,7 @@
                     </div>
                     <div class="cgpt-url">
                       <span class="cgpt-url-tune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8H9.3M13.7 8H20"/><circle cx="11.5" cy="8" r="2.2"/><path d="M4 16H6.8M11.2 16H20"/><circle cx="9" cy="16" r="2.2"/></svg></span>
-                      <span class="cgpt-url-text">chatgpt.com</span>
+                      <span class="cgpt-url-text" id="pvCgptUrlText">chatgpt.com</span>
                       <svg class="cgpt-url-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 17.3l-6.2 3.6 1.6-7-5.4-4.7 7.1-.6L12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7z"/></svg>
                     </div>
                     <div class="cgpt-urlbar-icons cgpt-urlbar-right">
@@ -1550,7 +1666,7 @@
                       <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
                     </div>
                   </div>
-                  <div class="cgpt-body">
+                  <div class="cgpt-body" id="pvCgptBody">
                     <div class="cgpt-sidebar">
                       <div class="cgpt-sidebar-head">
                         <span class="cgpt-logo">ChatGPT</span>
@@ -1569,7 +1685,7 @@
                     </div>
                     <div class="cgpt-main">
                       <div class="cgpt-thread">
-                        <div id="pvCgptThread1">
+                        <div id="pvCgptThread1" class="cgpt-thread-turn">
                           <div class="cgpt-msg-user" id="pvCgptUser">Monitor my Owl Trade account and notify me when I should buy or sell.</div>
                           <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistant">
                             <div class="cgpt-msg-assistant">I can help with that — first I'll need access to your Owl Trade account.</div>
@@ -1580,8 +1696,8 @@
                             </div>
                           </div>
                         </div>
-                        <div id="pvCgptThread2" hidden>
-                          <div class="cgpt-msg-user" id="pvCgptUser2">Any updates on OJ?</div>
+                        <div id="pvCgptThread2" hidden class="cgpt-thread-turn">
+                          <div class="cgpt-msg-user" id="pvCgptUser2"><span class="cgpt-mention-chip"><span class="cgpt-owl-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></span>Owl Trade</span> any updates on OJ?</div>
                           <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistant2">
                             <div class="cgpt-tool-pill" id="pvCgptToolPill">
                               <span class="cgpt-tool-pill-loading">
@@ -1631,41 +1747,72 @@
                             <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="cgpt-pop-item-text"><p>Explore apps</p><span>Chat with apps in ChatGPT</span></span><svg class="cgpt-pop-item-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
                           </div>
                         </div>
-                        <div class="cgpt-pop-view" data-view="app">
-                          <div class="cgpt-pop-app-head">
-                            <button class="cgpt-pop-back" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-                            <span>Apps</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
-                          </div>
-                          <div class="cgpt-pop-app-card">
-                            <div class="cgpt-owl-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
-                            <div class="cgpt-pop-app-meta"><p class="cgpt-pop-app-name">Owl Trade</p><button class="cgpt-pop-connect" tabindex="-1">Connect</button></div>
-                          </div>
-                          <p class="cgpt-pop-app-tagline">Invest, buy, trade</p>
+                      </div>
+                      <p class="cgpt-disclaimer">ChatGPT can make mistakes. Check important info.</p>
+                      <!-- full-page install screen, matches the real Customer
+                           Journey step 1 exactly (icon, name, Install plugin,
+                           tagline) — replaces the old small popover app card -->
+                      <div class="cgpt-app-page" id="pvCgptAppPage">
+                        <div class="cgpt-owl-icon cgpt-app-page-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
+                        <div class="cgpt-app-page-title-row">
+                          <p class="cgpt-app-page-name">Owl Trade</p>
+                          <button class="cgpt-app-page-connect" tabindex="-1">Install plugin</button>
                         </div>
-                        <div class="cgpt-pop-view" data-view="connect">
-                          <button class="cgpt-pop-close" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-                          <div class="cgpt-pop-connect-icons">
-                            <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
-                            <span class="cgpt-pop-connect-dots"><span></span><span></span><span></span></span>
-                            <div class="cgpt-owl-icon cgpt-owl-icon-sm"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
-                          </div>
-                          <p class="cgpt-pop-connect-heading">Connect Owl Trade</p>
-                          <div class="cgpt-pop-warning-box">
-                            <p><strong>You're in control.</strong> ChatGPT always respects your training data preferences.</p>
-                            <p><strong>Data shared with this app.</strong> By connecting, you allow it to access basic account info and a summary of your recent context and intent within ChatGPT.</p>
-                            <div class="cgpt-pop-toggle-row"><strong>Reference memories and chats</strong><span class="cgpt-pop-toggle"></span></div>
-                          </div>
-                          <button class="cgpt-pop-continue" tabindex="-1">Continue to Owl Trade</button>
-                        </div>
-                        <div class="cgpt-pop-view" data-view="success">
-                          <div class="cgpt-pop-success">
-                            <div class="cgpt-pop-success-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cream)" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg></div>
-                            <p class="cgpt-pop-success-text">Owl Trade connected</p>
+                        <p class="cgpt-app-page-tagline">Invest, buy, trade</p>
+                        <div class="cgpt-app-page-preview-card">
+                          <div class="cgpt-pop-preview-msg">@Owl Trade monitor VOO and get me hourly price alerts</div>
+                          <div class="cgpt-pop-preview-chart">
+                            <div class="cgpt-chart-head"><span class="cgpt-chart-ticker">VOO</span><span class="cgpt-chart-name">Vanguard S&amp;P 500 ETF</span><span class="cgpt-chart-change">+2.48 (0.30%)</span></div>
+                            <div class="cgpt-chart-plot">
+                              <div class="cgpt-chart-axis"><span style="top:11.7%">555</span><span style="top:91.7%">548</span></div>
+                              <svg class="cgpt-chart-svg" viewBox="0 0 280 120" preserveAspectRatio="none">
+                                <line class="cgpt-chart-grid" x1="0" y1="14" x2="280" y2="14"/>
+                                <line class="cgpt-chart-grid" x1="0" y1="110" x2="280" y2="110"/>
+                                <path class="cgpt-chart-area" d="M0,90 L40,96 L80,78 L120,84 L160,64 L200,70 L240,48 L280,40 L280,120 L0,120 Z"/>
+                                <path class="cgpt-chart-line" d="M0,90 L40,96 L80,78 L120,84 L160,64 L200,70 L240,48 L280,40"/>
+                                <circle class="cgpt-chart-dot" cx="280" cy="40" r="4"/>
+                              </svg>
+                            </div>
+                            <div class="cgpt-chart-foot"><span><i class="cgpt-chart-swatch"></i>Current <b>$552.14</b></span></div>
                           </div>
                         </div>
                       </div>
-                      <p class="cgpt-disclaimer">ChatGPT can make mistakes. Check important info.</p>
+                    </div>
+                  </div>
+                  <!-- hosted login (step 2) / consent (step 3) — a real new
+                       tab, not a popover: no sidebar, just the page itself,
+                       matching the End User Journey slides exactly -->
+                  <div class="cgpt-body-plain" id="pvCgptBodyPlain" hidden>
+                    <div id="pvCgptLoginBody" hidden>
+                      <div class="ui-mock">
+                        <div class="ui-avatar"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
+                        <p class="ui-title">Log in to Owl Trade</p>
+                        <div class="ui-input"><span class="ui-input-text">you@owltrade.com</span></div>
+                        <div class="ui-input"><span class="ui-input-dots">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</span></div>
+                        <div class="ui-btn ui-btn-primary">Log In</div>
+                        <div class="ui-mock-divider"></div>
+                        <p class="ui-signup-row">New to Owl Trade? <span class="ui-signup-link">Sign up</span></p>
+                      </div>
+                    </div>
+                    <div id="pvCgptConsentBody" hidden>
+                      <div class="consent-mobile">
+                        <div class="consent-mobile-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt="" class="consent-mobile-icon-logo"></div>
+                        <p class="consent-mobile-heading">ChatGPT wants access to Owl Trade</p>
+                        <div class="consent-mobile-divider"></div>
+                        <p class="consent-mobile-label">ChatGPT will be allowed to:</p>
+                        <ul class="consent-mobile-list">
+                          <li>Verify your profile information</li>
+                          <li>Verify your identity</li>
+                          <li>Take action on your behalf</li>
+                        </ul>
+                        <div class="consent-mobile-divider"></div>
+                        <p class="consent-mobile-terms">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                        <div class="consent-mobile-actions">
+                          <div class="consent-mobile-allow">Allow</div>
+                          <div class="consent-mobile-deny">Deny</div>
+                        </div>
+                      </div>
+                      <div class="pv-toast" id="pvCgptToast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg><span>Owl Trade connected</span></div>
                     </div>
                   </div>
                 </div>
@@ -1753,8 +1900,9 @@
                   <div class="cgpt-titlebar">
                     <div class="cgpt-dots"><span></span><span></span><span></span></div>
                     <div class="cgpt-tab">
-                      <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
-                      <span class="cgpt-tab-label">ChatGPT</span>
+                      <span class="cgpt-tab-fav" id="pvCgptTabFavChatgptS"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
+                      <span class="cgpt-owl-icon-tab" id="pvCgptTabFavOwlS" hidden><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></span>
+                      <span class="cgpt-tab-label" id="pvCgptTabLabelS">ChatGPT</span>
                       <svg class="cgpt-tab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
                     </div>
                     <span class="cgpt-tab-plus">+</span>
@@ -1767,7 +1915,7 @@
                     </div>
                     <div class="cgpt-url">
                       <span class="cgpt-url-tune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8H9.3M13.7 8H20"/><circle cx="11.5" cy="8" r="2.2"/><path d="M4 16H6.8M11.2 16H20"/><circle cx="9" cy="16" r="2.2"/></svg></span>
-                      <span class="cgpt-url-text">chatgpt.com</span>
+                      <span class="cgpt-url-text" id="pvCgptUrlTextS">chatgpt.com</span>
                       <svg class="cgpt-url-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 17.3l-6.2 3.6 1.6-7-5.4-4.7 7.1-.6L12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7z"/></svg>
                     </div>
                     <div class="cgpt-urlbar-icons cgpt-urlbar-right">
@@ -1775,7 +1923,7 @@
                       <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
                     </div>
                   </div>
-                  <div class="cgpt-body">
+                  <div class="cgpt-body" id="pvCgptBodyS">
                     <div class="cgpt-sidebar">
                       <div class="cgpt-sidebar-head">
                         <span class="cgpt-logo">ChatGPT</span>
@@ -1794,7 +1942,7 @@
                     </div>
                     <div class="cgpt-main">
                       <div class="cgpt-thread">
-                        <div id="pvCgptThread1S">
+                        <div id="pvCgptThread1S" class="cgpt-thread-turn">
                           <div class="cgpt-msg-user" id="pvCgptUserS">Monitor my Owl Trade account and notify me when I should buy or sell.</div>
                           <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistantS">
                             <div class="cgpt-msg-assistant">I can help with that — first I'll need access to your Owl Trade account.</div>
@@ -1805,8 +1953,8 @@
                             </div>
                           </div>
                         </div>
-                        <div id="pvCgptThread2S" hidden>
-                          <div class="cgpt-msg-user" id="pvCgptUser2S">Any updates on OJ?</div>
+                        <div id="pvCgptThread2S" hidden class="cgpt-thread-turn">
+                          <div class="cgpt-msg-user" id="pvCgptUser2S"><span class="cgpt-mention-chip"><span class="cgpt-owl-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></span>Owl Trade</span> any updates on OJ?</div>
                           <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistant2S">
                             <div class="cgpt-tool-pill" id="pvCgptToolPillS">
                               <span class="cgpt-tool-pill-loading">
@@ -1856,41 +2004,66 @@
                             <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="cgpt-pop-item-text"><p>Explore apps</p><span>Chat with apps in ChatGPT</span></span><svg class="cgpt-pop-item-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
                           </div>
                         </div>
-                        <div class="cgpt-pop-view" data-view="app">
-                          <div class="cgpt-pop-app-head">
-                            <button class="cgpt-pop-back" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-                            <span>Apps</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
-                          </div>
-                          <div class="cgpt-pop-app-card">
-                            <div class="cgpt-owl-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
-                            <div class="cgpt-pop-app-meta"><p class="cgpt-pop-app-name">Owl Trade</p><button class="cgpt-pop-connect" tabindex="-1">Connect</button></div>
-                          </div>
-                          <p class="cgpt-pop-app-tagline">Invest, buy, trade</p>
+                      </div>
+                      <p class="cgpt-disclaimer">ChatGPT can make mistakes. Check important info.</p>
+                      <div class="cgpt-app-page" id="pvCgptAppPageS">
+                        <div class="cgpt-owl-icon cgpt-app-page-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
+                        <div class="cgpt-app-page-title-row">
+                          <p class="cgpt-app-page-name">Owl Trade</p>
+                          <button class="cgpt-app-page-connect" tabindex="-1">Install plugin</button>
                         </div>
-                        <div class="cgpt-pop-view" data-view="connect">
-                          <button class="cgpt-pop-close" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-                          <div class="cgpt-pop-connect-icons">
-                            <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
-                            <span class="cgpt-pop-connect-dots"><span></span><span></span><span></span></span>
-                            <div class="cgpt-owl-icon cgpt-owl-icon-sm"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
-                          </div>
-                          <p class="cgpt-pop-connect-heading">Connect Owl Trade</p>
-                          <div class="cgpt-pop-warning-box">
-                            <p><strong>You're in control.</strong> ChatGPT always respects your training data preferences.</p>
-                            <p><strong>Data shared with this app.</strong> By connecting, you allow it to access basic account info and a summary of your recent context and intent within ChatGPT.</p>
-                            <div class="cgpt-pop-toggle-row"><strong>Reference memories and chats</strong><span class="cgpt-pop-toggle"></span></div>
-                          </div>
-                          <button class="cgpt-pop-continue" tabindex="-1">Continue to Owl Trade</button>
-                        </div>
-                        <div class="cgpt-pop-view" data-view="success">
-                          <div class="cgpt-pop-success">
-                            <div class="cgpt-pop-success-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cream)" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg></div>
-                            <p class="cgpt-pop-success-text">Owl Trade connected</p>
+                        <p class="cgpt-app-page-tagline">Invest, buy, trade</p>
+                        <div class="cgpt-app-page-preview-card">
+                          <div class="cgpt-pop-preview-msg">@Owl Trade monitor VOO and get me hourly price alerts</div>
+                          <div class="cgpt-pop-preview-chart">
+                            <div class="cgpt-chart-head"><span class="cgpt-chart-ticker">VOO</span><span class="cgpt-chart-name">Vanguard S&amp;P 500 ETF</span><span class="cgpt-chart-change">+2.48 (0.30%)</span></div>
+                            <div class="cgpt-chart-plot">
+                              <div class="cgpt-chart-axis"><span style="top:11.7%">555</span><span style="top:91.7%">548</span></div>
+                              <svg class="cgpt-chart-svg" viewBox="0 0 280 120" preserveAspectRatio="none">
+                                <line class="cgpt-chart-grid" x1="0" y1="14" x2="280" y2="14"/>
+                                <line class="cgpt-chart-grid" x1="0" y1="110" x2="280" y2="110"/>
+                                <path class="cgpt-chart-area" d="M0,90 L40,96 L80,78 L120,84 L160,64 L200,70 L240,48 L280,40 L280,120 L0,120 Z"/>
+                                <path class="cgpt-chart-line" d="M0,90 L40,96 L80,78 L120,84 L160,64 L200,70 L240,48 L280,40"/>
+                                <circle class="cgpt-chart-dot" cx="280" cy="40" r="4"/>
+                              </svg>
+                            </div>
+                            <div class="cgpt-chart-foot"><span><i class="cgpt-chart-swatch"></i>Current <b>$552.14</b></span></div>
                           </div>
                         </div>
                       </div>
-                      <p class="cgpt-disclaimer">ChatGPT can make mistakes. Check important info.</p>
+                    </div>
+                  </div>
+                  <div class="cgpt-body-plain" id="pvCgptBodyPlainS" hidden>
+                    <div id="pvCgptLoginBodyS" hidden>
+                      <div class="ui-mock">
+                        <div class="ui-avatar"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
+                        <p class="ui-title">Log in to Owl Trade</p>
+                        <div class="ui-input"><span class="ui-input-text">you@owltrade.com</span></div>
+                        <div class="ui-input"><span class="ui-input-dots">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</span></div>
+                        <div class="ui-btn ui-btn-primary">Log In</div>
+                        <div class="ui-mock-divider"></div>
+                        <p class="ui-signup-row">New to Owl Trade? <span class="ui-signup-link">Sign up</span></p>
+                      </div>
+                    </div>
+                    <div id="pvCgptConsentBodyS" hidden>
+                      <div class="consent-mobile">
+                        <div class="consent-mobile-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt="" class="consent-mobile-icon-logo"></div>
+                        <p class="consent-mobile-heading">ChatGPT wants access to Owl Trade</p>
+                        <div class="consent-mobile-divider"></div>
+                        <p class="consent-mobile-label">ChatGPT will be allowed to:</p>
+                        <ul class="consent-mobile-list">
+                          <li>Verify your profile information</li>
+                          <li>Verify your identity</li>
+                          <li>Take action on your behalf</li>
+                        </ul>
+                        <div class="consent-mobile-divider"></div>
+                        <p class="consent-mobile-terms">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                        <div class="consent-mobile-actions">
+                          <div class="consent-mobile-allow">Allow</div>
+                          <div class="consent-mobile-deny">Deny</div>
+                        </div>
+                      </div>
+                      <div class="pv-toast" id="pvCgptToastS"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg><span>Owl Trade connected</span></div>
                     </div>
                   </div>
                 </div>
@@ -2097,6 +2270,16 @@
       var pvCgptToolPill = document.getElementById('pvCgptToolPill');
       var pvCgptReply2 = document.getElementById('pvCgptReply2');
       var pvCgptChart2 = document.getElementById('pvCgptChart2');
+      var pvCgptTabFavChatgpt = document.getElementById('pvCgptTabFavChatgpt');
+      var pvCgptTabFavOwl = document.getElementById('pvCgptTabFavOwl');
+      var pvCgptTabLabel = document.getElementById('pvCgptTabLabel');
+      var pvCgptUrlText = document.getElementById('pvCgptUrlText');
+      var pvCgptBody = document.getElementById('pvCgptBody');
+      var pvCgptBodyPlain = document.getElementById('pvCgptBodyPlain');
+      var pvCgptAppPage = document.getElementById('pvCgptAppPage');
+      var pvCgptLoginBody = document.getElementById('pvCgptLoginBody');
+      var pvCgptConsentBody = document.getElementById('pvCgptConsentBody');
+      var pvCgptToast = document.getElementById('pvCgptToast');
       var pvStytchWrap = document.getElementById('pvStytchWrap');
       var previewEyebrow = document.getElementById('previewEyebrow');
       var previewTitleWrap = document.getElementById('previewImageTitleWrap');
@@ -2259,8 +2442,24 @@
         var timers = [];
         function after(fn, ms){ timers.push(setTimeout(fn, ms)); }
         function stop(){ timers.forEach(function(id){ clearTimeout(id); }); timers = []; }
-        function switchPopView(view){
-          r.popViews.forEach(function(v){ v.classList.toggle('active', v.dataset.view === view); });
+        // ChatGPT <-> hosted Owl Trade tab swap — same window, the tab
+        // favicon/label and url bar just change, matching how a real browser
+        // tab navigates rather than simulating two separate windows
+        function showChatgptTab(){
+          r.tabFavChatgpt.hidden = false;
+          r.tabFavOwl.hidden = true;
+          r.tabLabel.textContent = 'ChatGPT';
+          r.urlText.textContent = 'chatgpt.com';
+          r.bodyPlain.hidden = true;
+          r.bodyMain.hidden = false;
+        }
+        function showOwlTab(url){
+          r.tabFavChatgpt.hidden = true;
+          r.tabFavOwl.hidden = false;
+          r.tabLabel.textContent = 'Owl Trade';
+          r.urlText.textContent = url;
+          r.bodyMain.hidden = true;
+          r.bodyPlain.hidden = false;
         }
         function resetVisual(){
           r.wrap.classList.add('pv-visible');
@@ -2268,7 +2467,6 @@
           r.user.classList.remove('pv-in');
           r.assistant.classList.remove('pv-in');
           r.popover.classList.remove('show');
-          switchPopView('menu');
           r.thread1.hidden = false;
           r.thread2.hidden = true;
           r.user2.classList.remove('pv-in');
@@ -2280,6 +2478,11 @@
           r.phoneBubble.classList.remove('pv-in');
           r.phoneSuggest.classList.remove('pv-in');
           r.phoneInputbar.classList.remove('pv-in');
+          r.appPage.classList.remove('show');
+          r.loginBody.hidden = true;
+          r.consentBody.hidden = true;
+          r.toast.classList.remove('show');
+          showChatgptTab();
         }
         function run(){
           stop();
@@ -2287,40 +2490,48 @@
           // turn 1: the initial ask, ChatGPT needs access
           after(function(){ r.user.classList.add('pv-in'); }, 300);
           after(function(){ r.assistant.classList.add('pv-in'); }, 900);
-          // "+" popover: explore apps -> Owl Trade -> connect -> success, all inside
-          // the same chat window/popover rather than cutting to a separate screen
+          // "+" menu -> Owl Trade's full install page (matches Customer
+          // Journey step 1) -> a genuine new tab for login (End User Journey
+          // step 2) -> the hosted consent page (step 3, full tab, not a
+          // popover) -> a brief confirmation -> back to ChatGPT for the
+          // actual OJ-futures check (step 4)
           after(function(){ r.popover.classList.add('show'); }, 1800);
-          after(function(){ switchPopView('app'); }, 3000);
-          after(function(){ switchPopView('connect'); }, 4600);
-          after(function(){ switchPopView('success'); }, 8200);
-          // close the popover — otherwise it's still "open" underneath and would
-          // silently reappear when the chat window shows turn 2
-          after(function(){ r.popover.classList.remove('show'); }, 9700);
-          after(function(){ switchPopView('menu'); }, 9900);
-          // still in the same window — now asking it to monitor, which shows
-          // Owl Trade actually in use
+          after(function(){ r.popover.classList.remove('show'); r.appPage.classList.add('show'); }, 2800);
           after(function(){
+            r.appPage.classList.remove('show');
+            showOwlTab('owltrade.com/login');
+            r.loginBody.hidden = false;
+          }, 4600);
+          after(function(){
+            r.loginBody.hidden = true;
+            r.urlText.textContent = 'twilio.com/owltrade/agent-consent';
+            r.consentBody.hidden = false;
+          }, 6400);
+          after(function(){ r.toast.classList.add('show'); }, 8000);
+          after(function(){
+            r.toast.classList.remove('show');
+            showChatgptTab();
             r.thread1.hidden = true;
             r.thread2.hidden = false;
-          }, 10000);
-          after(function(){ r.user2.classList.add('pv-in'); }, 10400);
-          after(function(){ r.assistant2.classList.add('pv-in'); }, 11000);
-          after(function(){ r.toolPill.classList.add('pv-done'); }, 12000);
+          }, 9200);
+          after(function(){ r.user2.classList.add('pv-in'); }, 9500);
+          after(function(){ r.assistant2.classList.add('pv-in'); }, 10100);
+          after(function(){ r.toolPill.classList.add('pv-done'); }, 11100);
           after(function(){
             r.reply2.classList.add('pv-in');
             r.chart2.classList.add('pv-in');
-          }, 12100);
+          }, 11200);
           // cut to the phone for the human-in-the-loop SMS approval
           after(function(){
             r.wrap.classList.remove('pv-visible');
             r.phoneWrap.classList.add('pv-visible');
-          }, 14000);
-          after(function(){ r.phoneHeader.classList.add('pv-in'); }, 14300);
-          after(function(){ r.phoneInputbar.classList.add('pv-in'); }, 14500);
-          after(function(){ r.phoneBubble.classList.add('pv-in'); }, 14800);
-          after(function(){ r.phoneSuggest.classList.add('pv-in'); }, 15400);
-          after(function(){ r.phoneWrap.classList.remove('pv-visible'); }, 18700);
-          after(function(){ run(); }, 19200);
+          }, 13200);
+          after(function(){ r.phoneHeader.classList.add('pv-in'); }, 13500);
+          after(function(){ r.phoneInputbar.classList.add('pv-in'); }, 13700);
+          after(function(){ r.phoneBubble.classList.add('pv-in'); }, 14000);
+          after(function(){ r.phoneSuggest.classList.add('pv-in'); }, 14600);
+          after(function(){ r.phoneWrap.classList.remove('pv-visible'); }, 17900);
+          after(function(){ run(); }, 18400);
         }
         return {run: run, stop: stop};
       }
@@ -2511,7 +2722,10 @@
         wrap: pvCgptWrap, phoneWrap: pvPhoneWrap, user: pvCgptUser, assistant: pvCgptAssistant,
         popover: pvCgptPopover, popViews: pvCgptPopViews, thread1: pvCgptThread1, thread2: pvCgptThread2,
         user2: pvCgptUser2, assistant2: pvCgptAssistant2, toolPill: pvCgptToolPill, reply2: pvCgptReply2, chart2: pvCgptChart2,
-        phoneHeader: pvPhoneHeader, phoneBubble: pvPhoneBubble, phoneSuggest: pvPhoneSuggest, phoneInputbar: pvPhoneInputbar
+        phoneHeader: pvPhoneHeader, phoneBubble: pvPhoneBubble, phoneSuggest: pvPhoneSuggest, phoneInputbar: pvPhoneInputbar,
+        tabFavChatgpt: pvCgptTabFavChatgpt, tabFavOwl: pvCgptTabFavOwl, tabLabel: pvCgptTabLabel, urlText: pvCgptUrlText,
+        bodyMain: pvCgptBody, bodyPlain: pvCgptBodyPlain, appPage: pvCgptAppPage,
+        loginBody: pvCgptLoginBody, consentBody: pvCgptConsentBody, toast: pvCgptToast
       });
       function runCgptPhoneScene(){ panelCgptScene.run(); }
       function stopCgptPhoneScene(){ panelCgptScene.stop(); }
@@ -2630,6 +2844,13 @@
       rows.forEach(function(row){
         row.addEventListener('click', function(){ openTrack(row.id); });
         row.addEventListener('dblclick', function(){
+          // "playing" a real case study means going to read it — only the
+          // placeholder Portfolio row (data-href="#") falls back to the old
+          // open-panel-and-animate behavior, since there's nowhere to send it
+          if(row.dataset.href && row.dataset.href !== '#'){
+            window.location.href = row.dataset.href;
+            return;
+          }
           openTrack(row.id);
           setPlaying(true);
         });
@@ -2677,8 +2898,23 @@
         selectTrack(trackIds[(idx + 1) % trackIds.length]);
       });
 
-      tbPlay.addEventListener('click', togglePlaying);
+      // same "playing a real case study = go read it" rule as the row
+      // dblclick above, applied to both play buttons — the Portfolio track
+      // (no href) still just toggles the ambient animation
+      function openCurrentCaseStudyOrToggle(){
+        var t = getTrack(currentId);
+        if(t && t.dataset.href && t.dataset.href !== '#'){
+          window.location.href = t.dataset.href;
+          return true;
+        }
+        return false;
+      }
+      tbPlay.addEventListener('click', function(){
+        if(openCurrentCaseStudyOrToggle()) return;
+        togglePlaying();
+      });
       heroPlay.addEventListener('click', function(){
+        if(openCurrentCaseStudyOrToggle()) return;
         togglePlaying();
         revealBar();
       });
@@ -2876,7 +3112,12 @@
               toolPill: mediaEl.querySelector('#pvCgptToolPillS'), reply2: mediaEl.querySelector('#pvCgptReply2S'),
               chart2: mediaEl.querySelector('#pvCgptChart2S'), phoneHeader: mediaEl.querySelector('#pvPhoneHeaderS'),
               phoneBubble: mediaEl.querySelector('#pvPhoneBubbleS'), phoneSuggest: mediaEl.querySelector('#pvPhoneSuggestS'),
-              phoneInputbar: mediaEl.querySelector('#pvPhoneInputbarS')
+              phoneInputbar: mediaEl.querySelector('#pvPhoneInputbarS'),
+              tabFavChatgpt: mediaEl.querySelector('#pvCgptTabFavChatgptS'), tabFavOwl: mediaEl.querySelector('#pvCgptTabFavOwlS'),
+              tabLabel: mediaEl.querySelector('#pvCgptTabLabelS'), urlText: mediaEl.querySelector('#pvCgptUrlTextS'),
+              bodyMain: mediaEl.querySelector('#pvCgptBodyS'), bodyPlain: mediaEl.querySelector('#pvCgptBodyPlainS'),
+              appPage: mediaEl.querySelector('#pvCgptAppPageS'), loginBody: mediaEl.querySelector('#pvCgptLoginBodyS'),
+              consentBody: mediaEl.querySelector('#pvCgptConsentBodyS'), toast: mediaEl.querySelector('#pvCgptToastS')
             }).run();
           });
         } else if(row.dataset.company === 'Stytch'){
