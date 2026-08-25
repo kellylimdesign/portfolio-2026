@@ -611,6 +611,14 @@
   .friction-card-title{font-family:var(--sans); font-size:15.5px; font-weight:700; color:var(--ink); margin:0 0 8px; line-height:1.35;}
   .friction-card-desc{font-family:var(--sans); font-size:13px; line-height:1.55; color:var(--ink-70); margin:0;}
   @media (max-width:720px){ .friction-grid{grid-template-columns:1fr;} }
+  /* a card that references a specific screen elsewhere in the deck jumps
+     there on click, instead of just naming it — link-blue accent (matching
+     .mock-callout-next) so it reads unambiguously as "linked" */
+  .friction-link{
+    color:#1A73E8; cursor:pointer; background:none; border:none; padding:0; font:inherit; font-weight:600;
+    transition:color .2s ease;
+  }
+  .friction-link:hover{color:#0D5BC7; text-decoration:underline; text-underline-offset:2px;}
 
   /* hover tooltip for inline glossary-style terms within teaser copy */
   .tooltip-term{position:relative; border-bottom:1px dotted var(--ink-45); cursor:help;}
@@ -772,32 +780,35 @@
     border:1px solid rgba(23,22,27,.14);
     border-radius:0 12px 12px 0;
     box-shadow:0 10px 24px rgba(23,22,27,.14);
-    padding:14px 22px; display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;
+    padding:14px 22px; display:flex; flex-direction:column; gap:8px;
     opacity:0; transform:translateX(-100%); pointer-events:none;
     transition:opacity .4s ease, transform .5s cubic-bezier(.22,1,.36,1);
   }
   .mock-callout.show{opacity:1; transform:translateX(0);}
+  /* kicker + Next sit on one row (per Kelly: the button read as an
+     afterthought floating below the paragraph) — the description is its own
+     full-width line underneath, not sharing the row with either */
+  .mock-callout-head{display:flex; align-items:center; justify-content:space-between; gap:16px;}
   .mock-callout-kicker{
     font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
-    color:var(--ink-45); flex:0 0 auto; margin:0;
+    color:var(--ink-45); margin:0;
   }
-  .mock-callout p{font-family:var(--sans); font-size:12.5px; line-height:1.5; color:var(--ink-70); margin:0; flex:1 1 260px;}
+  .mock-callout p{font-family:var(--sans); font-size:12.5px; line-height:1.5; color:var(--ink-70); margin:0;}
   /* explicit acknowledge-and-advance control — the walkthrough pauses on
      every callout now instead of auto-continuing on a timer, so a viewer
      reading slower than the old fixed dwell time never gets rushed past it.
      .mock-callout itself is pointer-events:none (it floats over mock content
      without blocking clicks on the mock underneath); this re-enables just
      the button, not the whole card. */
-  .mock-callout-actions{flex:0 0 100%; display:flex; justify-content:flex-end; margin-top:2px;}
+  /* test: link-blue accent instead of the monochrome underline treatment
+     used elsewhere (terms-link, friction-link) — scoped to just this button
+     to compare against the grayscale system, not yet a system-wide decision */
   .mock-callout-next{
-    pointer-events:auto; appearance:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
-    font-family:var(--sans); font-size:12px; font-weight:600; color:var(--ink);
-    background:rgba(23,22,27,.06); border:1px solid rgba(23,22,27,.18); border-radius:20px;
-    padding:6px 14px; transition:background .2s ease, border-color .2s ease;
+    pointer-events:auto; appearance:none; cursor:pointer; flex-shrink:0;
+    font-family:var(--sans); font-size:12px; font-weight:600; color:#1A73E8;
+    background:none; border:none; padding:0; transition:color .2s ease;
   }
-  .mock-callout-next:hover{background:rgba(23,22,27,.1); border-color:rgba(23,22,27,.32);}
-  .mock-callout-next span{display:inline-block; transition:transform .2s ease;}
-  .mock-callout-next:hover span{transform:translateX(2px);}
+  .mock-callout-next:hover{color:#0D5BC7; text-decoration:underline; text-underline-offset:2px;}
 
   /* "how we got here" pause overlay — a deliberate detour out of the main
      journey (see the go(1)/historySeenGroups JS), not another equal-weight
@@ -2216,6 +2227,9 @@
     font-family:var(--sans); font-size:10.5px; line-height:1.5; color:var(--ink-45);
     text-align:center; margin:0 0 12px;
   }
+  /* stays monochrome (no accent hue) like the rest of this end-user-facing
+     screen — underline + a darker ink is the only "this is clickable" cue */
+  .terms-link{color:var(--ink); text-decoration:underline; text-underline-offset:2px;}
   .consent-mobile-actions{display:flex; gap:10px;}
   .consent-mobile-allow, .consent-mobile-deny{
     flex:1; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center;
@@ -3447,7 +3461,7 @@
                   <li>Take action on your behalf</li>
                 </ul>
                 <div class="consent-mobile-divider"></div>
-                <p class="consent-mobile-terms">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                <p class="consent-mobile-terms">By allowing, you agree to the <span class="terms-link">Terms of Service</span> and <span class="terms-link">Privacy Policy</span>.</p>
                 <div class="consent-mobile-actions">
                   <div class="consent-mobile-allow">Allow</div>
                   <div class="consent-mobile-deny">Deny</div>
@@ -3553,7 +3567,7 @@
          Reuses the dashed .example-callout from slide 2 (the abstract problem's
          "For Example" box) so the same visual language signals we're now
          continuing that same concrete example, not starting a new one. -->
-    <section class="slide layout-text">
+    <section class="slide layout-text" id="slideOwlTradeIntro">
       <div class="text-block">
         <p class="kicker">Owl Trade × ChatGPT · Illustrative</p>
         <div class="example-callout">
@@ -3758,7 +3772,7 @@
                     <li>Take action on your behalf</li>
                   </ul>
                   <div class="consent-mobile-divider"></div>
-                  <p class="consent-mobile-terms">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                  <p class="consent-mobile-terms">By allowing, you agree to the <span class="terms-link">Terms of Service</span> and <span class="terms-link">Privacy Policy</span>.</p>
                   <div class="consent-mobile-actions">
                     <div class="consent-mobile-allow">Allow</div>
                     <div class="consent-mobile-deny">Deny</div>
@@ -3926,7 +3940,7 @@
                               <li>Take action on your behalf</li>
                             </ul>
                             <div class="cgpt-consent-divider"></div>
-                            <p class="cgpt-consent-disclaimer">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                            <p class="cgpt-consent-disclaimer">By allowing, you agree to the <span class="terms-link">Terms of Service</span> and <span class="terms-link">Privacy Policy</span>.</p>
                             <div class="cgpt-consent-actions">
                               <button class="cgpt-consent-allow" data-action="continue">Allow</button>
                               <button class="cgpt-consent-deny" data-action="close">Deny</button>
@@ -4115,7 +4129,7 @@
                           <li>Take action on your behalf</li>
                         </ul>
                         <div class="consent-mobile-divider"></div>
-                        <p class="consent-mobile-terms">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                        <p class="consent-mobile-terms">By allowing, you agree to the <span class="terms-link">Terms of Service</span> and <span class="terms-link">Privacy Policy</span>.</p>
                         <div class="consent-mobile-actions">
                           <div class="consent-mobile-allow">Allow</div>
                           <div class="consent-mobile-deny">Deny</div>
@@ -4538,19 +4552,25 @@
                   </div>
                 </div>
                 <div class="mock-callout" id="oktaToTwilioCallout">
-                  <p class="mock-callout-kicker">Next: The Twilio Console</p>
-                  <p>Once you've copied the information needed to authenticate your users, head over to the Twilio Console.</p>
-                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
+                  <div class="mock-callout-head">
+                    <p class="mock-callout-kicker">Gather Your Authentication System Credentials</p>
+                    <button class="mock-callout-next" type="button">Next</button>
+                  </div>
+                  <p>Once you've copied the information from your authentication provider, head over to the Twilio Console.</p>
                 </div>
                 <div class="mock-callout" id="jwtModalCallout">
-                  <p class="mock-callout-kicker">Where Those Values Go</p>
+                  <div class="mock-callout-head">
+                    <p class="mock-callout-kicker">Hand Over To Twilio For Verification</p>
+                    <button class="mock-callout-next" type="button">Next</button>
+                  </div>
                   <p>This is where those values go — paste what you copied from Okta so Twilio can use it to verify your users' identity.</p>
-                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
                 </div>
                 <div class="mock-callout" id="uploadCallout">
-                  <p class="mock-callout-kicker">Why Upload, Not Paste</p>
+                  <div class="mock-callout-head">
+                    <p class="mock-callout-kicker">Why Upload, Not Paste</p>
+                    <button class="mock-callout-next" type="button">Got it</button>
+                  </div>
                   <p>Fewer chances for a copy-paste error to silently corrupt a key. It also mirrors the API itself: engineering built bulk upload and delete for keys at the API level, so the console stays a clean match for it, not a separate paved path.</p>
-                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Got it <span aria-hidden="true">&rarr;</span></button></div>
                 </div>
               </div>
             </div>
@@ -4597,9 +4617,11 @@
                   </div>
                 </div>
                 <div class="mock-callout" id="consentPreviewCallout">
-                  <p class="mock-callout-kicker">Watch The Preview Update</p>
+                  <div class="mock-callout-head">
+                    <p class="mock-callout-kicker">Watch The Preview Update</p>
+                    <button class="mock-callout-next" type="button">Next</button>
+                  </div>
                   <p>The consent screen preview updates live as you type — so you can see exactly what your users will see before you save.</p>
-                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
                 </div>
               </div>
             </div>
@@ -4646,24 +4668,32 @@
                   </div>
                 </div>
                 <div class="mock-callout" id="clientsListCallout">
-                  <p class="mock-callout-kicker">One Place For Every Agent</p>
+                  <div class="mock-callout-head">
+                    <p class="mock-callout-kicker">One Place For Every Agent</p>
+                    <button class="mock-callout-next" type="button">Next</button>
+                  </div>
                   <p>Every agent or app that's been granted access to Owl Trade lives here — no separate tool needed to see what's connected.</p>
-                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
                 </div>
                 <div class="mock-callout" id="clientDetailCallout">
-                  <p class="mock-callout-kicker">Everything About One Agent</p>
+                  <div class="mock-callout-head">
+                    <p class="mock-callout-kicker">Everything About One Agent</p>
+                    <button class="mock-callout-next" type="button">Next</button>
+                  </div>
                   <p>Name, description, grant types, redirect URLs — everything tied to this agent lives on a single page.</p>
-                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
                 </div>
                 <div class="mock-callout" id="identitiesListCallout">
-                  <p class="mock-callout-kicker">Or Look Up By User</p>
+                  <div class="mock-callout-head">
+                    <p class="mock-callout-kicker">Or Look Up By User</p>
+                    <button class="mock-callout-next" type="button">Next</button>
+                  </div>
                   <p>The same access can be viewed the other way — by user instead of by agent. Useful when you're troubleshooting one person's access, like restricting or updating what an agent can do if a user's permissions change.</p>
-                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
                 </div>
                 <div class="mock-callout" id="identityDetailCallout">
-                  <p class="mock-callout-kicker">One User's Access, In Full</p>
+                  <div class="mock-callout-head">
+                    <p class="mock-callout-kicker">One User's Access, In Full</p>
+                    <button class="mock-callout-next" type="button">Next</button>
+                  </div>
                   <p>The Authorized Clients tab shows exactly which agents this user has approved and what each one can currently do — a live picture of their permissions, not a static log.</p>
-                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
                 </div>
               </div>
             </div>
@@ -4932,11 +4962,11 @@
       <div class="friction-grid">
         <div class="friction-card">
           <p class="friction-card-title">Cross-team dependency</p>
-          <p class="friction-card-desc">HITL approval runs on Verify — another Twilio team's RCS infrastructure, and real cross-team coordination to secure.</p>
+          <p class="friction-card-desc"><button class="friction-link" onclick="jumpToStep('slideCustomerJourney', 4)">High risk approvals</button> run on Verify — another Twilio team's RCS infrastructure, and real cross-team coordination to secure.</p>
         </div>
         <div class="friction-card">
           <p class="friction-card-title">A new bet, no playbook</p>
-          <p class="friction-card-desc">No existing customer base to design against yet — assumptions now being tested with design partners.</p>
+          <p class="friction-card-desc">No existing customer base to design against yet — assumptions now being <button class="friction-link" onclick="jumpToStep('slideValidating', null)">tested with design partners</button>.</p>
         </div>
         <div class="friction-card">
           <p class="friction-card-title">Standalone demos, before the product existed</p>
@@ -4944,13 +4974,13 @@
         </div>
         <div class="friction-card">
           <p class="friction-card-title">Scoping the API mid-design</p>
-          <p class="friction-card-desc">The Clients↔Identities link got cut from engineering under a tight timeline — the design adjusted with it. See "Who's Connected?"</p>
+          <p class="friction-card-desc">The Clients ↔ Identities link got cut from engineering under a tight timeline — the design adjusted with it. See <button class="friction-link" onclick="jumpToStep('slideCustomerJourney', 3)">Manage agents</button>.</p>
         </div>
       </div>
     </section>
 
     <!-- 16. TIMELINE — what we're validating (unchanged from v2) -->
-    <section class="slide layout-timeline">
+    <section class="slide layout-timeline" id="slideValidating">
       <div class="text-block">
         <p class="kicker">Impact</p>
         <h1>What We're Validating</h1>
@@ -5263,7 +5293,7 @@
                           <li>Take action on your behalf</li>
                         </ul>
                         <div class="consent-mobile-divider"></div>
-                        <p class="consent-mobile-terms">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                        <p class="consent-mobile-terms">By allowing, you agree to the <span class="terms-link">Terms of Service</span> and <span class="terms-link">Privacy Policy</span>.</p>
                         <div class="consent-mobile-actions">
                           <div class="consent-mobile-allow">Allow</div>
                           <div class="consent-mobile-deny">Deny</div>
@@ -5318,7 +5348,7 @@
                                 <li>Take action on your behalf</li>
                               </ul>
                               <div class="consent-mobile-divider"></div>
-                              <p class="consent-mobile-terms">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                              <p class="consent-mobile-terms">By allowing, you agree to the <span class="terms-link">Terms of Service</span> and <span class="terms-link">Privacy Policy</span>.</p>
                               <div class="consent-mobile-actions">
                                 <div class="consent-mobile-allow">Allow</div>
                                 <div class="consent-mobile-deny">Deny</div>
@@ -6229,6 +6259,20 @@
     }
   }
 
+  // jump straight to a specific slide (and, for step-nav slides, a specific
+  // step within it) — used by the "Challenges" slide's callout links so a
+  // reference like "High risk approvals" actually takes you there instead of
+  // just naming it. render() alone would land on the slide's default step 1
+  // (restartStepsNext resets to it on every visit), so the step selection has
+  // to happen as a second call after render(), not folded into it.
+  function jumpToStep(slideId, stepNum){
+    const target = document.getElementById(slideId);
+    if (!target) return;
+    idx = Array.from(slides).indexOf(target);
+    render();
+    if (stepNum != null) selectStepContext(target, stepNum);
+  }
+
   function selectStepContext(slide, s){
     // cancel ANY pending autoplay schedule from whichever step was active
     // before — without this, leftover timers from e.g. a 12-step "Manage
@@ -6618,6 +6662,11 @@
     // pauses on a callout pointing at it (after both fields are typed, before
     // Save) instead of just holding the filled-in state on a blind timer.
     const steps = [
+      // runGatedSequence fires a step's fn() the instant it runs — a delay on
+      // step 0 only delays step 1, not the click itself. This leading no-op
+      // is what actually gives the initial "Customize" summary view time to
+      // register before the Edit click fires.
+      {delay:1800, fn: () => {}},
       {delay:1000, fn: () => clickWithPulse(editBtn)},
       // friendly name goes first (it's the first field) — preview heading
       // swaps live from the "[App name]" placeholder to "Owl Trade" as it types
@@ -6787,19 +6836,33 @@
     // on three callouts (why head to Twilio, what the JWT modal is for, why
     // upload-not-paste) and waits for a "Next" click on each instead of
     // guessing a reading time.
+    // copy buttons now show the pulse, then wait a beat before actually
+    // flipping to "copied" — same "cursor lands, then screen reacts" gap
+    // clickWithPulse gives every other scripted click, which copyBtns[0]
+    // was missing (pulse + copied state landed in the same instant, so
+    // it didn't read as a real click)
+    const doCopy = (btn) => { showClickPulseOnEl(btn); setTimeout(() => { btn.classList.add('copied'); proto._copied.add(btn.dataset.key); }, 260); };
     const steps = [
-      {delay:900,  fn: () => { showClickPulseOnEl(copyBtns[0]); copyBtns[0].classList.add('copied'); proto._copied.add(copyBtns[0].dataset.key); }},
-      {delay:1200, fn: () => { showClickPulseOnEl(copyBtns[1]); copyBtns[1].classList.add('copied'); proto._copied.add(copyBtns[1].dataset.key); }},
-      {delay:1200, fn: () => { showClickPulseOnEl(copyBtns[2]); copyBtns[2].classList.add('copied'); proto._copied.add(copyBtns[2].dataset.key); twilioTab.classList.add('pulse'); }},
+      // runGatedSequence fires a step's fn() the instant it runs — a delay on
+      // step 0 only delays step 1, not the first click itself. This leading
+      // no-op is what actually gives the console a beat to register before
+      // the first copy fires.
+      {delay:900,  fn: () => {}},
+      {delay:900,  fn: () => doCopy(copyBtns[0])},
+      {delay:1200, fn: () => doCopy(copyBtns[1])},
+      {delay:1200, fn: () => { doCopy(copyBtns[2]); twilioTab.classList.add('pulse'); }},
       {delay:600,  fn: () => {}},
       {callout:'oktaToTwilioCallout'},
       // switch to Twilio Console and mount the live prototype (Configurations
       // tab) — left live/interactive afterward rather than auto-resetting,
-      // since it's the real console now, not a timed screenshot demo.
-      {delay:400,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); }},
+      // since it's the real console now, not a timed screenshot demo. Slowed
+      // (400->900, 1200->1800) so the tab switch itself has time to register
+      // before the Configure click fires — it was reading as one instant jump
+      // straight to the open modal.
+      {delay:900,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); }},
       // open the real "Configure JWT Profile" side modal — pause on it before
       // saving so the callout can explain what it's for
-      {delay:1200, fn: () => clickWithPulse(document.getElementById('jwtConfigureBtn'))},
+      {delay:1800, fn: () => clickWithPulse(document.getElementById('jwtConfigureBtn'))},
       {delay:900,  fn: () => {}},
       {callout:'jwtModalCallout'},
       // save so the JWT Configuration section on the page behind it appears
