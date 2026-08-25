@@ -769,6 +769,22 @@
     color:var(--ink-45); flex:0 0 auto; margin:0;
   }
   .mock-callout p{font-family:var(--sans); font-size:12.5px; line-height:1.5; color:var(--ink-70); margin:0; flex:1 1 260px;}
+  /* explicit acknowledge-and-advance control — the walkthrough pauses on
+     every callout now instead of auto-continuing on a timer, so a viewer
+     reading slower than the old fixed dwell time never gets rushed past it.
+     .mock-callout itself is pointer-events:none (it floats over mock content
+     without blocking clicks on the mock underneath); this re-enables just
+     the button, not the whole card. */
+  .mock-callout-actions{flex:0 0 100%; display:flex; justify-content:flex-end; margin-top:2px;}
+  .mock-callout-next{
+    pointer-events:auto; appearance:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--sans); font-size:12px; font-weight:600; color:var(--ink);
+    background:rgba(23,22,27,.06); border:1px solid rgba(23,22,27,.18); border-radius:20px;
+    padding:6px 14px; transition:background .2s ease, border-color .2s ease;
+  }
+  .mock-callout-next:hover{background:rgba(23,22,27,.1); border-color:rgba(23,22,27,.32);}
+  .mock-callout-next span{display:inline-block; transition:transform .2s ease;}
+  .mock-callout-next:hover span{transform:translateX(2px);}
 
   /* "how we got here" pause overlay — a deliberate detour out of the main
      journey (see the go(1)/historySeenGroups JS), not another equal-weight
@@ -1533,6 +1549,16 @@
     font-family:var(--sans); font-size:12px; line-height:1.5; color:var(--ink); max-width:75%;
     opacity:0; transform:translateY(8px);
   }
+  /* real ChatGPT @-mentions a connected app as a rich inline chip right in
+     the sent message, not just plain "Owl Trade" text — matches the "Act on
+     your behalf" step to how @GitHub etc. actually render (per reference
+     screenshot), reusing the same real-logo .cgpt-owl-icon this file already
+     has for the tool-pill and tab favicon. */
+  .cgpt-mention-chip{
+    display:inline-flex; align-items:center; gap:5px; background:#fff; border-radius:999px;
+    padding:2px 10px 2px 2px; margin-right:3px; font-weight:600; color:var(--ink); vertical-align:middle;
+  }
+  .cgpt-mention-chip .cgpt-owl-icon{width:18px; height:18px;}
   .cgpt-msg-assistant-wrap{align-self:flex-start; max-width:80%; opacity:0; transform:translateY(8px);}
   .cgpt-msg-assistant{
     font-family:var(--sans); font-size:12px; line-height:1.55; color:var(--ink); margin:0;
@@ -1545,8 +1571,7 @@
      done, crossfading in place via CSS grid stacking so the pill doesn't
      resize) followed by the assistant's actual answer + a small ticker,
      revealed only once the tool call has "finished" */
-  .cgpt-owl-icon-xs{width:16px; height:16px; border-radius:5px;}
-  .cgpt-owl-icon-xs svg{width:9px; height:9px;}
+  .cgpt-owl-icon-xs{width:16px; height:16px;}
   .cgpt-tool-pill{display:inline-grid; margin-bottom:10px;}
   .cgpt-tool-pill-loading, .cgpt-tool-pill-done{
     grid-area:1/1; display:flex; align-items:center; gap:7px;
@@ -1641,14 +1666,40 @@
     font-family:var(--sans); font-size:9.5px; color:var(--ink-45);
   }
 
-  .cgpt-owl-icon{
-    width:42px; height:42px; border-radius:10px; background:var(--ink);
-    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  /* the app's own detail/install page (data-view="app") — modeled on
+     mocks/owl-trade/FakeGPT - App.svg's back/title/share header, app card +
+     Connect button, tagline, and an example prompt+result preview */
+  .cgpt-pop-view[data-view="app"]{padding:14px 14px 16px; box-sizing:border-box; overflow-y:auto;}
+  .cgpt-pop-app-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .cgpt-pop-app-head span{font-family:var(--sans); font-size:11px; font-weight:700; color:var(--ink);}
+  .cgpt-pop-app-head > svg{width:14px; height:14px; color:var(--ink); flex-shrink:0;}
+  .cgpt-pop-back{
+    appearance:none; -webkit-appearance:none; background:none; border:none; padding:0;
+    cursor:pointer; display:flex; color:var(--ink); flex-shrink:0;
   }
-  .cgpt-owl-icon svg{width:24px; height:24px;}
-  .cgpt-owl-icon-sm{width:26px; height:26px; border-radius:7px;}
-  .cgpt-owl-icon-tab{width:13px; height:13px; border-radius:3px;}
-  .cgpt-owl-icon-tab svg{width:9px; height:9px;}
+  .cgpt-pop-back svg{width:14px; height:14px;}
+  .cgpt-pop-app-card{display:flex; align-items:center; gap:12px; margin-bottom:6px;}
+  .cgpt-pop-app-meta{display:flex; flex-direction:column; align-items:flex-start; gap:6px;}
+  .cgpt-pop-app-name{font-family:var(--sans); font-size:13px; font-weight:700; color:var(--ink); margin:0;}
+  .cgpt-pop-connect{
+    appearance:none; -webkit-appearance:none; background:var(--ink); color:var(--cream); border:none;
+    border-radius:14px; padding:5px 14px; font-family:var(--sans); font-size:10.5px; font-weight:600; cursor:pointer;
+  }
+  .cgpt-pop-app-tagline{font-family:var(--sans); font-size:10.5px; color:var(--ink-45); margin:0 0 16px;}
+  .cgpt-pop-app-preview{border-top:1px solid var(--line); padding-top:14px;}
+  .cgpt-pop-preview-msg{
+    font-family:var(--sans); font-size:10.5px; line-height:1.45; color:var(--ink-70);
+    background:rgba(23,22,27,.04); border-radius:10px; padding:9px 11px; margin:0 0 10px;
+  }
+
+  /* the real owltrade-logo.png asset (same circular mark used on the consent
+     screens and the SMS approval avatar), not a hand-drawn approximation —
+     the image already bakes in its own circular ink background, so this is
+     just a sizing frame around it, same convention as .consent-mobile-icon */
+  .cgpt-owl-icon{width:42px; height:42px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center;}
+  .cgpt-owl-icon img{width:100%; height:100%; object-fit:cover; display:block;}
+  .cgpt-owl-icon-sm{width:26px; height:26px;}
+  .cgpt-owl-icon-tab{width:13px; height:13px;}
   /* body variant for steps 2-3 (login / consent) — same window shell as the
      ChatGPT thread, but no sidebar, just centered page content, so the
      frame is visually identical and only the "page" inside changes. */
@@ -1657,13 +1708,34 @@
      edge from the top like a real page, instead of centering a card */
   .cgpt-body-page{flex:1; min-height:0; overflow:hidden; display:flex; align-items:stretch;}
   .cgpt-body-page > img{display:block; width:100%; height:auto;}
-  .cgpt-owl-icon-sm svg{width:15px; height:15px;}
-  /* still used by the price-alert card in the End User Journey's "Act on
-     your behalf" step, even though the app-preview screen that originally
-     introduced these classes has been removed */
-  .cgpt-pop-preview-chart{background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
-  .cgpt-pop-ticker{font-family:var(--sans); font-size:10.5px; color:var(--ink); display:block; margin-bottom:6px;}
-  .cgpt-pop-spark{width:100%; height:20px; color:var(--ink-45);}
+  /* result card used by the "Explore apps" preview (step 3) and the price-alert
+     moment in the End User Journey's "Act on your behalf" step (step 4) — a real
+     labeled chart (axis, gridlines, current-price marker) rather than a bare
+     sparkline, so an agent's result reads as production output, not a wireframe.
+     Kept in the deck's own ink/cream tokens rather than the reference app's actual
+     colors, matching the rest of this file (see feedback_slide_deck_visual_style). */
+  .cgpt-pop-preview-chart{background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:12px 14px 10px;}
+  .cgpt-chart-head{display:flex; align-items:baseline; gap:6px; margin-bottom:8px;}
+  .cgpt-chart-ticker{font-family:var(--mono); font-size:11px; font-weight:700; color:var(--ink);}
+  .cgpt-chart-name{font-family:var(--sans); font-size:10.5px; color:var(--ink-70); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .cgpt-chart-change{font-family:var(--mono); font-size:10.5px; font-weight:700; color:var(--ink); flex-shrink:0;}
+  /* axis labels are real HTML, not SVG <text> — the SVG next to them uses
+     preserveAspectRatio="none" so the line chart can stretch to fill any
+     width, but that non-uniform scale squashes embedded text into an
+     illegible blur. A separate flex column sidesteps that entirely. */
+  .cgpt-chart-plot{display:flex; align-items:stretch; gap:6px;}
+  .cgpt-chart-axis{position:relative; width:26px; flex-shrink:0;}
+  .cgpt-chart-axis span{position:absolute; left:0; transform:translateY(-50%); font-family:var(--mono); font-size:9px; color:var(--ink-45); white-space:nowrap;}
+  .cgpt-chart-svg{flex:1; min-width:0; height:64px; display:block;}
+  .cgpt-chart-grid{stroke:var(--line); stroke-width:1;}
+  .cgpt-chart-threshold{stroke:var(--ink-45); stroke-width:1; stroke-dasharray:3 3;}
+  .cgpt-chart-area{fill:var(--ink); opacity:.06; stroke:none;}
+  .cgpt-chart-line{fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+  .cgpt-chart-dot{fill:var(--cream); stroke:var(--ink); stroke-width:2;}
+  .cgpt-chart-foot{display:flex; gap:14px; margin-top:6px; font-family:var(--sans); font-size:10px; color:var(--ink-70);}
+  .cgpt-chart-foot b{color:var(--ink); font-family:var(--mono); font-weight:700;}
+  .cgpt-chart-swatch{display:inline-block; width:8px; height:2px; background:var(--ink); margin-right:5px; vertical-align:middle;}
+  .cgpt-chart-swatch-dashed{background:none; border-top:2px dashed var(--ink-45); height:0;}
 
   .cgpt-pop-view[data-view="connect"]{padding:20px 16px 16px; box-sizing:border-box;}
   .cgpt-pop-close{
@@ -1691,6 +1763,112 @@
     appearance:none; width:100%; background:var(--ink); color:var(--cream); border:none; cursor:pointer;
     border-radius:20px; padding:11px; font-family:var(--sans); font-size:11.5px; font-weight:600;
   }
+
+  /* consent screen (data-view="connect") — matches mocks/owl-trade/OAuth -
+     Consent.svg's own layout exactly: title, ringed ChatGPT mark, two-line
+     heading, divider, bulleted permissions, divider, ToS line, Allow/Deny.
+     #C08B0C on Allow is the mock's own gold, pulled straight from the SVG
+     (same value the Owl Trade logo itself uses), not an approximation. */
+  .cgpt-consent-title{font-family:var(--sans); font-size:11px; font-weight:700; color:var(--ink); text-align:center; margin:0 0 18px;}
+  .cgpt-consent-icon{
+    width:44px; height:44px; border-radius:50%; border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 16px; flex-shrink:0;
+  }
+  .cgpt-consent-icon svg{width:20px; height:20px; color:var(--ink);}
+  .cgpt-consent-heading{font-family:var(--sans); font-size:15px; font-weight:700; line-height:1.35; text-align:center; color:var(--ink); margin:0 0 16px;}
+  .cgpt-consent-divider{height:1px; background:var(--line); margin:0 -16px 14px;}
+  .cgpt-consent-allowed-label{font-family:var(--sans); font-size:11.5px; font-weight:700; color:var(--ink); margin:0 0 10px;}
+  .cgpt-consent-list{list-style:none; margin:0 0 14px; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .cgpt-consent-list li{font-family:var(--sans); font-size:10.5px; line-height:1.4; color:var(--ink); padding-left:13px; position:relative;}
+  .cgpt-consent-list li::before{content:'\2022'; position:absolute; left:0; color:var(--ink);}
+  .cgpt-consent-disclaimer{font-family:var(--sans); font-size:9px; line-height:1.5; color:var(--ink-45); margin:0 0 14px;}
+  .cgpt-consent-actions{display:flex; gap:8px;}
+  .cgpt-consent-allow{
+    flex:1; appearance:none; -webkit-appearance:none; background:#C08B0C; color:#fff; border:none; cursor:pointer;
+    border-radius:9px; padding:10px; font-family:var(--sans); font-size:11px; font-weight:600;
+  }
+  .cgpt-consent-deny{
+    flex:1; appearance:none; -webkit-appearance:none; background:none; color:var(--ink); border:1px solid var(--line); cursor:pointer;
+    border-radius:9px; padding:10px; font-family:var(--sans); font-size:11px; font-weight:600;
+  }
+
+  /* the "Owl Trade" app page — a full-screen takeover of .cgpt-main (sidebar
+     stays untouched, same as clicking into an app for real) rather than a
+     small popover, since this is a dedicated page in the real product, not
+     a menu overlay. Same fade-in convention as .cgpt-popover. */
+  .cgpt-app-page{
+    position:absolute; inset:0; z-index:25; background:var(--cream);
+    display:flex; flex-direction:column; opacity:0; pointer-events:none;
+    transition:opacity .22s ease;
+    /* the page's own outer margin — this was missing entirely before, so
+       the icon/title/gold card/Information rows sat flush against the
+       window's edges instead of reading as a page with real margins. */
+    padding:18px 28px 22px; box-sizing:border-box;
+  }
+  .cgpt-app-page.show{opacity:1; pointer-events:auto;}
+  /* per Kelly's own mock (Desktop/test.svg): a plain "< Plugins" breadcrumb
+     back link, not a centered "Apps" title + share icon */
+  .cgpt-app-page-head{padding-bottom:14px; flex-shrink:0;}
+  .cgpt-app-page-back{
+    appearance:none; -webkit-appearance:none; background:none; border:none; padding:4px 0; cursor:pointer;
+    display:flex; align-items:center; gap:6px; color:var(--ink); font-family:var(--sans); font-size:13px; font-weight:600;
+  }
+  .cgpt-app-page-back svg{width:16px; height:16px; flex-shrink:0;}
+  .cgpt-app-page-body{flex:1; min-height:0; overflow-y:auto;}
+  /* icon sits alone on its own row, then a name+tagline block with Connect
+     pinned to the far right of the row (not tight against the name) — both
+     per the mock's own layout, not the generic ChatGPT Plugins page pattern
+     this was modeled on before. Sized to fit the actual window's content
+     pane without scrolling — the mock itself was drawn at a taller aspect
+     ratio than this window's real 568x460 content area, so a literal 1:1
+     scale of it overflowed. */
+  .cgpt-app-page-icon{width:56px; height:56px; margin-bottom:14px;}
+  .cgpt-app-page-title-row{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px;}
+  .cgpt-app-page-name{font-family:var(--sans); font-size:20px; font-weight:700; color:var(--ink); margin:0 0 4px;}
+  .cgpt-app-page-connect{
+    appearance:none; -webkit-appearance:none; background:var(--ink); color:var(--cream); border:none;
+    border-radius:16px; padding:8px 16px; font-family:var(--sans); font-size:12px; font-weight:600; cursor:pointer; flex-shrink:0;
+  }
+  .cgpt-app-page-tagline{font-family:var(--sans); font-size:12px; color:var(--ink-45); margin:0;}
+  /* the gold card wrapping the example prompt + result — the mock's own
+     addition; the message bubble sits right-aligned inside it (like a real
+     sent chat message) with the result card underneath spanning full width.
+     Chart sizing is scoped here (not the shared .cgpt-chart-* rules) so
+     step 4's own chart and the landing page's ambient one aren't affected. */
+  .cgpt-app-page-preview-card{
+    display:flex; flex-direction:column; background:#E7CB8D; border-radius:14px;
+    padding:16px; max-width:420px;
+  }
+  .cgpt-app-page-preview-card .cgpt-pop-preview-msg{align-self:flex-end; max-width:80%; background:#F7EFDA; margin:0 0 10px;}
+  .cgpt-app-page-preview-card .cgpt-pop-preview-chart{padding:10px 12px 8px;}
+  .cgpt-app-page-preview-card .cgpt-chart-head{margin-bottom:6px;}
+  .cgpt-app-page-preview-card .cgpt-chart-svg{height:46px;}
+  .cgpt-app-page-preview-card .cgpt-chart-foot{margin-top:4px;}
+  /* the long-form description block below the hero — skills list, sample
+     @-mention prompts, requirements — modeled on the real ChatGPT Plugins
+     page's own Canva listing (same section order: intro paragraph,
+     "Available skills," invocation line, "Try prompts like," Requirements).
+     This is genuinely below-the-fold content on the real page too, so it's
+     fine for it to require scrolling here rather than fitting above it. */
+  .cgpt-app-page-desc{margin-top:22px; max-width:460px; font-family:var(--sans); font-size:12px; line-height:1.6; color:var(--ink-70);}
+  .cgpt-app-page-desc p{margin:0 0 12px;}
+  .cgpt-app-page-desc b{color:var(--ink); font-weight:600;}
+  .cgpt-app-page-desc-label{font-family:var(--sans); font-size:12.5px; font-weight:700; color:var(--ink); margin:0 0 8px;}
+  .cgpt-app-page-desc ul{list-style:none; margin:0 0 14px; padding:0; display:flex; flex-direction:column; gap:7px;}
+  .cgpt-app-page-desc ul li{position:relative; padding-left:13px;}
+  .cgpt-app-page-desc ul li::before{content:'\2022'; position:absolute; left:0; color:var(--ink-45);}
+  .cgpt-app-page-desc-prompts li{font-family:var(--mono); font-size:11px; color:var(--ink-70);}
+  .cgpt-app-page-appsec{margin-top:6px; margin-bottom:22px; max-width:460px;}
+  .cgpt-app-page-appsec-row{display:flex; align-items:center; gap:10px; margin-top:8px;}
+  .cgpt-app-page-appsec-row span{font-family:var(--sans); font-size:13px; font-weight:600; color:var(--ink);}
+  .cgpt-app-page-info{margin-top:16px; max-width:420px;}
+  .cgpt-app-page-info-label{font-family:var(--sans); font-size:13px; font-weight:700; color:var(--ink); margin:0 0 2px;}
+  .cgpt-app-page-info-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0;
+    border-top:1px solid var(--line); font-family:var(--sans); font-size:11.5px;
+  }
+  .cgpt-app-page-info-row span:first-child{color:var(--ink-45);}
+  .cgpt-app-page-info-row span:last-child{color:var(--ink); font-weight:600;}
   /* abstracted illustrations (Option B) — real HTML/CSS UI components (buttons, inputs,
      cards, message bubbles) instead of hand-drawn line-art, modeled on real login/OAuth/
      RCS patterns. Flat and opaque throughout — no blur/translucency ("liquid glass"). */
@@ -1717,6 +1895,13 @@
   }
   .step-frame.active .ui-avatar{animation:uiPopIn .4s cubic-bezier(.34,1.56,.64,1) .05s forwards;}
   .ui-avatar svg{width:18px; height:18px;}
+  /* the step 2 login avatar holds the real Owl Trade logo, not an SVG glyph
+     like the other .ui-avatar instances — this never got its own sizing rule
+     when the logo was swapped in, so it was rendering unclipped at native
+     size instead of filling the circle. border-radius lives on the img
+     itself (not overflow:hidden on .ui-avatar) since other instances rely on
+     .ui-success-badge visibly overlapping the avatar's edge. */
+  .ui-avatar img{width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;}
   .ui-avatar-app{background:var(--ink);}
 
   .ui-title{font-family:var(--sans); font-weight:600; font-size:15px; color:var(--ink); margin:0 0 7px; opacity:0; transform:translateY(4px);}
@@ -2438,7 +2623,7 @@
 
   /* section header row (title + action button) */
   .tw-sec-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px;}
-  .tw-sec-title{font-size:26px; font-weight:500; margin:0;}
+  .tw-sec-title{font-size:20px; font-weight:500; margin:0;}
   .tw-sec-title-solo{margin:0 0 22px;}
   .tw-btn{
     appearance:none; font-family:inherit; font-size:13.5px; font-weight:500; cursor:pointer;
@@ -2579,6 +2764,11 @@
   /* chip row → first field label: measured gap 291.9(label top) - 211(chip
      bottom) = ~81px */
   .tw-drawer-meta{display:flex; align-items:center; gap:14px; margin-bottom:81px;}
+  /* Edit client drawer runs tighter than the measured default above — the
+     81px gap and 52px top padding read as too much dead space above a form
+     that's otherwise dense with fields */
+  #editClientOverlay .tw-drawer-body{padding-top:32px;}
+  #editClientOverlay .tw-drawer-meta{margin-bottom:32px;}
   .tw-drawer-type{font-size:14px; color:var(--tw-ink);}
   /* field box measured at 380x56 (all narrow fields identical) — 22px bottom
      margin lands close to the measured ~18px input-bottom-to-next-label gap */
@@ -2610,11 +2800,6 @@
     font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
     color:var(--tw-grey); margin:0 0 14px;
   }
-  .tw-scope-search-btn{
-    appearance:none; width:40px; height:40px; border-radius:10px; background:var(--tw-subtle);
-    border:none; color:var(--tw-grey); display:flex; align-items:center; justify-content:center; cursor:pointer;
-  }
-  .tw-scope-search-btn svg{width:16px; height:16px;}
   .tw-modal-divider{height:1px; background:var(--tw-line); margin:40px 0;}
   .tw-access-row{display:flex; align-items:flex-start; justify-content:space-between; gap:24px;}
   .tw-access-title{font-size:14px; font-weight:600; color:var(--tw-ink); margin:0 0 6px;}
@@ -3238,7 +3423,7 @@
             <div class="consent-mobile-frame consent-mobile-frame-history2">
               <div class="consent-mobile consent-mobile-sm">
                 <div class="consent-mobile-icon">
-                  <img src="assets/owltrade-logo.png" alt="OwlTrade logo" class="consent-mobile-icon-logo">
+                  <img src="assets/owltrade-logo.png?v=3" alt="OwlTrade logo" class="consent-mobile-icon-logo">
                 </div>
                 <p class="consent-mobile-heading">ChatGPT wants access to Owl Trade</p>
                 <div class="consent-mobile-divider"></div>
@@ -3430,11 +3615,12 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
                       </div>
                     </div>
-                    <div class="cgpt-nav-item cgpt-nav-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>New chat</div>
+                    <div class="cgpt-nav-item cgpt-nav-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New chat</div>
+                    <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M8 21h10a2 2 0 0 0 2-2V9"/></svg>Images</div>
                     <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7.5" height="16" rx="2"/><rect x="13.5" y="4" width="7.5" height="16" rx="2"/></svg>Library</div>
-                    <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Projects</div>
-                    <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Scheduled</div>
                     <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-4 7.5"/></svg>Plugins</div>
+                    <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>Projects</div>
+                    <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M9.5 10l-2 2 2 2M14.5 10l2 2-2 2"/></svg>Codex</div>
                     <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</div>
                     <p class="cgpt-recents-label">Recents</p>
                     <div class="cgpt-recent-item">Plan my next vacation</div>
@@ -3486,13 +3672,26 @@
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
                         </div>
                         <div class="cgpt-pop-app-card">
-                          <div class="cgpt-owl-icon"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                          <div class="cgpt-owl-icon"><img src="assets/owltrade-logo.png?v=3" alt=""></div>
                           <div class="cgpt-pop-app-meta"><p class="cgpt-pop-app-name">Owl Trade</p><button class="cgpt-pop-connect" data-action="connect">Connect</button></div>
                         </div>
                         <p class="cgpt-pop-app-tagline">Invest, buy, trade</p>
                         <div class="cgpt-pop-app-preview">
                           <div class="cgpt-pop-preview-msg">@Owl Trade monitor VOO and get me hourly price alerts</div>
-                          <div class="cgpt-pop-preview-chart"><span class="cgpt-pop-ticker">VOO <b>+2.48</b> (0.30%)</span><svg class="cgpt-pop-spark" viewBox="0 0 100 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M0 10 L10 14 L20 6 L30 16 L40 12 L50 15 L60 9 L70 13 L80 8 L90 11 L100 5"/></svg></div>
+                          <div class="cgpt-pop-preview-chart">
+                            <div class="cgpt-chart-head"><span class="cgpt-chart-ticker">VOO</span><span class="cgpt-chart-name">Vanguard S&amp;P 500 ETF</span><span class="cgpt-chart-change">+2.48 (0.30%)</span></div>
+                            <div class="cgpt-chart-plot">
+                              <div class="cgpt-chart-axis"><span style="top:11.7%">555</span><span style="top:91.7%">548</span></div>
+                              <svg class="cgpt-chart-svg" viewBox="0 0 280 120" preserveAspectRatio="none">
+                                <line class="cgpt-chart-grid" x1="0" y1="14" x2="280" y2="14"/>
+                                <line class="cgpt-chart-grid" x1="0" y1="110" x2="280" y2="110"/>
+                                <path class="cgpt-chart-area" d="M0,90 L40,96 L80,78 L120,84 L160,64 L200,70 L240,48 L280,40 L280,120 L0,120 Z"/>
+                                <path class="cgpt-chart-line" d="M0,90 L40,96 L80,78 L120,84 L160,64 L200,70 L240,48 L280,40"/>
+                                <circle class="cgpt-chart-dot" cx="280" cy="40" r="4"/>
+                              </svg>
+                            </div>
+                            <div class="cgpt-chart-foot"><span><i class="cgpt-chart-swatch"></i>Current <b>$552.14</b></span></div>
+                          </div>
                         </div>
                       </div>
                       <div class="cgpt-pop-view" data-view="connect">
@@ -3500,7 +3699,7 @@
                         <div class="cgpt-pop-connect-icons">
                           <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
                           <span class="cgpt-pop-connect-dots"><span></span><span></span><span></span></span>
-                          <div class="cgpt-owl-icon cgpt-owl-icon-sm"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                          <div class="cgpt-owl-icon cgpt-owl-icon-sm"><img src="assets/owltrade-logo.png?v=3" alt=""></div>
                         </div>
                         <p class="cgpt-pop-connect-heading">Connect Owl Trade</p>
                         <div class="cgpt-pop-warning-box">
@@ -3651,11 +3850,12 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
                           </div>
                         </div>
-                        <div class="cgpt-nav-item cgpt-nav-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>New chat</div>
+                        <div class="cgpt-nav-item cgpt-nav-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New chat</div>
+                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M8 21h10a2 2 0 0 0 2-2V9"/></svg>Images</div>
                         <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7.5" height="16" rx="2"/><rect x="13.5" y="4" width="7.5" height="16" rx="2"/></svg>Library</div>
-                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Projects</div>
-                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Scheduled</div>
                         <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-4 7.5"/></svg>Plugins</div>
+                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>Projects</div>
+                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M9.5 10l-2 2 2 2M14.5 10l2 2-2 2"/></svg>Codex</div>
                         <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</div>
                         <p class="cgpt-recents-label">Recents</p>
                         <div class="cgpt-recent-item">Plan my next vacation</div>
@@ -3693,27 +3893,99 @@
                               <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="cgpt-pop-item-text"><p>Create image</p><span>Visualize anything</span></span></div>
                               <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span class="cgpt-pop-item-text"><p>Web search</p><span>Find real-time news and info</span></span></div>
                               <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="14" width="4" height="6" rx="1"/><rect x="10" y="9" width="4" height="11" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg><span class="cgpt-pop-item-text"><p>Deep research</p><span>Get a detailed report</span></span></div>
-                              <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 9-9 9-9-9z"/></svg><span class="cgpt-pop-item-text"><p>Atlassian Rovo</p><span>Manage Jira and Confluence fast</span></span><span class="cgpt-pop-item-connect">Connect</span></div>
-                              <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg><span class="cgpt-pop-item-text"><p>Box</p><span>Search and reference your documents</span></span><span class="cgpt-pop-item-connect">Connect</span></div>
-                              <button class="cgpt-pop-item" data-action="connect"><svg viewBox="0 0 24 24" fill="var(--ink)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--cream)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--cream)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--cream)"/></svg><span class="cgpt-pop-item-text"><p>Owl Trade</p><span>Invest, buy, trade</span></span><span class="cgpt-pop-item-connect">Connect</span></button>
+                              <button class="cgpt-pop-item" data-action="view-app"><span class="cgpt-owl-icon" style="width:14px;height:14px;"><img src="assets/owltrade-logo.png?v=3" alt=""></span><span class="cgpt-pop-item-text"><p>Owl Trade</p><span>Invest, buy, trade</span></span><span class="cgpt-pop-item-connect">Connect</span></button>
                             </div>
                             <p class="cgpt-pop-footer">Type to search plugins, files, folders &amp; skills</p>
                           </div>
+                          <!-- matches mocks/owl-trade/OAuth - Consent.svg exactly: title, ChatGPT
+                               mark in a ringed circle, two-line heading, divider, bulleted
+                               permissions list, divider, ToS/Privacy line, Allow/Deny -->
                           <div class="cgpt-pop-view" data-view="connect">
+                            <p class="cgpt-consent-title">Owl Trade</p>
                             <button class="cgpt-pop-close" data-action="close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-                            <div class="cgpt-pop-connect-icons">
-                              <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
-                              <span class="cgpt-pop-connect-dots"><span></span><span></span><span></span></span>
-                              <div class="cgpt-owl-icon cgpt-owl-icon-sm"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                            <div class="cgpt-consent-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></div>
+                            <h3 class="cgpt-consent-heading">ChatGPT wants access to<br>Owl Trade</h3>
+                            <div class="cgpt-consent-divider"></div>
+                            <p class="cgpt-consent-allowed-label">ChatGPT will be allowed to:</p>
+                            <ul class="cgpt-consent-list">
+                              <li>Verify your profile information</li>
+                              <li>Verify your identity</li>
+                              <li>Take action on your behalf</li>
+                            </ul>
+                            <div class="cgpt-consent-divider"></div>
+                            <p class="cgpt-consent-disclaimer">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                            <div class="cgpt-consent-actions">
+                              <button class="cgpt-consent-allow" data-action="continue">Allow</button>
+                              <button class="cgpt-consent-deny" data-action="close">Deny</button>
                             </div>
-                            <p class="cgpt-pop-connect-heading">Connect Owl Trade</p>
-                            <div class="cgpt-pop-warning-box">
-                              <p><strong>You're in control.</strong> ChatGPT always respects your training data preferences.</p>
-                              <p><strong>Apps may introduce elevated risk.</strong> ChatGPT is built to protect your data, but attackers may attempt to use ChatGPT to access your data in the app, or use the app to access your data in ChatGPT.</p>
-                              <p><strong>Data shared with this app.</strong> By connecting, you allow it to access basic account info and a summary of your recent context and intent within ChatGPT.</p>
-                              <div class="cgpt-pop-toggle-row"><strong>Reference memories and chats</strong><span class="cgpt-pop-toggle"></span></div>
+                          </div>
+                        </div>
+                        <!-- the app's own install/detail page — modeled on mocks/owl-trade/FakeGPT
+                             - App.svg — a full-screen takeover of the chat area (sidebar stays,
+                             matching how ChatGPT itself navigates to an app's page), not a small
+                             popover, since that's what clicking "Owl Trade" actually opens. -->
+                        <div class="cgpt-app-page">
+                          <div class="cgpt-app-page-head">
+                            <button class="cgpt-app-page-back" data-action="close-app-page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Plugins</button>
+                          </div>
+                          <div class="cgpt-app-page-body">
+                            <div class="cgpt-owl-icon cgpt-app-page-icon"><img src="assets/owltrade-logo.png?v=3" alt=""></div>
+                            <div class="cgpt-app-page-title-row">
+                              <div>
+                                <p class="cgpt-app-page-name">Owl Trade</p>
+                                <p class="cgpt-app-page-tagline">Invest, buy, trade</p>
+                              </div>
+                              <button class="cgpt-app-page-connect" data-action="app-page-connect">Install plugin</button>
                             </div>
-                            <button class="cgpt-pop-continue" data-action="continue">Continue to Owl Trade</button>
+                            <div class="cgpt-app-page-preview-card">
+                              <div class="cgpt-pop-preview-msg">@Owl Trade monitor VOO and get me hourly price alerts</div>
+                              <div class="cgpt-pop-preview-chart">
+                                <div class="cgpt-chart-head"><span class="cgpt-chart-ticker">VOO</span><span class="cgpt-chart-name">Vanguard S&amp;P 500 ETF</span><span class="cgpt-chart-change">+2.48 (0.30%)</span></div>
+                                <div class="cgpt-chart-plot">
+                                  <div class="cgpt-chart-axis"><span style="top:11.7%">555</span><span style="top:91.7%">548</span></div>
+                                  <svg class="cgpt-chart-svg" viewBox="0 0 280 120" preserveAspectRatio="none">
+                                    <line class="cgpt-chart-grid" x1="0" y1="14" x2="280" y2="14"/>
+                                    <line class="cgpt-chart-grid" x1="0" y1="110" x2="280" y2="110"/>
+                                    <path class="cgpt-chart-area" d="M0,90 L40,96 L80,78 L120,84 L160,64 L200,70 L240,48 L280,40 L280,120 L0,120 Z"/>
+                                    <path class="cgpt-chart-line" d="M0,90 L40,96 L80,78 L120,84 L160,64 L200,70 L240,48 L280,40"/>
+                                    <circle class="cgpt-chart-dot" cx="280" cy="40" r="4"/>
+                                  </svg>
+                                </div>
+                                <div class="cgpt-chart-foot"><span><i class="cgpt-chart-swatch"></i>Current <b>$552.14</b></span></div>
+                              </div>
+                            </div>
+                            <div class="cgpt-app-page-desc">
+                              <p>Bring Owl Trade into ChatGPT and monitor markets, get price alerts, and act on trades through natural conversation.</p>
+                              <p class="cgpt-app-page-desc-label">Available skills:</p>
+                              <ul>
+                                <li><b>Monitor positions:</b> Track OJ futures, ETFs, and other assets in your portfolio in real time.</li>
+                                <li><b>Set price alerts:</b> Get notified the moment an asset crosses a threshold you care about.</li>
+                                <li><b>Place trades:</b> Buy or sell on your behalf once you've approved the specific action.</li>
+                                <li><b>Review activity:</b> Ask about recent trades, account balance, or position history.</li>
+                              </ul>
+                              <p>Once installed, describe what you want in plain language or invoke Owl Trade directly with <b>@Owl Trade</b>.</p>
+                              <p class="cgpt-app-page-desc-label">Try prompts like:</p>
+                              <ul class="cgpt-app-page-desc-prompts">
+                                <li>@Owl Trade, monitor OJ futures and notify me when I should buy or sell.</li>
+                                <li>@Owl Trade, monitor VOO and get me hourly price alerts.</li>
+                                <li>@Owl Trade, what's my current position in OJ futures?</li>
+                                <li>@Owl Trade, sell 10 shares of VOO.</li>
+                              </ul>
+                              <p><b>Requirements:</b> Connect your Owl Trade account to use the plugin. High-risk actions like trades require your approval before they're executed.</p>
+                            </div>
+                            <div class="cgpt-app-page-appsec">
+                              <p class="cgpt-app-page-info-label">App</p>
+                              <div class="cgpt-app-page-appsec-row">
+                                <div class="cgpt-owl-icon" style="width:32px;height:32px;"><img src="assets/owltrade-logo.png?v=3" alt=""></div>
+                                <span>Owl Trade</span>
+                              </div>
+                            </div>
+                            <div class="cgpt-app-page-info">
+                              <p class="cgpt-app-page-info-label">Information</p>
+                              <div class="cgpt-app-page-info-row"><span>Category</span><span>Financial</span></div>
+                              <div class="cgpt-app-page-info-row"><span>Capabilities</span><span>Interactive, Writes</span></div>
+                              <div class="cgpt-app-page-info-row"><span>Version</span><span>1.0.0</span></div>
+                            </div>
                           </div>
                         </div>
                         <p class="cgpt-disclaimer">ChatGPT can make mistakes. Check important info.</p>
@@ -3738,7 +4010,7 @@
                     <div class="cgpt-titlebar">
                       <div class="cgpt-dots"><span></span><span></span><span></span></div>
                       <div class="cgpt-tab">
-                        <span class="cgpt-tab-fav cgpt-owl-icon cgpt-owl-icon-tab"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                        <span class="cgpt-tab-fav cgpt-owl-icon cgpt-owl-icon-tab"><img src="assets/owltrade-logo.png?v=3" alt=""></span>
                         <span class="cgpt-tab-label">Owl Trade</span>
                         <svg class="cgpt-tab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
                       </div>
@@ -3764,7 +4036,7 @@
                     <div class="cgpt-body-plain">
                       <div class="ui-mock">
                         <div class="ui-avatar">
-                          <svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg>
+                          <img src="assets/owltrade-logo.png?v=3" alt="">
                         </div>
                         <p class="ui-title">Log in to Owl Trade</p>
                         <div class="ui-input"><span class="ui-input-text">you@owltrade.com</span><span class="ui-caret"></span></div>
@@ -3793,7 +4065,7 @@
                     <div class="cgpt-titlebar">
                       <div class="cgpt-dots"><span></span><span></span><span></span></div>
                       <div class="cgpt-tab">
-                        <span class="cgpt-tab-fav cgpt-owl-icon cgpt-owl-icon-tab"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                        <span class="cgpt-tab-fav cgpt-owl-icon cgpt-owl-icon-tab"><img src="assets/owltrade-logo.png?v=3" alt=""></span>
                         <span class="cgpt-tab-label">Owl Trade</span>
                         <svg class="cgpt-tab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
                       </div>
@@ -3819,7 +4091,7 @@
                     <div class="cgpt-body-plain">
                       <div class="consent-mobile">
                         <div class="consent-mobile-icon">
-                          <img src="assets/owltrade-logo.png" alt="OwlTrade logo" class="consent-mobile-icon-logo">
+                          <img src="assets/owltrade-logo.png?v=3" alt="OwlTrade logo" class="consent-mobile-icon-logo">
                         </div>
                         <p class="consent-mobile-heading">ChatGPT wants access to Owl Trade</p>
                         <div class="consent-mobile-divider"></div>
@@ -3888,11 +4160,12 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
                           </div>
                         </div>
-                        <div class="cgpt-nav-item cgpt-nav-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>New chat</div>
+                        <div class="cgpt-nav-item cgpt-nav-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New chat</div>
+                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M8 21h10a2 2 0 0 0 2-2V9"/></svg>Images</div>
                         <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7.5" height="16" rx="2"/><rect x="13.5" y="4" width="7.5" height="16" rx="2"/></svg>Library</div>
-                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Projects</div>
-                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Scheduled</div>
                         <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-4 7.5"/></svg>Plugins</div>
+                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>Projects</div>
+                        <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M9.5 10l-2 2 2 2M14.5 10l2 2-2 2"/></svg>Codex</div>
                         <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</div>
                         <p class="cgpt-recents-label">Recents</p>
                         <div class="cgpt-recent-item">Plan my next vacation</div>
@@ -3902,22 +4175,33 @@
                       </div>
                       <div class="cgpt-main">
                         <div class="cgpt-thread">
-                          <div class="cgpt-msg-user">Any updates on OJ?</div>
+                          <div class="cgpt-msg-user"><span class="cgpt-mention-chip"><span class="cgpt-owl-icon"><img src="assets/owltrade-logo.png?v=3" alt=""></span>Owl Trade</span> any updates on OJ?</div>
                           <div class="cgpt-msg-assistant-wrap">
                             <div class="cgpt-tool-pill">
                               <span class="cgpt-tool-pill-loading">
-                                <span class="cgpt-owl-icon cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span class="cgpt-owl-icon cgpt-owl-icon-xs"><img src="assets/owltrade-logo.png?v=3" alt=""></span>
                                 <span>Using Owl Trade&hellip;</span>
                               </span>
                               <span class="cgpt-tool-pill-done">
-                                <span class="cgpt-owl-icon cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span class="cgpt-owl-icon cgpt-owl-icon-xs"><img src="assets/owltrade-logo.png?v=3" alt=""></span>
                                 <span>Used Owl Trade</span>
                               </span>
                             </div>
                             <p class="cgpt-msg-assistant cgpt-msg-assistant-delayed">Not yet &mdash; OJ is at $3.42, three cents below your $3.45 alert threshold. I&rsquo;ll keep watching and let you know the moment it crosses.</p>
                             <div class="cgpt-pop-preview-chart cgpt-msg-assistant-delayed" style="margin-top:10px;">
-                              <span class="cgpt-pop-ticker">OJ <b>+0.08</b> (2.4%)</span>
-                              <svg class="cgpt-pop-spark" viewBox="0 0 100 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M0 10 L10 14 L20 6 L30 16 L40 12 L50 15 L60 9 L70 13 L80 8 L90 11 L100 5"/></svg>
+                              <div class="cgpt-chart-head"><span class="cgpt-chart-ticker">OJ</span><span class="cgpt-chart-name">Orange Juice Futures</span><span class="cgpt-chart-change">+0.08 (2.4%)</span></div>
+                              <div class="cgpt-chart-plot">
+                                <div class="cgpt-chart-axis"><span style="top:11.7%">3.60</span><span style="top:51.7%">3.45</span><span style="top:91.7%">3.30</span></div>
+                                <svg class="cgpt-chart-svg" viewBox="0 0 280 120" preserveAspectRatio="none">
+                                  <line class="cgpt-chart-grid" x1="0" y1="14" x2="280" y2="14"/>
+                                  <line class="cgpt-chart-grid" x1="0" y1="110" x2="280" y2="110"/>
+                                  <line class="cgpt-chart-threshold" x1="0" y1="62" x2="280" y2="62"/>
+                                  <path class="cgpt-chart-area" d="M0,104 L40,94 L80,107 L120,84 L160,91 L200,78 L240,88 L280,72 L280,120 L0,120 Z"/>
+                                  <path class="cgpt-chart-line" d="M0,104 L40,94 L80,107 L120,84 L160,91 L200,78 L240,88 L280,72"/>
+                                  <circle class="cgpt-chart-dot" cx="280" cy="72" r="4"/>
+                                </svg>
+                              </div>
+                              <div class="cgpt-chart-foot"><span><i class="cgpt-chart-swatch"></i>Current <b>$3.42</b></span><span><i class="cgpt-chart-swatch cgpt-chart-swatch-dashed"></i>Alert at <b>$3.45</b></span></div>
                             </div>
                             <div class="cgpt-msg-actions cgpt-msg-assistant-delayed">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
@@ -4056,7 +4340,7 @@
                       <div class="ui-phone-contact">
                         <div class="ui-phone-avatar-wrap">
                           <div class="ui-phone-avatar">
-                            <img src="assets/owltrade-logo.png" alt="OwlTrade logo">
+                            <img src="assets/owltrade-logo.png?v=3" alt="OwlTrade logo">
                           </div>
                           <span class="ui-verified-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
                         </div>
@@ -4240,9 +4524,20 @@
                     <div class="idp-screen idp-screen-embed tw-console-embed" data-app="twilio" id="idpTwilioSlot"></div>
                   </div>
                 </div>
+                <div class="mock-callout" id="oktaToTwilioCallout">
+                  <p class="mock-callout-kicker">Next: The Twilio Console</p>
+                  <p>Once you've copied the information needed to authenticate your users, head over to the Twilio Console.</p>
+                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
+                </div>
+                <div class="mock-callout" id="jwtModalCallout">
+                  <p class="mock-callout-kicker">Where Those Values Go</p>
+                  <p>This is where those values go — paste what you copied from Okta so Twilio can use it to verify your users' identity.</p>
+                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
+                </div>
                 <div class="mock-callout" id="uploadCallout">
                   <p class="mock-callout-kicker">Why Upload, Not Paste</p>
                   <p>Fewer chances for a copy-paste error to silently corrupt a key. It also mirrors the API itself: engineering built bulk upload and delete for keys at the API level, so the console stays a clean match for it, not a separate paved path.</p>
+                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Got it <span aria-hidden="true">&rarr;</span></button></div>
                 </div>
               </div>
             </div>
@@ -4288,6 +4583,11 @@
                     <div class="cgpt-body-page tw-console-embed" id="s7ConsentSlot"></div>
                   </div>
                 </div>
+                <div class="mock-callout" id="consentPreviewCallout">
+                  <p class="mock-callout-kicker">Watch The Preview Update</p>
+                  <p>The consent screen preview updates live as you type — so you can see exactly what your users will see before you save.</p>
+                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
+                </div>
               </div>
             </div>
           </div>
@@ -4332,6 +4632,26 @@
                     <div class="cgpt-body-page tw-console-embed" id="s7ClientsSlot"></div>
                   </div>
                 </div>
+                <div class="mock-callout" id="clientsListCallout">
+                  <p class="mock-callout-kicker">One Place For Every Agent</p>
+                  <p>Every agent or app that's been granted access to Owl Trade lives here — no separate tool needed to see what's connected.</p>
+                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
+                </div>
+                <div class="mock-callout" id="clientDetailCallout">
+                  <p class="mock-callout-kicker">Everything About One Agent</p>
+                  <p>Name, description, grant types, redirect URLs — everything tied to this agent lives on a single page.</p>
+                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
+                </div>
+                <div class="mock-callout" id="identitiesListCallout">
+                  <p class="mock-callout-kicker">Or Look Up By User</p>
+                  <p>The same access can be viewed the other way — by user instead of by agent. Useful when you're troubleshooting one person's access, like restricting or updating what an agent can do if a user's permissions change.</p>
+                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
+                </div>
+                <div class="mock-callout" id="identityDetailCallout">
+                  <p class="mock-callout-kicker">One User's Access, In Full</p>
+                  <p>The Authorized Clients tab shows exactly which agents this user has approved and what each one can currently do — a live picture of their permissions, not a static log.</p>
+                  <div class="mock-callout-actions"><button class="mock-callout-next" type="button">Next <span aria-hidden="true">&rarr;</span></button></div>
+                </div>
               </div>
             </div>
           </div>
@@ -4364,7 +4684,7 @@
                         <div class="ui-phone-contact">
                           <div class="ui-phone-avatar-wrap">
                             <div class="ui-phone-avatar">
-                              <img src="assets/owltrade-logo.png" alt="OwlTrade logo">
+                              <img src="assets/owltrade-logo.png?v=3" alt="OwlTrade logo">
                             </div>
                             <span class="ui-verified-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
                           </div>
@@ -4774,13 +5094,12 @@
                     <div class="tw-client-detail">
                       <div class="tw-config-sec-head">
                         <h1 class="tw-h1" id="cdName" style="margin-bottom:0;">Client name</h1>
-                        <button class="tw-btn tw-btn-danger">Delete client</button>
+                        <div style="display:flex; gap:12px;">
+                          <button class="tw-btn" id="cdEditBtn">Edit client</button>
+                          <button class="tw-btn tw-btn-danger">Delete client</button>
+                        </div>
                       </div>
-                      <div style="height:28px;"></div>
-                      <div class="tw-config-sec-head">
-                        <h3 class="tw-config-sec-title">Details</h3>
-                        <button class="tw-btn" id="cdEditBtn">Edit client details</button>
-                      </div>
+                      <div style="height:14px;"></div>
                       <div class="tw-detail-stack">
                         <div class="tw-detail-field">
                           <p class="tw-config-field-label">Client name</p>
@@ -4887,7 +5206,7 @@
                       <div class="consent-mobile" id="consentPreviewCard">
                         <div class="consent-mobile-icon">
                           <svg id="consentPreviewIconSvg" viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>
-                          <img src="assets/owltrade-logo.png" alt="" class="consent-mobile-icon-logo" id="consentPreviewLogoImg" style="display:none;">
+                          <img src="assets/owltrade-logo.png?v=3" alt="" class="consent-mobile-icon-logo" id="consentPreviewLogoImg" style="display:none;">
                         </div>
                         <p class="consent-mobile-heading" id="consentPreviewHeading">ChatGPT wants access to [App name]</p>
                         <div class="consent-mobile-divider"></div>
@@ -4942,7 +5261,7 @@
                             <div class="consent-mobile" id="consentModalPreviewCard">
                               <div class="consent-mobile-icon">
                                 <svg id="consentModalPreviewIconSvg" viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>
-                                <img src="assets/owltrade-logo.png" alt="" class="consent-mobile-icon-logo" id="consentModalPreviewLogoImg" style="display:none;">
+                                <img src="assets/owltrade-logo.png?v=3" alt="" class="consent-mobile-icon-logo" id="consentModalPreviewLogoImg" style="display:none;">
                               </div>
                               <p class="consent-mobile-heading" id="consentModalPreviewHeading">ChatGPT wants access to [App name]</p>
                               <div class="consent-mobile-divider"></div>
@@ -5024,11 +5343,13 @@
                       </div>
 
                       <div class="tw-config-subpanel active" data-idsub="details">
-                        <h2 class="tw-sec-title" style="margin-bottom:30px;">Details</h2>
                         <div class="tw-config-sec">
                           <h3 class="tw-config-sec-title" style="margin-bottom:22px;">Profile</h3>
                           <div class="tw-detail-stack">
-                            <div class="tw-detail-field"><p class="tw-config-field-label">External ID</p><p class="tw-config-field-value" id="idExternal">--</p></div>
+                            <div class="tw-detail-field">
+                              <p class="tw-config-field-label">External ID</p>
+                              <button class="tw-idchip"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 4H5.333C4.597 4 4 4.597 4 5.333V12C4 12.736 4.597 13.333 5.333 13.333H12C12.736 13.333 13.333 12.736 13.333 12V5.333C13.333 4.597 12.736 4 12 4Z"/><path d="M1.333 9.333C0.6 9.333 0 8.733 0 8V1.333C0 0.6 0.6 0 1.333 0H8C8.733 0 9.333 0.6 9.333 1.333"/></svg><span id="idExternal">--</span></button>
+                            </div>
                             <div class="tw-detail-field tw-detail-field-row">
                               <div><p class="tw-config-field-label">Date created</p><p class="tw-config-field-value" id="idCreated">--</p></div>
                               <div><p class="tw-config-field-label">Last updated</p><p class="tw-config-field-value" id="idUpdated">--</p></div>
@@ -5036,7 +5357,7 @@
                           </div>
                         </div>
                         <div class="tw-config-sec">
-                          <h3 class="tw-config-sec-title" style="margin-bottom:8px;">Allowed scopes</h3>
+                          <h3 class="tw-config-sec-title" style="margin-bottom:22px;">Allowed scopes</h3>
                           <div class="tw-scope-table">
                             <div class="tw-scope-thead"><div>Scope</div><div>Description</div></div>
                             <div id="idScopeList"></div>
@@ -5045,10 +5366,9 @@
                       </div>
 
                       <div class="tw-config-subpanel" data-idsub="clients">
-                        <h2 class="tw-sec-title" style="margin-bottom:22px;">Authorized clients</h2>
                         <div class="tw-search tw-search-solo">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-                          Search by users
+                          Search by client
                         </div>
                         <div class="tw-table tw-table-idclients" style="margin-top:26px;">
                           <div class="tw-thead">
@@ -5202,18 +5522,17 @@
               <div class="tw-drawer">
                 <button class="tw-drawer-close" id="idClientModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
                 <div class="tw-drawer-body">
-                  <div class="tw-config-sec-head" style="margin-bottom:28px;">
-                    <h2 class="tw-h1" id="idcmName" style="margin-bottom:0;">Client name</h2>
+                  <h2 class="tw-h1" id="idcmName" style="margin-bottom:0;">Client name</h2>
+                  <div class="tw-drawer-meta" style="margin-bottom:48px; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                      <span class="tw-idchip" id="idcmId"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 4H5.333C4.597 4 4 4.597 4 5.333V12C4 12.736 4.597 13.333 5.333 13.333H12C12.736 13.333 13.333 12.736 13.333 12V5.333C13.333 4.597 12.736 4 12 4Z"/><path d="M1.333 9.333C0.6 9.333 0 8.733 0 8V1.333C0 0.6 0.6 0 1.333 0H8C8.733 0 9.333 0.6 9.333 1.333"/></svg><span></span></span>
+                      <span class="tw-drawer-type">Created <span id="idcmCreated">--</span><span style="margin:0 10px;">&bull;</span>Last updated <span id="idcmUpdated">--</span></span>
+                    </div>
                     <button class="tw-btn" id="idcmGoToClient">Go to full client details</button>
-                  </div>
-                  <div class="tw-drawer-meta" style="margin-bottom:48px;">
-                    <span class="tw-idchip" id="idcmId"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 4H5.333C4.597 4 4 4.597 4 5.333V12C4 12.736 4.597 13.333 5.333 13.333H12C12.736 13.333 13.333 12.736 13.333 12V5.333C13.333 4.597 12.736 4 12 4Z"/><path d="M1.333 9.333C0.6 9.333 0 8.733 0 8V1.333C0 0.6 0.6 0 1.333 0H8C8.733 0 9.333 0.6 9.333 1.333"/></svg><span></span></span>
-                    <span class="tw-drawer-type">Created <span id="idcmCreated">--</span> &bull; Last updated <span id="idcmUpdated">--</span></span>
                   </div>
 
                   <p class="tw-modal-section-label">SCOPES</p>
                   <p class="tw-lede" style="margin-bottom:20px;">Scopes the user has authorized this client to use</p>
-                  <button class="tw-scope-search-btn" aria-label="Search scopes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></button>
                   <div class="tw-scope-table" style="margin-top:20px;">
                     <div class="tw-scope-thead"><div>Name</div><div>Description</div></div>
                     <div id="idcmScopeRows"></div>
@@ -5410,9 +5729,12 @@
     // a drawer closing/being abandoned (step change, slide change) should
     // also reset any scripted annotation left showing inside it — otherwise
     // reopening that same drawer later (e.g. the standalone live prototype)
-    // shows it already revealed instead of hidden
-    const callout = document.getElementById('uploadCallout');
-    if (callout) callout.classList.remove('show');
+    // shows it already revealed instead of hidden. Covers every gated
+    // walkthrough callout (step 1's IdP proto, step 3's Clients/Identities
+    // proto), not just the one this comment used to name.
+    ['uploadCallout','oktaToTwilioCallout','jwtModalCallout','consentPreviewCallout',
+     'clientsListCallout','clientDetailCallout','identitiesListCallout','identityDetailCallout'
+    ].forEach(id => { const c = document.getElementById(id); if (c) c.classList.remove('show'); });
   }
 
   // ---- "how we got here" pause overlay (Manage agents / Clients & Identities) ----
@@ -5984,12 +6306,15 @@
     if (urlText) urlText.textContent = idpUrls.okta;
     clearIdpFlowAutoplay();
     idpFlowSetState(proto, 'empty');
-    // the callout lives inside the shared live-console's Upload drawer, which
-    // physically moves around the DOM (see mountLiveConsole) — look it up
-    // globally rather than within scope, since scope may not contain it
-    // wherever the console currently happens to be mounted
-    const callout = document.getElementById('uploadCallout');
-    if (callout) callout.classList.remove('show');
+    // these callouts live inside the shared live-console's Upload drawer (or
+    // float over this same window), which physically moves around the DOM
+    // (see mountLiveConsole) — look them up globally rather than within
+    // scope, since scope may not contain them wherever the console currently
+    // happens to be mounted
+    ['oktaToTwilioCallout','jwtModalCallout','uploadCallout'].forEach(id => {
+      const c = document.getElementById(id);
+      if (c) c.classList.remove('show');
+    });
   }
   function restartIdpProto(){
     const active = slides[idx];
@@ -6033,9 +6358,11 @@
   // value in turn, switches to the Twilio Console tab, then settles back to the
   // start so the viewer can click through it themselves.
   let idpAutoplayTimers = [];
+  let idpAutoplayStop = null;
   function clearIdpAutoplay(){
     idpAutoplayTimers.forEach(t => clearTimeout(t));
     idpAutoplayTimers = [];
+    if (idpAutoplayStop) { idpAutoplayStop(); idpAutoplayStop = null; }
   }
   // auto-demo of the Twilio-tab flow (empty -> Configure modal -> filled),
   // played when the Twilio Console tab is opened. Optionally resets to the
@@ -6131,6 +6458,55 @@
     root.addEventListener('click', (e) => { if (e.isTrusted) clearFn(); }, {once:true, capture:true});
   }
 
+  // shared walkthrough runner for autoplayIdpProto/autoplayClientsFlow — a
+  // list of steps, each either {delay, fn} (fires fn after delay ms and
+  // continues automatically) or {callout} (shows that .mock-callout, id or
+  // element, and PAUSES until its .mock-callout-next button is clicked).
+  // Per Kelly: callouts were on a fixed timer before, which either rushed a
+  // slow reader or left a fast one waiting — a real "Next" click removes the
+  // guesswork entirely. Returns a stop() that cancels whatever's pending
+  // (a queued timer or a listening button) and hides any open callout, so
+  // clearIdpAutoplay/clearClientsAutoplay can cleanly interrupt mid-sequence.
+  function runGatedSequence(steps, timerBag){
+    let cancelled = false;
+    let pendingCleanup = null;
+    let openCalloutEl = null;
+    function stop(){
+      cancelled = true;
+      if (pendingCleanup) { pendingCleanup(); pendingCleanup = null; }
+      if (openCalloutEl) { openCalloutEl.classList.remove('show'); openCalloutEl = null; }
+    }
+    function run(i){
+      if (cancelled || i >= steps.length) return;
+      const s = steps[i];
+      if (s.callout) {
+        const el = typeof s.callout === 'string' ? document.getElementById(s.callout) : s.callout;
+        if (!el) { run(i + 1); return; }
+        el.classList.add('show');
+        openCalloutEl = el;
+        const btn = el.querySelector('.mock-callout-next');
+        if (!btn) { run(i + 1); return; }
+        const handler = (e) => {
+          e.stopPropagation();
+          btn.removeEventListener('click', handler);
+          el.classList.remove('show');
+          openCalloutEl = null;
+          pendingCleanup = null;
+          run(i + 1);
+        };
+        btn.addEventListener('click', handler);
+        pendingCleanup = () => btn.removeEventListener('click', handler);
+      } else {
+        s.fn();
+        const t = setTimeout(() => run(i + 1), s.delay || 0);
+        timerBag.push(t);
+        pendingCleanup = () => clearTimeout(t);
+      }
+    }
+    run(0);
+    return stop;
+  }
+
   // visible "cursor click" indicator for the autoplay walkthroughs, so a
   // viewer can see where each scripted click is landing. position:fixed +
   // getBoundingClientRect() lands correctly regardless of the console's
@@ -6163,7 +6539,14 @@
   // the modal's own preview as it goes), then save so the logo lands in the
   // Consent Screen tab's preview too.
   let consentAutoplayTimers = [];
-  function clearConsentAutoplay(){ consentAutoplayTimers.forEach(clearTimeout); consentAutoplayTimers = []; }
+  let consentAutoplayStop = null;
+  function clearConsentAutoplay(){
+    consentAutoplayTimers.forEach(clearTimeout);
+    consentAutoplayTimers = [];
+    if (consentAutoplayStop) { consentAutoplayStop(); consentAutoplayStop = null; }
+    const c = document.getElementById('consentPreviewCallout');
+    if (c) c.classList.remove('show');
+  }
   function autoplayConsentFlow(){
     clearConsentAutoplay();
     const root = document.querySelector('.cgpt-body-live');
@@ -6184,19 +6567,38 @@
       };
       typeStep();
     };
-    consentAutoplayTimers.push(setTimeout(() => clickWithPulse(editBtn), 700));
-    // friendly name goes first now (it's the first field) — preview heading
-    // swaps live from the "[App name]" placeholder to "Owl Trade" as it types
-    consentAutoplayTimers.push(setTimeout(() => typeInto(nameInput, 'Owl Trade', 55), 1500));
-    consentAutoplayTimers.push(setTimeout(() => typeInto(input, 'https://owltrade.com/logo.png', 28), 2400));
-    consentAutoplayTimers.push(setTimeout(() => clickWithPulse(saveBtn), 5000));
+    // per Kelly: too fast to follow on a first pass, and even slowed down it
+    // gave no reason to look at the live-updating preview panel — so this now
+    // pauses on a callout pointing at it (after both fields are typed, before
+    // Save) instead of just holding the filled-in state on a blind timer.
+    const steps = [
+      {delay:1000, fn: () => clickWithPulse(editBtn)},
+      // friendly name goes first (it's the first field) — preview heading
+      // swaps live from the "[App name]" placeholder to "Owl Trade" as it types
+      {delay:1300, fn: () => typeInto(nameInput, 'Owl Trade', 70)},
+      {delay:1700, fn: () => typeInto(input, 'https://owltrade.com/logo.png', 40)},
+      {delay:1800, fn: () => {}},
+      {callout:'consentPreviewCallout'},
+      {delay:400,  fn: () => clickWithPulse(saveBtn)},
+    ];
+    consentAutoplayStop = runGatedSequence(steps, consentAutoplayTimers);
   }
 
   // step 3 "Manage agents" — walks a client detail (scroll, edit, scroll,
   // close), back to the list, then an identity's Authorized Clients tab into
   // its own detail modal. All real clicks on the real console.
   let clientsAutoplayTimers = [];
-  function clearClientsAutoplay(){ clientsAutoplayTimers.forEach(clearTimeout); clientsAutoplayTimers = []; }
+  let clientsAutoplayStop = null;
+  const clientsCalloutIds = ['clientsListCallout','clientDetailCallout','identitiesListCallout','identityDetailCallout'];
+  function hideClientsCallouts(){
+    clientsCalloutIds.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('show'); });
+  }
+  function clearClientsAutoplay(){
+    clientsAutoplayTimers.forEach(clearTimeout);
+    clientsAutoplayTimers = [];
+    if (clientsAutoplayStop) { clientsAutoplayStop(); clientsAutoplayStop = null; }
+    hideClientsCallouts();
+  }
   function autoplayClientsFlow(){
     clearClientsAutoplay();
     const root = document.querySelector('.cgpt-body-live');
@@ -6204,21 +6606,34 @@
     armAutoplayCancelGuard(root, clearClientsAutoplay);
     const click = (sel) => clickWithPulse(root.querySelector(sel));
     const scrollEl = (sel, top) => { const el = root.querySelector(sel) || document.querySelector(sel); if (el) el.scrollTo({top, behavior:'smooth'}); };
-    const schedule = [
-      [600,   () => click('.tw-clients-list .tw-client-link')],
-      [1800,  () => scrollEl('.tw-content', 260)],
-      [3000,  () => scrollEl('.tw-content', 0)],
-      [3800,  () => click('#cdEditBtn')],
-      [5000,  () => scrollEl('#editClientOverlay .tw-drawer-body', 160)],
-      [6200,  () => scrollEl('#editClientOverlay .tw-drawer-body', 0)],
-      [6900,  () => click('#editClientClose')],
-      [7700,  () => click('#twCrumbCur')],
-      [8700,  () => click('.tw-tab[data-tab="identities"]')],
-      [9700,  () => click('.tw-identities-list .tw-id-link')],
-      [10900, () => click('.tw-idsub-tab[data-idsub="clients"]')],
-      [12000, () => click('#idClientsRows .tw-idc-name')],
+    // per Kelly: still too fast even after the first slowdown pass, and with
+    // no explanation of *why* each screen matters — so this now pauses on
+    // four screens (Clients list, one client's detail, Identities list, one
+    // identity's detail), waiting for a "Next" click on each callout instead
+    // of guessing a reading time, matching step 1's pattern.
+    const steps = [
+      {delay:600,  fn: () => {}},
+      {callout:'clientsListCallout'},
+      {delay:400,  fn: () => click('.tw-clients-list .tw-client-link')},
+      {delay:600,  fn: () => {}},
+      {callout:'clientDetailCallout'},
+      {delay:400,  fn: () => scrollEl('.tw-content', 260)},
+      {delay:1800, fn: () => scrollEl('.tw-content', 0)},
+      {delay:1600, fn: () => click('#cdEditBtn')},
+      {delay:1800, fn: () => scrollEl('#editClientOverlay .tw-drawer-body', 160)},
+      {delay:1800, fn: () => scrollEl('#editClientOverlay .tw-drawer-body', 0)},
+      {delay:1500, fn: () => click('#editClientClose')},
+      {delay:1600, fn: () => click('#twCrumbCur')},
+      {delay:1600, fn: () => click('.tw-tab[data-tab="identities"]')},
+      {delay:500,  fn: () => {}},
+      {callout:'identitiesListCallout'},
+      {delay:400,  fn: () => click('.tw-identities-list .tw-id-link')},
+      {delay:1000, fn: () => {}},
+      {callout:'identityDetailCallout'},
+      {delay:400,  fn: () => click('.tw-idsub-tab[data-idsub="clients"]')},
+      {delay:1700, fn: () => click('#idClientsRows .tw-idc-name')},
     ];
-    schedule.forEach(([d, fn]) => clientsAutoplayTimers.push(setTimeout(fn, d)));
+    clientsAutoplayStop = runGatedSequence(steps, clientsAutoplayTimers);
   }
 
   // "How We Got Here" (agents) step 1 — mounts the same live console into
@@ -6320,28 +6735,40 @@
       const urlText = proto.querySelector('#idpUrlText');
       if (urlText) urlText.textContent = idpUrls[app];
     };
-    const schedule = [
-      [600,  () => { showClickPulseOnEl(copyBtns[0]); copyBtns[0].classList.add('copied'); proto._copied.add(copyBtns[0].dataset.key); }],
-      [1300, () => { showClickPulseOnEl(copyBtns[1]); copyBtns[1].classList.add('copied'); proto._copied.add(copyBtns[1].dataset.key); }],
-      [2000, () => { showClickPulseOnEl(copyBtns[2]); copyBtns[2].classList.add('copied'); proto._copied.add(copyBtns[2].dataset.key); twilioTab.classList.add('pulse'); }],
+    // per Kelly: this whole "How We Got Here" walkthrough moved too fast to
+    // follow on a first pass, and even slowed down it just auto-continued on
+    // a timer with no explanation of *why* each screen matters. Now it pauses
+    // on three callouts (why head to Twilio, what the JWT modal is for, why
+    // upload-not-paste) and waits for a "Next" click on each instead of
+    // guessing a reading time.
+    const steps = [
+      {delay:900,  fn: () => { showClickPulseOnEl(copyBtns[0]); copyBtns[0].classList.add('copied'); proto._copied.add(copyBtns[0].dataset.key); }},
+      {delay:1200, fn: () => { showClickPulseOnEl(copyBtns[1]); copyBtns[1].classList.add('copied'); proto._copied.add(copyBtns[1].dataset.key); }},
+      {delay:1200, fn: () => { showClickPulseOnEl(copyBtns[2]); copyBtns[2].classList.add('copied'); proto._copied.add(copyBtns[2].dataset.key); twilioTab.classList.add('pulse'); }},
+      {delay:600,  fn: () => {}},
+      {callout:'oktaToTwilioCallout'},
       // switch to Twilio Console and mount the live prototype (Configurations
       // tab) — left live/interactive afterward rather than auto-resetting,
       // since it's the real console now, not a timed screenshot demo.
-      [2900, () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); }],
-      // open the real "Configure JWT Profile" side modal, then save it so the
-      // JWT Configuration section on the page behind it appears filled in —
-      // matches Okta values copied above, ending on the filled state, not
-      // mid-modal or bouncing off to some other tab
-      [3900, () => clickWithPulse(document.getElementById('jwtConfigureBtn'))],
-      [5300, () => clickWithPulse(document.getElementById('jwtModalSave'))],
+      {delay:400,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); }},
+      // open the real "Configure JWT Profile" side modal — pause on it before
+      // saving so the callout can explain what it's for
+      {delay:1200, fn: () => clickWithPulse(document.getElementById('jwtConfigureBtn'))},
+      {delay:900,  fn: () => {}},
+      {callout:'jwtModalCallout'},
+      // save so the JWT Configuration section on the page behind it appears
+      // filled in — matches Okta values copied above, ending on the filled
+      // state, not mid-modal or bouncing off to some other tab
+      {delay:400,  fn: () => clickWithPulse(document.getElementById('jwtModalSave'))},
       // then open the Upload public keys drawer for context, and slide the
       // "why upload, not paste" callout in from outside the browser-chrome
       // window — kept off the UI itself so it reads as commentary, not a
       // real console element
-      [6100, () => clickWithPulse(document.getElementById('uploadKeysBtn'))],
-      [6900, () => { const c = document.getElementById('uploadCallout'); if (c) c.classList.add('show'); }],
+      {delay:1500, fn: () => clickWithPulse(document.getElementById('uploadKeysBtn'))},
+      {delay:900,  fn: () => {}},
+      {callout:'uploadCallout'},
     ];
-    schedule.forEach(([delay, fn]) => idpAutoplayTimers.push(setTimeout(fn, delay)));
+    idpAutoplayStop = runGatedSequence(steps, idpAutoplayTimers);
   }
 
   // step 4 · part 2 — Verify-wizard clickable prototype. States: create-blank ->
@@ -6442,15 +6869,19 @@
       const toggle = win.querySelector('[data-action="toggle-plus"]');
       const popover = win.querySelector('.cgpt-popover');
       const tooltip = win.querySelector('.cgpt-tooltip');
+      const appPage = win.querySelector('.cgpt-app-page');
       if (!toggle || !popover) return;
 
       const openPopover = () => { setPopView(popover, 'menu'); popover.classList.add('show'); };
       const closePopover = () => popover.classList.remove('show');
       const hideTooltip = () => { if (tooltip) tooltip.classList.remove('show'); };
+      const openAppPage = () => { closePopover(); if (appPage) appPage.classList.add('show'); };
+      const closeAppPage = () => { if (appPage) appPage.classList.remove('show'); };
 
       closePopover();
       setPopView(popover, 'menu');
       hideTooltip();
+      closeAppPage();
 
       toggle.onclick = (e) => {
         e.stopPropagation();
@@ -6460,20 +6891,29 @@
       };
       popover.onclick = (e) => e.stopPropagation();
       win.onclick = () => closePopover();
+      if (appPage) appPage.onclick = (e) => e.stopPropagation();
 
       popover.querySelectorAll('[data-action]').forEach(el => {
         const action = el.dataset.action;
-        if (action === 'explore-apps') el.onclick = () => { clearCgptAutoplay(); hideTooltip(); switchPopView(popover, 'app'); };
-        else if (action === 'back-to-menu') el.onclick = () => { clearCgptAutoplay(); hideTooltip(); switchPopView(popover, 'menu'); };
+        if (action === 'view-app') el.onclick = () => { clearCgptAutoplay(); hideTooltip(); openAppPage(); };
         else if (action === 'connect') el.onclick = () => { clearCgptAutoplay(); hideTooltip(); switchPopView(popover, 'connect'); };
         else if (action === 'close' || action === 'continue') el.onclick = () => { clearCgptAutoplay(); hideTooltip(); closePopover(); };
       });
+      if (appPage) {
+        appPage.querySelectorAll('[data-action]').forEach(el => {
+          const action = el.dataset.action;
+          if (action === 'close-app-page') el.onclick = () => { clearCgptAutoplay(); closeAppPage(); };
+          else if (action === 'app-page-connect') el.onclick = () => { clearCgptAutoplay(); closeAppPage(); popover.classList.add('show'); setPopView(popover, 'connect'); };
+        });
+      }
     });
   }
 
-  // one-time walkthrough: the first time step 1 is landed on, play menu -> app ->
-  // connect -> close automatically, then settle back into the plain clickable
-  // state so a viewer can re-explore it themselves at their own pace.
+  // one-time walkthrough: the first time step 1 is landed on, play menu -> open
+  // the Owl Trade app page, then stop there and let a viewer explore at their
+  // own pace — per Kelly, step 1 is "Request," not "Grant Access" (step 3
+  // already owns the full OAuth consent screen), so the scripted part of this
+  // step shouldn't also barrel through into consent.
   let cgptAutoplayTimers = [];
   function clearCgptAutoplay(){
     cgptAutoplayTimers.forEach(t => clearTimeout(t));
@@ -6483,20 +6923,16 @@
     clearCgptAutoplay();
     const popover = win.querySelector('.cgpt-popover');
     const tooltip = win.querySelector('.cgpt-tooltip');
+    const appPage = win.querySelector('.cgpt-app-page');
     if (!popover) return;
     popover.classList.remove('show');
     setPopView(popover, 'menu');
     if (tooltip) tooltip.classList.remove('show');
+    if (appPage) appPage.classList.remove('show');
 
-    // menu -> connect directly (no more "app" preview screen in between) —
-    // dwells longer on the menu than the old schedule did, since the list
-    // now has seven rows to read instead of four
     const schedule = [
       [700,  () => popover.classList.add('show')],
-      [3200, () => switchPopView(popover, 'connect')],
-      [5600, () => popover.classList.remove('show')],
-      [6100, () => setPopView(popover, 'menu')],
-      [6700, () => { if (tooltip) tooltip.classList.add('show'); }],
+      [3200, () => { popover.classList.remove('show'); if (appPage) appPage.classList.add('show'); }],
     ];
     schedule.forEach(([delay, fn]) => cgptAutoplayTimers.push(setTimeout(fn, delay)));
   }

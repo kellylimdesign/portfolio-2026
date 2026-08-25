@@ -20,6 +20,13 @@
        surface) — the inverse of --ink/--ink-70 per theme, so it stays legible
        whether the theme's base ink is dark-on-light or light-on-dark */
     --hero-text:#F5F3EF; --hero-text-70:rgba(245,243,239,.78);
+    /* content cards (.preview-card: Overview/Credits) were reading as flat
+       outlined regions — same fill as the page behind them, hairline border,
+       no shadow, nothing lifting them off the surface. Tried a parchment tone
+       below --cream instead of white; per Kelly, white read better after all —
+       back to that. */
+    --card-bg:#FFFFFF;
+    --card-shadow:0 1px 2px rgba(23,22,27,.05), 0 8px 20px rgba(23,22,27,.07);
   }
   /* dark theme — overrides the shell's own tokens only. The embedded product mocks
      (ChatGPT window, phone/SMS frame) intentionally reuse these SAME token names for
@@ -33,6 +40,12 @@
     --hover-tint:rgba(255,255,255,.08); --hover-tint-soft:rgba(255,255,255,.05);
     --active-tint:rgba(255,255,255,.07); --track-tint:rgba(255,255,255,.16);
     --hero-text:#1E1B24; --hero-text-70:rgba(30,27,36,.78);
+    /* dark mode: shadows barely read against a near-black page, so the lift
+       comes mainly from the fill being a step lighter than --cream (matching
+       how "elevated" surfaces read in dark UIs generally) plus a subtle inset
+       top highlight standing in for the light-mode shadow's job */
+    --card-bg:#28232F;
+    --card-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 10px 24px rgba(0,0,0,.35);
   }
   .pv-cgpt-wrap, .pv-phone-wrap{
     --cream:#FAF9F6; --ink:#17161B; --ink-70:#4A4950; --ink-45:#8A8891; --line:#E4E2DD; --bezel:#0E0E10;
@@ -322,7 +335,15 @@
     display:flex; align-items:center; gap:18px; text-align:left; max-width:640px;
     background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
   }
-  .pick-thumb{width:110px; height:110px; border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 8px 20px rgba(23,22,27,.18);}
+  /* clickable row had zero hover feedback before — the thumb lifting (shadow
+     grows, tiny rise) is the only cue this whole row is a link, since it's a
+     bare button with no border/fill of its own to react */
+  .pick-thumb{
+    width:110px; height:110px; border-radius:8px; overflow:hidden; flex-shrink:0;
+    box-shadow:0 8px 20px rgba(23,22,27,.18);
+    transition:box-shadow .2s ease, transform .2s ease;
+  }
+  .pick-card:hover .pick-thumb{box-shadow:0 14px 30px rgba(23,22,27,.24); transform:translateY(-2px);}
   .pick-thumb img{width:100%; height:100%; object-fit:cover;}
   .pick-body{display:flex; flex-direction:column; gap:6px; min-width:0;}
   .pick-posted{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-70);}
@@ -336,11 +357,19 @@
     display:flex; flex-direction:column; gap:8px; text-align:left;
     background:none; border:none; padding:0; cursor:pointer; font-family:inherit;
   }
-  .discog-thumb{width:100%; aspect-ratio:1/1; border-radius:8px; overflow:hidden; box-shadow:0 8px 20px rgba(23,22,27,.14);}
+  .discog-thumb{
+    width:100%; aspect-ratio:1/1; border-radius:8px; overflow:hidden;
+    box-shadow:0 8px 20px rgba(23,22,27,.14);
+    transition:box-shadow .2s ease, transform .2s ease;
+  }
   /* real vector logo files (not the 180x180 raster favicons) — those went
      visibly soft once upscaled to fill a grid tile, especially at 2x pixel
      density; an actual SVG source stays crisp at any size */
   .discog-thumb img{width:100%; height:100%; display:block; object-fit:cover; transition:transform .2s ease;}
+  /* the whole tile lifts (not just the image zooming inside a static frame) —
+     matches the treatment now used on .pick-thumb/.static-project-media so
+     every clickable image-card on the page responds the same way */
+  .discog-card:hover .discog-thumb{box-shadow:0 14px 28px rgba(23,22,27,.2); transform:translateY(-3px);}
   .discog-card:hover .discog-thumb img{transform:scale(1.03);}
   .discog-title{font-size:14px; font-weight:700; color:var(--ink); line-height:1.3;}
   .discog-meta{font-size:12px; color:var(--ink-45);}
@@ -491,7 +520,7 @@
   .preview-header .lib-toggle-btn{opacity:0; pointer-events:none;}
   #previewPanel:hover .preview-header .lib-toggle-btn,
   #previewPanel:focus-within .preview-header .lib-toggle-btn{opacity:1; pointer-events:auto;}
-  .preview-image-wrap{position:relative;}
+  .preview-image-wrap{position:relative; cursor:pointer;}
   .preview-image{
     position:relative; width:100%; aspect-ratio:1/1; overflow:hidden;
     margin:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--line);
@@ -527,6 +556,14 @@
   @keyframes blobDriftB{0%{transform:translate(0,0) scale(1);} 100%{transform:translate(-16%,-14%) scale(.86);}}
   @keyframes blobDriftC{0%{transform:translate(0,0) scale(1);} 100%{transform:translate(12%,-18%) scale(1.12);}}
   .preview-image-bg.variant-b .mesh-blob{animation-direction:alternate-reverse;}
+  /* Stytch gets its own value/saturation within the same purple family as
+     Twilio's default above — deeper and more saturated rather than a
+     different hue, so the two projects read as distinct without breaking
+     the page's single accent-color language (option "D — Deep Violet") */
+  .preview-image-bg.variant-b{background-image:linear-gradient(150deg, #E4D9F5 0%, #C5A9E8 45%, #8B5FC9 100%);}
+  .preview-image-bg.variant-b .mesh-blob-a{background:radial-gradient(circle, rgba(91,32,163,.62), rgba(91,32,163,0) 70%);}
+  .preview-image-bg.variant-b .mesh-blob-b{background:radial-gradient(circle, rgba(140,84,214,.55), rgba(140,84,214,0) 70%);}
+  .preview-image-bg.variant-b .mesh-blob-c{background:radial-gradient(circle, rgba(56,18,110,.55), rgba(56,18,110,0) 70%);}
   /* subtle grain, same technique as the page-wide texture (body::before) but
      scoped to just this backdrop so it doesn't also wash over the mocks on top */
   .preview-image-bg::after{
@@ -626,9 +663,12 @@
   .cgpt-pop-item-text span{font-family:var(--sans); font-size:9.5px; color:var(--ink-45);}
   .cgpt-pop-item-connect{margin-left:auto; font-family:var(--sans); font-size:10px; color:var(--ink-45); flex-shrink:0;}
   .cgpt-pop-item-chevron{width:12px; height:12px; color:var(--ink-45); margin-left:auto; flex-shrink:0;}
-  .cgpt-owl-icon{width:42px; height:42px; border-radius:10px; background:var(--ink); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-  .cgpt-owl-icon svg{width:24px; height:24px;}
-  .cgpt-owl-icon-sm{width:26px; height:26px; border-radius:7px;}
+  /* real owltrade-logo.png (matches the case study's own consent-screen/SMS-avatar
+     usage), not a hand-drawn approximation — image already bakes in its own
+     circular ink background, this is just a sizing frame around it */
+  .cgpt-owl-icon{width:42px; height:42px; border-radius:50%; overflow:hidden; flex-shrink:0; display:block;}
+  .cgpt-owl-icon img{width:100%; height:100%; object-fit:cover; display:block;}
+  .cgpt-owl-icon-sm{width:26px; height:26px;}
   .cgpt-pop-app-head{display:flex; align-items:center; gap:10px; padding:12px 14px 4px; font-family:var(--sans); font-size:11px; font-weight:600; color:var(--ink);}
   .cgpt-pop-back{width:22px; height:22px; border-radius:50%; background:rgba(23,22,27,.06); display:flex; align-items:center; justify-content:center; border:none; flex-shrink:0;}
   .cgpt-pop-back svg{width:11px; height:11px; color:var(--ink);}
@@ -723,8 +763,8 @@
 
   /* second chat turn — the follow-up ask that shows Owl Trade actually being used,
      once it's connected (tool-call pill crossfades loading -> done in place) */
-  .cgpt-owl-icon-xs{width:16px; height:16px; border-radius:5px; background:var(--ink); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-  .cgpt-owl-icon-xs svg{width:9px; height:9px;}
+  .cgpt-owl-icon-xs{width:16px; height:16px; border-radius:50%; overflow:hidden; flex-shrink:0; display:block;}
+  .cgpt-owl-icon-xs img{width:100%; height:100%; object-fit:cover; display:block;}
   .cgpt-tool-pill{display:inline-grid; margin-bottom:10px;}
   .cgpt-tool-pill-loading, .cgpt-tool-pill-done{grid-area:1/1; display:flex; align-items:center; gap:7px; background:rgba(23,22,27,.05); border-radius:20px; padding:5px 12px 5px 5px; font-family:var(--sans); font-size:11px; color:var(--ink-70); white-space:nowrap; transition:opacity .3s ease;}
   .cgpt-tool-pill-done{opacity:0;}
@@ -732,9 +772,31 @@
   .cgpt-tool-pill.pv-done .cgpt-tool-pill-done{opacity:1;}
   .cgpt-msg-assistant-delayed{opacity:0; transform:translateY(6px);}
   .cgpt-msg-assistant-delayed.pv-in{animation:uiBubbleIn .4s cubic-bezier(.34,1.2,.64,1) forwards;}
-  .cgpt-pop-preview-chart{background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
-  .cgpt-pop-ticker{font-family:var(--sans); font-size:10.5px; color:var(--ink); display:block; margin-bottom:6px;}
-  .cgpt-pop-spark{width:100%; height:20px; color:var(--ink-45);}
+  /* ported from the case study's own upgraded result card (agent-identity/index.html)
+     so this ambient preview matches what "Act on your behalf" actually looks like now —
+     a labeled chart, not a bare sparkline */
+  .cgpt-pop-preview-chart{background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:12px 14px 10px;}
+  .cgpt-chart-head{display:flex; align-items:baseline; gap:6px; margin-bottom:8px;}
+  .cgpt-chart-ticker{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:11px; font-weight:700; color:var(--ink);}
+  .cgpt-chart-name{font-family:var(--sans); font-size:10.5px; color:var(--ink-70); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .cgpt-chart-change{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:10.5px; font-weight:700; color:var(--ink); flex-shrink:0;}
+  /* axis labels are real HTML, not SVG <text> — the SVG next to them uses
+     preserveAspectRatio="none" so the line chart can stretch to fill any
+     width, but that non-uniform scale squashes embedded text into an
+     illegible blur. A separate flex column sidesteps that entirely. */
+  .cgpt-chart-plot{display:flex; align-items:stretch; gap:6px;}
+  .cgpt-chart-axis{position:relative; width:26px; flex-shrink:0;}
+  .cgpt-chart-axis span{position:absolute; left:0; transform:translateY(-50%); font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:9px; color:var(--ink-45); white-space:nowrap;}
+  .cgpt-chart-svg{flex:1; min-width:0; height:64px; display:block;}
+  .cgpt-chart-grid{stroke:var(--line); stroke-width:1;}
+  .cgpt-chart-threshold{stroke:var(--ink-45); stroke-width:1; stroke-dasharray:3 3;}
+  .cgpt-chart-area{fill:var(--ink); opacity:.06; stroke:none;}
+  .cgpt-chart-line{fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+  .cgpt-chart-dot{fill:var(--cream); stroke:var(--ink); stroke-width:2;}
+  .cgpt-chart-foot{display:flex; gap:14px; margin-top:6px; font-family:var(--sans); font-size:10px; color:var(--ink-70);}
+  .cgpt-chart-foot b{color:var(--ink); font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-weight:700;}
+  .cgpt-chart-swatch{display:inline-block; width:8px; height:2px; background:var(--ink); margin-right:5px; vertical-align:middle;}
+  .cgpt-chart-swatch-dashed{background:none; border-top:2px dashed var(--ink-45); height:0;}
 
   @keyframes uiBubbleIn{ to{opacity:1; transform:translateY(0);} }
   @keyframes uiFadeUp{ to{opacity:1; transform:translateY(0);} }
@@ -771,34 +833,50 @@
   .sk-preview-bar span:nth-child(3){background:#28C840;}
   .sk-preview-body{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:26px;}
   .sk-card{
-    width:100%; max-width:280px; background:var(--sk-card-bg,#FFFFFF); border:1px solid #CFCFCF;
-    border-radius:var(--sk-card-radius,10px); padding:26px 24px; font-family:var(--sk-card-font,Arial,sans-serif); text-align:center;
+    width:100%; max-width:280px; background:var(--sk-card-bg,#FFFFFF); border:1px solid var(--sk-card-border,#E4E4E4);
+    border-radius:var(--sk-card-radius,4px); padding:26px 24px; font-family:var(--sk-card-font,system-ui); text-align:center;
     box-shadow:0 4px 24px rgba(23,22,27,.05);
-    transition:background-color .3s ease, border-radius .3s ease;
+    transition:background-color .3s ease, border-color .3s ease, border-radius .3s ease;
   }
   .sk-card-brand{font-size:19px; font-weight:700; margin-bottom:8px; color:var(--sk-ink);}
   .sk-card-heading{font-size:14px; font-weight:600; margin:0 0 14px; color:var(--sk-ink);}
   .sk-input{width:100%; box-sizing:border-box; font-family:inherit; font-size:12.5px; padding:9px 11px; border:1px solid var(--sk-line-strong); border-radius:6px; margin-bottom:9px; color:var(--sk-ink); background:#fff;}
   .sk-primary-btn{
     width:100%; font-family:inherit; font-size:12.5px; font-weight:600; padding:10px; margin-bottom:4px;
-    border-radius:6px; border:1px solid transparent; background:var(--sk-pbtn-bg,#161616); color:#fff; cursor:default;
-    transition:background-color .3s ease, border-color .3s ease;
+    border-radius:var(--sk-pbtn-radius,4px); border:1px solid var(--sk-pbtn-border,#161616);
+    background:var(--sk-pbtn-bg,#161616); color:var(--sk-pbtn-text,#FCFCFC); cursor:default;
+    transition:background-color .3s ease, border-color .3s ease, border-radius .3s ease, color .3s ease;
   }
   .sk-divider{display:flex; align-items:center; gap:9px; margin:14px 0; color:var(--sk-ink-45); font-size:10.5px;}
   .sk-divider::before, .sk-divider::after{content:''; flex:1; height:1px; background:var(--sk-line);}
-  .sk-oauth-btn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%; font-family:inherit; font-size:12px; padding:8px; border-radius:6px; border:1px solid var(--sk-line-strong); background:#fff; color:var(--sk-ink);}
+  .sk-oauth-btn{
+    display:flex; align-items:center; justify-content:center; gap:7px; width:100%; font-family:inherit; font-size:12px; padding:8px;
+    border-radius:var(--sk-sbtn-radius,4px); border:1px solid var(--sk-sbtn-border,#E4E4E4);
+    background:var(--sk-sbtn-bg,#F5F5F5); color:var(--sk-sbtn-text,#161616);
+    transition:background-color .3s ease, border-color .3s ease, border-radius .3s ease, color .3s ease;
+  }
   .sk-oauth-dot{width:13px; height:13px; border-radius:4px; background:#4285F4; flex-shrink:0;}
-  .sk-config-scroll{flex:1; min-height:0; padding:20px 20px 18px;}
+  .sk-config-scroll{flex:1; min-height:0; padding:20px 20px 18px; overflow-y:auto; scrollbar-width:none;}
+  .sk-config-scroll::-webkit-scrollbar{display:none;}
   .sk-subsection-label{font-size:12.5px; font-weight:600; margin:0 0 12px; color:var(--sk-ink);}
-  .sk-field-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 6px; border-radius:6px; transition:background-color .35s ease;}
-  .sk-field-row.pv-flash{background:rgba(230,253,19,.45);}
+  .sk-divider-line{height:1px; background:var(--sk-line); margin:14px 0 14px;}
+  .sk-field-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px;}
   .sk-field-row label{font-size:12.5px; color:var(--sk-ink-70);}
   .sk-field-control{flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; gap:7px;}
-  .sk-field-value{font-family:var(--sk-mono); font-size:12px; border-bottom:1px solid var(--sk-line-strong); padding:3px 2px 4px; color:var(--sk-ink); text-align:right; min-width:52px; display:inline-block;}
+  .sk-field-value{font-family:var(--sk-mono); font-size:12px; border-bottom:1px solid var(--sk-line-strong); padding:3px 2px 4px; color:var(--sk-ink); text-align:right; min-width:52px; display:inline-block; transition:border-color .2s ease;}
+  /* replaces the old full-row yellow "click" flash — a field being demoed
+     now reads as someone actually typing into it: an ink caret blinks at
+     the end of the value while its characters get revealed one at a time */
+  .sk-field-value.pv-editing{border-bottom-color:var(--sk-ink);}
+  .sk-field-value.pv-editing::after{
+    content:''; display:inline-block; width:1px; height:11px; background:var(--sk-ink);
+    margin-left:2px; vertical-align:-1px; animation:pvCaretBlink .9s step-end infinite;
+  }
+  @keyframes pvCaretBlink{0%,49%{opacity:1;} 50%,100%{opacity:0;}}
   .sk-suffix{font-family:var(--sk-mono); font-size:11.5px; color:var(--sk-ink-45); flex-shrink:0;}
   .sk-hex-prefix{color:var(--sk-ink-45); font-family:var(--sk-mono); font-size:12px; flex-shrink:0;}
   .sk-swatch{width:18px; height:18px; border-radius:5px; border:1px solid var(--sk-line-strong); flex-shrink:0; transition:background-color .3s ease;}
-  @media (prefers-reduced-motion:reduce){.pv-stytch-wrap{transition:none;} .sk-field-row{transition:none;}}
+  @media (prefers-reduced-motion:reduce){.pv-stytch-wrap{transition:none;} .sk-field-value.pv-editing::after{animation:none;}}
   .preview-image-overlay{
     position:absolute; left:0; right:0; bottom:0; padding:16px 18px 14px;
     background:linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.36) 60%, rgba(0,0,0,0) 100%);
@@ -835,8 +913,8 @@
   .preview-callout p{font-size:12.5px; line-height:1.5; color:var(--ink-70); margin:0;}
   .preview-callout strong{color:var(--ink); font-weight:600;}
   .preview-card{
-    background:var(--cream); border:1px solid var(--line); border-radius:14px;
-    padding:16px 18px; margin:0 0 16px;
+    background:var(--card-bg); border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; margin:0 0 16px; box-shadow:var(--card-shadow);
   }
   .preview-card-label{font-size:14px; font-weight:700; color:var(--ink); margin:0 0 8px;}
   .preview-desc{font-size:13.5px; line-height:1.6; color:var(--ink-70); margin:0;}
@@ -1032,8 +1110,13 @@
      "still look like this UI" per Kelly's reference. */
   .static-project-media{
     position:relative; width:100%; height:380px; border-radius:16px; overflow:hidden;
-    background:var(--line); box-shadow:0 14px 34px rgba(23,22,27,.14);
+    background:var(--line); box-shadow:0 14px 34px rgba(23,22,27,.14); cursor:pointer;
+    transition:box-shadow .2s ease, transform .2s ease;
   }
+  /* the primary "click to open the case study" surface on the whole page had
+     zero hover response before — cursor:pointer alone doesn't read as
+     interactive on a full-bleed image with no visible edge to react */
+  .static-project-media:hover{box-shadow:0 20px 44px rgba(23,22,27,.2); transform:translateY(-3px);}
   .static-project-media img{width:100%; height:100%; object-fit:cover;}
   /* the cloned ChatGPT/Stytch scenes size themselves with a fixed px width +
      zoom (see .pv-cgpt-wrap etc.) rather than scaling to their container, so
@@ -1059,7 +1142,7 @@
   .static-project-expand:hover{background:var(--accent-hover); transform:scale(1.06);}
   .static-project-cards{display:flex; flex-direction:column; gap:20px; max-width:680px; margin:24px 0 0;}
   .static-project-cards .preview-card{
-    background:var(--cream); border:1px solid var(--line); border-radius:14px; padding:22px 24px; margin:0;
+    padding:22px 24px; margin:0;
   }
   .static-project-cards .preview-card-label{font-size:16px;}
   .static-project-cards .preview-desc{font-size:14.5px;}
@@ -1502,18 +1585,29 @@
                           <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistant2">
                             <div class="cgpt-tool-pill" id="pvCgptToolPill">
                               <span class="cgpt-tool-pill-loading">
-                                <span class="cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span class="cgpt-owl-icon-xs"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></span>
                                 <span>Using Owl Trade&hellip;</span>
                               </span>
                               <span class="cgpt-tool-pill-done">
-                                <span class="cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span class="cgpt-owl-icon-xs"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></span>
                                 <span>Used Owl Trade</span>
                               </span>
                             </div>
                             <p class="cgpt-msg-assistant cgpt-msg-assistant-delayed" id="pvCgptReply2">Not yet — OJ is at $3.42, three cents below your $3.45 alert threshold. I'll keep watching and let you know the moment it crosses.</p>
                             <div class="cgpt-pop-preview-chart cgpt-msg-assistant-delayed" id="pvCgptChart2" style="margin-top:10px;">
-                              <span class="cgpt-pop-ticker">OJ <b>+0.08</b> (2.4%)</span>
-                              <svg class="cgpt-pop-spark" viewBox="0 0 100 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M0 10 L10 14 L20 6 L30 16 L40 12 L50 15 L60 9 L70 13 L80 8 L90 11 L100 5"/></svg>
+                              <div class="cgpt-chart-head"><span class="cgpt-chart-ticker">OJ</span><span class="cgpt-chart-name">Orange Juice Futures</span><span class="cgpt-chart-change">+0.08 (2.4%)</span></div>
+                              <div class="cgpt-chart-plot">
+                                <div class="cgpt-chart-axis"><span style="top:11.7%">3.60</span><span style="top:51.7%">3.45</span><span style="top:91.7%">3.30</span></div>
+                                <svg class="cgpt-chart-svg" viewBox="0 0 280 120" preserveAspectRatio="none">
+                                  <line class="cgpt-chart-grid" x1="0" y1="14" x2="280" y2="14"/>
+                                  <line class="cgpt-chart-grid" x1="0" y1="110" x2="280" y2="110"/>
+                                  <line class="cgpt-chart-threshold" x1="0" y1="62" x2="280" y2="62"/>
+                                  <path class="cgpt-chart-area" d="M0,104 L40,94 L80,107 L120,84 L160,91 L200,78 L240,88 L280,72 L280,120 L0,120 Z"/>
+                                  <path class="cgpt-chart-line" d="M0,104 L40,94 L80,107 L120,84 L160,91 L200,78 L240,88 L280,72"/>
+                                  <circle class="cgpt-chart-dot" cx="280" cy="72" r="4"/>
+                                </svg>
+                              </div>
+                              <div class="cgpt-chart-foot"><span><i class="cgpt-chart-swatch"></i>Current <b>$3.42</b></span><span><i class="cgpt-chart-swatch cgpt-chart-swatch-dashed"></i>Alert at <b>$3.45</b></span></div>
                             </div>
                           </div>
                         </div>
@@ -1544,7 +1638,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
                           </div>
                           <div class="cgpt-pop-app-card">
-                            <div class="cgpt-owl-icon"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                            <div class="cgpt-owl-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
                             <div class="cgpt-pop-app-meta"><p class="cgpt-pop-app-name">Owl Trade</p><button class="cgpt-pop-connect" tabindex="-1">Connect</button></div>
                           </div>
                           <p class="cgpt-pop-app-tagline">Invest, buy, trade</p>
@@ -1554,7 +1648,7 @@
                           <div class="cgpt-pop-connect-icons">
                             <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
                             <span class="cgpt-pop-connect-dots"><span></span><span></span><span></span></span>
-                            <div class="cgpt-owl-icon cgpt-owl-icon-sm"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                            <div class="cgpt-owl-icon cgpt-owl-icon-sm"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
                           </div>
                           <p class="cgpt-pop-connect-heading">Connect Owl Trade</p>
                           <div class="cgpt-pop-warning-box">
@@ -1596,7 +1690,7 @@
                         <button class="ui-phone-navbtn" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M15 18l-6-6 6-6"/></svg></button>
                         <div class="ui-phone-contact">
                           <div class="ui-phone-avatar-wrap">
-                            <div class="ui-phone-avatar"><img src="agent-identity/assets/owltrade-logo.png" alt="OwlTrade logo"></div>
+                            <div class="ui-phone-avatar"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt="OwlTrade logo"></div>
                             <span class="ui-verified-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
                           </div>
                           <p class="ui-phone-sender">OwlTrade</p>
@@ -1633,36 +1727,16 @@
                       <input class="sk-input" type="email" placeholder="example@email.com" readonly tabindex="-1">
                       <button class="sk-primary-btn" id="pvSkPrimaryBtn" tabindex="-1">Continue with email</button>
                       <div class="sk-divider">or</div>
-                      <button class="sk-oauth-btn" tabindex="-1"><span class="sk-oauth-dot"></span>Continue with Google</button>
+                      <button class="sk-oauth-btn" id="pvSkOauthBtn" tabindex="-1"><span class="sk-oauth-dot"></span>Continue with Google</button>
                     </div>
                   </div>
                 </div>
                 <div class="sk-pane sk-pane-config">
-                  <div class="sk-config-scroll">
-                    <p class="sk-subsection-label">Styling</p>
-                    <div class="sk-field-row" id="pvSkFontRow">
-                      <label>Font</label>
-                      <div class="sk-field-control"><span class="sk-field-value" id="pvSkFontVal">system-ui</span></div>
-                    </div>
-                    <div class="sk-field-row" id="pvSkBgRow">
-                      <label>Background Color</label>
-                      <div class="sk-field-control">
-                        <span class="sk-swatch" id="pvSkBgSwatch" style="background:#FFFFFF"></span>
-                        <span class="sk-hex-prefix">#</span><span class="sk-field-value" id="pvSkBgVal">FFFFFF</span>
-                      </div>
-                    </div>
-                    <div class="sk-field-row" id="pvSkRadiusRow">
-                      <label>Border radius</label>
-                      <div class="sk-field-control"><span class="sk-field-value" id="pvSkRadiusVal">4</span><span class="sk-suffix">px</span></div>
-                    </div>
-                    <div class="sk-field-row" id="pvSkPBtnRow">
-                      <label>Primary Button</label>
-                      <div class="sk-field-control">
-                        <span class="sk-swatch" id="pvSkPBtnSwatch" style="background:#161616"></span>
-                        <span class="sk-hex-prefix">#</span><span class="sk-field-value" id="pvSkPBtnVal">161616</span>
-                      </div>
-                    </div>
-                  </div>
+                  <!-- filled by buildSkConfigHTML('') from SK_FIELDS — the full
+                       General/Container/Colors/Primary Button/Secondary Button
+                       field set the real SDK Integration Builder ships, not a
+                       trimmed-down handful -->
+                  <div class="sk-config-scroll"></div>
                 </div>
               </div>
             </div>
@@ -1736,18 +1810,29 @@
                           <div class="cgpt-msg-assistant-wrap" id="pvCgptAssistant2S">
                             <div class="cgpt-tool-pill" id="pvCgptToolPillS">
                               <span class="cgpt-tool-pill-loading">
-                                <span class="cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span class="cgpt-owl-icon-xs"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></span>
                                 <span>Using Owl Trade&hellip;</span>
                               </span>
                               <span class="cgpt-tool-pill-done">
-                                <span class="cgpt-owl-icon-xs"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></span>
+                                <span class="cgpt-owl-icon-xs"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></span>
                                 <span>Used Owl Trade</span>
                               </span>
                             </div>
                             <p class="cgpt-msg-assistant cgpt-msg-assistant-delayed" id="pvCgptReply2S">Not yet — OJ is at $3.42, three cents below your $3.45 alert threshold. I'll keep watching and let you know the moment it crosses.</p>
                             <div class="cgpt-pop-preview-chart cgpt-msg-assistant-delayed" id="pvCgptChart2S" style="margin-top:10px;">
-                              <span class="cgpt-pop-ticker">OJ <b>+0.08</b> (2.4%)</span>
-                              <svg class="cgpt-pop-spark" viewBox="0 0 100 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M0 10 L10 14 L20 6 L30 16 L40 12 L50 15 L60 9 L70 13 L80 8 L90 11 L100 5"/></svg>
+                              <div class="cgpt-chart-head"><span class="cgpt-chart-ticker">OJ</span><span class="cgpt-chart-name">Orange Juice Futures</span><span class="cgpt-chart-change">+0.08 (2.4%)</span></div>
+                              <div class="cgpt-chart-plot">
+                                <div class="cgpt-chart-axis"><span style="top:11.7%">3.60</span><span style="top:51.7%">3.45</span><span style="top:91.7%">3.30</span></div>
+                                <svg class="cgpt-chart-svg" viewBox="0 0 280 120" preserveAspectRatio="none">
+                                  <line class="cgpt-chart-grid" x1="0" y1="14" x2="280" y2="14"/>
+                                  <line class="cgpt-chart-grid" x1="0" y1="110" x2="280" y2="110"/>
+                                  <line class="cgpt-chart-threshold" x1="0" y1="62" x2="280" y2="62"/>
+                                  <path class="cgpt-chart-area" d="M0,104 L40,94 L80,107 L120,84 L160,91 L200,78 L240,88 L280,72 L280,120 L0,120 Z"/>
+                                  <path class="cgpt-chart-line" d="M0,104 L40,94 L80,107 L120,84 L160,91 L200,78 L240,88 L280,72"/>
+                                  <circle class="cgpt-chart-dot" cx="280" cy="72" r="4"/>
+                                </svg>
+                              </div>
+                              <div class="cgpt-chart-foot"><span><i class="cgpt-chart-swatch"></i>Current <b>$3.42</b></span><span><i class="cgpt-chart-swatch cgpt-chart-swatch-dashed"></i>Alert at <b>$3.45</b></span></div>
                             </div>
                           </div>
                         </div>
@@ -1778,7 +1863,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
                           </div>
                           <div class="cgpt-pop-app-card">
-                            <div class="cgpt-owl-icon"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                            <div class="cgpt-owl-icon"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
                             <div class="cgpt-pop-app-meta"><p class="cgpt-pop-app-name">Owl Trade</p><button class="cgpt-pop-connect" tabindex="-1">Connect</button></div>
                           </div>
                           <p class="cgpt-pop-app-tagline">Invest, buy, trade</p>
@@ -1788,7 +1873,7 @@
                           <div class="cgpt-pop-connect-icons">
                             <span class="cgpt-tab-fav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
                             <span class="cgpt-pop-connect-dots"><span></span><span></span><span></span></span>
-                            <div class="cgpt-owl-icon cgpt-owl-icon-sm"><svg viewBox="0 0 24 24" fill="var(--cream)"><path d="M12 2c-1 1.4-2.6 1.9-2.6 1.9s.9.9.9 1.9c-3 1-5.3 4-5.3 8.2a7 7 0 0 0 14 0c0-4.2-2.3-7.2-5.3-8.2 0-1 .9-1.9.9-1.9S13 3.4 12 2z"/><circle cx="9.2" cy="13.4" r="1.5" fill="var(--ink)"/><circle cx="14.8" cy="13.4" r="1.5" fill="var(--ink)"/><path d="M12 15.2l-1.3 2.1h2.6z" fill="var(--ink)"/></svg></div>
+                            <div class="cgpt-owl-icon cgpt-owl-icon-sm"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt=""></div>
                           </div>
                           <p class="cgpt-pop-connect-heading">Connect Owl Trade</p>
                           <div class="cgpt-pop-warning-box">
@@ -1830,7 +1915,7 @@
                         <button class="ui-phone-navbtn" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M15 18l-6-6 6-6"/></svg></button>
                         <div class="ui-phone-contact">
                           <div class="ui-phone-avatar-wrap">
-                            <div class="ui-phone-avatar"><img src="agent-identity/assets/owltrade-logo.png" alt="OwlTrade logo"></div>
+                            <div class="ui-phone-avatar"><img src="agent-identity/assets/owltrade-logo.png?v=3" alt="OwlTrade logo"></div>
                             <span class="ui-verified-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
                           </div>
                           <p class="ui-phone-sender">OwlTrade</p>
@@ -1874,36 +1959,12 @@
                       <input class="sk-input" type="email" placeholder="example@email.com" readonly tabindex="-1">
                       <button class="sk-primary-btn" id="pvSkPrimaryBtnS" tabindex="-1">Continue with email</button>
                       <div class="sk-divider">or</div>
-                      <button class="sk-oauth-btn" tabindex="-1"><span class="sk-oauth-dot"></span>Continue with Google</button>
+                      <button class="sk-oauth-btn" id="pvSkOauthBtnS" tabindex="-1"><span class="sk-oauth-dot"></span>Continue with Google</button>
                     </div>
                   </div>
                 </div>
                 <div class="sk-pane sk-pane-config">
-                  <div class="sk-config-scroll">
-                    <p class="sk-subsection-label">Styling</p>
-                    <div class="sk-field-row" id="pvSkFontRowS">
-                      <label>Font</label>
-                      <div class="sk-field-control"><span class="sk-field-value" id="pvSkFontValS">system-ui</span></div>
-                    </div>
-                    <div class="sk-field-row" id="pvSkBgRowS">
-                      <label>Background Color</label>
-                      <div class="sk-field-control">
-                        <span class="sk-swatch" id="pvSkBgSwatchS" style="background:#FFFFFF"></span>
-                        <span class="sk-hex-prefix">#</span><span class="sk-field-value" id="pvSkBgValS">FFFFFF</span>
-                      </div>
-                    </div>
-                    <div class="sk-field-row" id="pvSkRadiusRowS">
-                      <label>Border radius</label>
-                      <div class="sk-field-control"><span class="sk-field-value" id="pvSkRadiusValS">4</span><span class="sk-suffix">px</span></div>
-                    </div>
-                    <div class="sk-field-row" id="pvSkPBtnRowS">
-                      <label>Primary Button</label>
-                      <div class="sk-field-control">
-                        <span class="sk-swatch" id="pvSkPBtnSwatchS" style="background:#161616"></span>
-                        <span class="sk-hex-prefix">#</span><span class="sk-field-value" id="pvSkPBtnValS">161616</span>
-                      </div>
-                    </div>
-                  </div>
+                  <div class="sk-config-scroll"></div>
                 </div>
               </div>
             </div>
@@ -2037,18 +2098,6 @@
       var pvCgptReply2 = document.getElementById('pvCgptReply2');
       var pvCgptChart2 = document.getElementById('pvCgptChart2');
       var pvStytchWrap = document.getElementById('pvStytchWrap');
-      var pvSkCard = document.getElementById('pvSkCard');
-      var pvSkPrimaryBtn = document.getElementById('pvSkPrimaryBtn');
-      var pvSkFontRow = document.getElementById('pvSkFontRow');
-      var pvSkFontVal = document.getElementById('pvSkFontVal');
-      var pvSkBgRow = document.getElementById('pvSkBgRow');
-      var pvSkBgSwatch = document.getElementById('pvSkBgSwatch');
-      var pvSkBgVal = document.getElementById('pvSkBgVal');
-      var pvSkRadiusRow = document.getElementById('pvSkRadiusRow');
-      var pvSkRadiusVal = document.getElementById('pvSkRadiusVal');
-      var pvSkPBtnRow = document.getElementById('pvSkPBtnRow');
-      var pvSkPBtnSwatch = document.getElementById('pvSkPBtnSwatch');
-      var pvSkPBtnVal = document.getElementById('pvSkPBtnVal');
       var previewEyebrow = document.getElementById('previewEyebrow');
       var previewTitleWrap = document.getElementById('previewImageTitleWrap');
       var previewTitle = document.getElementById('previewTitle');
@@ -2277,47 +2326,178 @@
       }
 
       // Stytch scene — condensed re-creation of the SDK Integration Builder's real
-      // side-by-side demo: a config field flashes, then the live preview card updates
-      // to match, cycling font -> background -> radius -> button color and back
-      // (a palindrome, same as the real STYLE_DEMO_STEPS, so it loops seamlessly)
-      function makeStytchScene(r){
+      // side-by-side demo (tool.js's General/Container/Colors/Primary Button/
+      // Secondary Button field set, same labels/defaults/order — not a trimmed
+      // handful) with a live preview card that actually updates to match.
+      // SK_FIELDS is the single source of truth for both the panel's initial
+      // markup (buildSkConfigHTML) and the animation's reset defaults below,
+      // so the two can't drift apart the way two hand-written copies could.
+      var SK_FIELDS = [
+        {id: 'Font', label: 'Font', kind: 'text', section: 'General', def: 'system-ui'},
+        {id: 'Logo', label: 'Brand logo', kind: 'text', section: 'General', def: ''},
+        {id: 'Width', label: 'Width', kind: 'number', unit: 'px', section: 'Container', def: '400'},
+        {id: 'Bg', label: 'Background Color', kind: 'hex', section: 'Container', def: 'FFFFFF'},
+        {id: 'Border', label: 'Border Color', kind: 'hex', section: 'Container', def: 'E4E4E4'},
+        {id: 'Radius', label: 'Border radius', kind: 'number', unit: 'px', section: 'Container', def: '4'},
+        {id: 'ColorPrimary', label: 'Primary', kind: 'hex', section: 'Colors', def: '161616'},
+        {id: 'ColorSecondary', label: 'Secondary', kind: 'hex', section: 'Colors', def: '696969'},
+        {id: 'ColorSuccess', label: 'Success', kind: 'hex', section: 'Colors', def: '009869'},
+        {id: 'ColorError', label: 'Error', kind: 'hex', section: 'Colors', def: 'E7000B'},
+        {id: 'PBtnBg', label: 'Background Color', kind: 'hex', section: 'Primary Button', def: '161616'},
+        {id: 'PBtnText', label: 'Text Color', kind: 'hex', section: 'Primary Button', def: 'FCFCFC'},
+        {id: 'PBtnBorder', label: 'Border Color', kind: 'hex', section: 'Primary Button', def: '161616'},
+        {id: 'PBtnRadius', label: 'Border radius', kind: 'number', unit: 'px', section: 'Primary Button', def: '4'},
+        {id: 'SBtnBg', label: 'Background Color', kind: 'hex', section: 'Secondary Button', def: 'F5F5F5'},
+        {id: 'SBtnText', label: 'Text Color', kind: 'hex', section: 'Secondary Button', def: '161616'},
+        {id: 'SBtnBorder', label: 'Border Color', kind: 'hex', section: 'Secondary Button', def: 'E4E4E4'},
+        {id: 'SBtnRadius', label: 'Border radius', kind: 'number', unit: 'px', section: 'Secondary Button', def: '4'}
+      ];
+      var SK_FIELDS_BY_ID = {};
+      SK_FIELDS.forEach(function(f){ SK_FIELDS_BY_ID[f.id] = f; });
+
+      function buildSkConfigHTML(suffix){
+        var html = '';
+        var lastSection = null;
+        SK_FIELDS.forEach(function(f){
+          if(f.section !== lastSection){
+            if(lastSection !== null) html += '<div class="sk-divider-line"></div>';
+            html += '<p class="sk-subsection-label">' + f.section + '</p>';
+            lastSection = f.section;
+          }
+          var rowId = 'pvSk' + f.id + 'Row' + suffix;
+          var valId = 'pvSk' + f.id + 'Val' + suffix;
+          var control;
+          if(f.kind === 'hex'){
+            control = '<span class="sk-swatch" id="pvSk' + f.id + 'Swatch' + suffix + '" style="background:#' + f.def + '"></span>' +
+              '<span class="sk-hex-prefix">#</span><span class="sk-field-value" id="' + valId + '">' + f.def + '</span>';
+          } else if(f.kind === 'number'){
+            control = '<span class="sk-field-value" id="' + valId + '">' + f.def + '</span><span class="sk-suffix">' + f.unit + '</span>';
+          } else {
+            control = '<span class="sk-field-value" id="' + valId + '">' + (f.def || '—') + '</span>';
+          }
+          html += '<div class="sk-field-row" id="' + rowId + '"><label>' + f.label + '</label>' +
+            '<div class="sk-field-control">' + control + '</div></div>';
+        });
+        return html;
+      }
+
+      function skField(root, suffix, id){
+        return {
+          row: root.querySelector('#pvSk' + id + 'Row' + suffix),
+          val: root.querySelector('#pvSk' + id + 'Val' + suffix),
+          swatch: root.querySelector('#pvSk' + id + 'Swatch' + suffix)
+        };
+      }
+
+      // the fields actually demoed — same ones the real STYLE_DEMO_STEPS
+      // touches (Font/Background/Radius/Primary Button), extended to also
+      // sweep through the Container border and Secondary Button now that
+      // the panel shows them for real. Typing (see typeField below) replaces
+      // the old full-row yellow flash, which read as a click rather than
+      // someone actually editing the field.
+      var SK_ANIMATED_IDS = ['Font', 'Bg', 'Border', 'Radius', 'PBtnBg', 'PBtnText', 'PBtnRadius', 'SBtnBg', 'SBtnText', 'SBtnRadius'];
+
+      function makeStytchScene(root, suffix){
         var timers = [];
         function after(fn, ms){ timers.push(setTimeout(fn, ms)); }
         function stop(){ timers.forEach(function(id){ clearTimeout(id); }); timers = []; }
+
+        var card = root.querySelector('#pvSkCard' + suffix);
+        var primaryBtn = root.querySelector('#pvSkPrimaryBtn' + suffix);
+        var oauthBtn = root.querySelector('#pvSkOauthBtn' + suffix);
+        var configScroll = root.querySelector('.sk-config-scroll');
+        var f = {};
+        SK_ANIMATED_IDS.forEach(function(id){ f[id] = skField(root, suffix, id); });
+
+        function cssHex(id){ return '#' + SK_FIELDS_BY_ID[id].def; }
+        function cssNum(id){ return SK_FIELDS_BY_ID[id].def + 'px'; }
+
+        // scrolls the config pane (not the outer page — computed against the
+        // scroller's own rect, same fix noted in the real tool.js for why
+        // el.scrollIntoView() can't be used here) to center the field about
+        // to be edited, exactly like the real demo's scrollConfigPaneToCenter
+        function scrollToRow(row){
+          if(!row || !configScroll) return;
+          var scrollerRect = configScroll.getBoundingClientRect();
+          var rowRect = row.getBoundingClientRect();
+          var center = (rowRect.top - scrollerRect.top) + configScroll.scrollTop + rowRect.height / 2;
+          var target = Math.max(0, center - configScroll.clientHeight / 2);
+          configScroll.scrollTo({top: target, behavior: 'smooth'});
+        }
+
         function resetVisual(){
-          r.card.style.setProperty('--sk-card-font', 'system-ui');
-          r.card.style.setProperty('--sk-card-bg', '#FFFFFF');
-          r.card.style.setProperty('--sk-card-radius', '4px');
-          r.primaryBtn.style.setProperty('--sk-pbtn-bg', '#161616');
-          r.fontVal.textContent = 'system-ui';
-          r.bgSwatch.style.background = '#FFFFFF';
-          r.bgVal.textContent = 'FFFFFF';
-          r.radiusVal.textContent = '4';
-          r.pBtnSwatch.style.background = '#161616';
-          r.pBtnVal.textContent = '161616';
-          [r.fontRow, r.bgRow, r.radiusRow, r.pBtnRow].forEach(function(row){ row.classList.remove('pv-flash'); });
+          if(configScroll) configScroll.scrollTop = 0;
+          card.style.setProperty('--sk-card-font', SK_FIELDS_BY_ID.Font.def);
+          card.style.setProperty('--sk-card-bg', cssHex('Bg'));
+          card.style.setProperty('--sk-card-border', cssHex('Border'));
+          card.style.setProperty('--sk-card-radius', cssNum('Radius'));
+          primaryBtn.style.setProperty('--sk-pbtn-bg', cssHex('PBtnBg'));
+          primaryBtn.style.setProperty('--sk-pbtn-text', cssHex('PBtnText'));
+          primaryBtn.style.setProperty('--sk-pbtn-border', cssHex('PBtnBorder'));
+          primaryBtn.style.setProperty('--sk-pbtn-radius', cssNum('PBtnRadius'));
+          oauthBtn.style.setProperty('--sk-sbtn-bg', cssHex('SBtnBg'));
+          oauthBtn.style.setProperty('--sk-sbtn-text', cssHex('SBtnText'));
+          oauthBtn.style.setProperty('--sk-sbtn-border', cssHex('SBtnBorder'));
+          oauthBtn.style.setProperty('--sk-sbtn-radius', cssNum('SBtnRadius'));
+          SK_ANIMATED_IDS.concat(['PBtnBorder']).forEach(function(id){
+            var field = f[id] || skField(root, suffix, id);
+            var def = SK_FIELDS_BY_ID[id].def;
+            field.val.classList.remove('pv-editing');
+            field.val.textContent = def;
+            if(field.swatch) field.swatch.style.background = '#' + def;
+          });
         }
-        function flashRow(row){
-          row.classList.add('pv-flash');
-          after(function(){ row.classList.remove('pv-flash'); }, 900);
+
+        // reveals `text` into field.val one character at a time with a
+        // blinking caret (.pv-editing), then fires apply() — reads as someone
+        // actually typing the new value in, not a scripted instant swap
+        function typeField(startAt, field, text, apply, sync){
+          after(function(){ scrollToRow(field.row); }, startAt);
+          var TYPE_SPEED = 60;
+          var typeStart = startAt + 450;
+          after(function(){ field.val.classList.add('pv-editing'); field.val.textContent = ''; }, typeStart);
+          for(var c = 1; c <= text.length; c++){
+            (function(c){
+              after(function(){ field.val.textContent = text.slice(0, c); }, typeStart + c * TYPE_SPEED);
+            })(c);
+          }
+          after(function(){
+            field.val.classList.remove('pv-editing');
+            if(field.swatch) field.swatch.style.background = '#' + text;
+            apply(text);
+            if(sync){
+              sync.forEach(function(sid){
+                var sf = f[sid] || skField(root, suffix, sid);
+                sf.val.textContent = text;
+                if(sf.swatch) sf.swatch.style.background = '#' + text;
+              });
+            }
+          }, typeStart + text.length * TYPE_SPEED + 150);
         }
+
         function run(){
           stop();
           resetVisual();
+          var STEP_GAP = 1750;
           var steps = [
-            {row: r.fontRow, at: 1200, apply: function(){ r.card.style.setProperty('--sk-card-font', 'Georgia'); r.fontVal.textContent = 'Georgia'; }},
-            {row: r.bgRow, at: 2900, apply: function(){ r.card.style.setProperty('--sk-card-bg', '#EEF2FF'); r.bgSwatch.style.background = '#EEF2FF'; r.bgVal.textContent = 'EEF2FF'; }},
-            {row: r.radiusRow, at: 4600, apply: function(){ r.card.style.setProperty('--sk-card-radius', '22px'); r.radiusVal.textContent = '22'; }},
-            {row: r.pBtnRow, at: 6300, apply: function(){ r.primaryBtn.style.setProperty('--sk-pbtn-bg', '#2563EB'); r.pBtnSwatch.style.background = '#2563EB'; r.pBtnVal.textContent = '2563EB'; }},
-            {row: r.pBtnRow, at: 8300, apply: function(){ r.primaryBtn.style.setProperty('--sk-pbtn-bg', '#161616'); r.pBtnSwatch.style.background = '#161616'; r.pBtnVal.textContent = '161616'; }},
-            {row: r.radiusRow, at: 10000, apply: function(){ r.card.style.setProperty('--sk-card-radius', '4px'); r.radiusVal.textContent = '4'; }},
-            {row: r.bgRow, at: 11700, apply: function(){ r.card.style.setProperty('--sk-card-bg', '#FFFFFF'); r.bgSwatch.style.background = '#FFFFFF'; r.bgVal.textContent = 'FFFFFF'; }},
-            {row: r.fontRow, at: 13400, apply: function(){ r.card.style.setProperty('--sk-card-font', 'system-ui'); r.fontVal.textContent = 'system-ui'; }}
+            {id: 'Font', to: 'Georgia', apply: function(v){ card.style.setProperty('--sk-card-font', v); }},
+            {id: 'Bg', to: 'EEF2FF', apply: function(v){ card.style.setProperty('--sk-card-bg', '#' + v); }},
+            {id: 'Border', to: 'C7D2FE', apply: function(v){ card.style.setProperty('--sk-card-border', '#' + v); }},
+            {id: 'Radius', to: '22', apply: function(v){ card.style.setProperty('--sk-card-radius', v + 'px'); }},
+            {id: 'PBtnBg', to: '2563EB', apply: function(v){ primaryBtn.style.setProperty('--sk-pbtn-bg', '#' + v); primaryBtn.style.setProperty('--sk-pbtn-border', '#' + v); }, sync: ['PBtnBorder']},
+            {id: 'PBtnText', to: 'FFFFFF', apply: function(v){ primaryBtn.style.setProperty('--sk-pbtn-text', '#' + v); }},
+            {id: 'PBtnRadius', to: '20', apply: function(v){ primaryBtn.style.setProperty('--sk-pbtn-radius', v + 'px'); }},
+            {id: 'SBtnBg', to: '161616', apply: function(v){ oauthBtn.style.setProperty('--sk-sbtn-bg', '#' + v); }},
+            {id: 'SBtnText', to: 'FFFFFF', apply: function(v){ oauthBtn.style.setProperty('--sk-sbtn-text', '#' + v); }},
+            {id: 'SBtnRadius', to: '20', apply: function(v){ oauthBtn.style.setProperty('--sk-sbtn-radius', v + 'px'); }}
           ];
+          var t = 400;
           steps.forEach(function(step){
-            after(function(){ flashRow(step.row); step.apply(); }, step.at);
+            typeField(t, f[step.id], step.to, step.apply, step.sync);
+            t += STEP_GAP;
           });
-          after(function(){ run(); }, 15200);
+          var HOLD_MS = 1600;
+          after(function(){ run(); }, t + HOLD_MS);
         }
         return {run: run, stop: stop};
       }
@@ -2336,11 +2516,8 @@
       function runCgptPhoneScene(){ panelCgptScene.run(); }
       function stopCgptPhoneScene(){ panelCgptScene.stop(); }
 
-      var panelStytchScene = makeStytchScene({
-        card: pvSkCard, primaryBtn: pvSkPrimaryBtn, fontRow: pvSkFontRow, fontVal: pvSkFontVal,
-        bgRow: pvSkBgRow, bgSwatch: pvSkBgSwatch, bgVal: pvSkBgVal, radiusRow: pvSkRadiusRow, radiusVal: pvSkRadiusVal,
-        pBtnRow: pvSkPBtnRow, pBtnSwatch: pvSkPBtnSwatch, pBtnVal: pvSkPBtnVal
-      });
+      pvStytchWrap.querySelector('.sk-config-scroll').innerHTML = buildSkConfigHTML('');
+      var panelStytchScene = makeStytchScene(pvStytchWrap, '');
       function runStytchScene(){ panelStytchScene.run(); }
       function stopStytchScene(){ panelStytchScene.stop(); }
 
@@ -2470,6 +2647,15 @@
       pickCard.addEventListener('click', function(){ openTrack('track-01'); });
       discogCards.forEach(function(card){
         card.addEventListener('click', function(){ openTrack(card.dataset.track); });
+      });
+
+      // whole album-art card opens the case study too, same destination as
+      // its two arrow buttons — but let clicks on the arrows (or anything
+      // else that's its own link) handle themselves rather than double-navigating
+      previewImageWrap.addEventListener('click', function(e){
+        if(e.target.closest('a')) return;
+        if(previewExpandInline.hidden) return;
+        window.location.href = previewExpandInline.getAttribute('href');
       });
 
       tbPanelToggle.addEventListener('click', togglePanel);
@@ -2643,6 +2829,9 @@
         if(sceneTplId){
           mediaEl.classList.add('static-project-media-scene');
           mediaEl.appendChild(document.getElementById(sceneTplId).content.cloneNode(true));
+          if(row.dataset.company === 'Stytch'){
+            mediaEl.querySelector('.sk-config-scroll').innerHTML = buildSkConfigHTML('S');
+          }
         } else if(row.dataset.thumb){
           var img = document.createElement('img');
           img.src = row.dataset.thumb;
@@ -2660,6 +2849,12 @@
           '</div>' +
           expandHtml;
         mediaEl.appendChild(overlayEl);
+        if(row.dataset.href){
+          mediaEl.addEventListener('click', function(e){
+            if(e.target.closest('a')) return;
+            window.location.href = row.dataset.href;
+          });
+        }
         var cardsEl = document.createElement('div');
         cardsEl.className = 'static-project-cards';
         cardsEl.appendChild(tpl.content.cloneNode(true));
@@ -2686,14 +2881,7 @@
           });
         } else if(row.dataset.company === 'Stytch'){
           staticSceneRunners.push(function(){
-            makeStytchScene({
-              card: mediaEl.querySelector('#pvSkCardS'), primaryBtn: mediaEl.querySelector('#pvSkPrimaryBtnS'),
-              fontRow: mediaEl.querySelector('#pvSkFontRowS'), fontVal: mediaEl.querySelector('#pvSkFontValS'),
-              bgRow: mediaEl.querySelector('#pvSkBgRowS'), bgSwatch: mediaEl.querySelector('#pvSkBgSwatchS'),
-              bgVal: mediaEl.querySelector('#pvSkBgValS'), radiusRow: mediaEl.querySelector('#pvSkRadiusRowS'),
-              radiusVal: mediaEl.querySelector('#pvSkRadiusValS'), pBtnRow: mediaEl.querySelector('#pvSkPBtnRowS'),
-              pBtnSwatch: mediaEl.querySelector('#pvSkPBtnSwatchS'), pBtnVal: mediaEl.querySelector('#pvSkPBtnValS')
-            }).run();
+            makeStytchScene(mediaEl, 'S').run();
           });
         }
       });
