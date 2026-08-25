@@ -103,6 +103,11 @@
   }
   .friction-card-title{font-family:var(--sans); font-size:15.5px; font-weight:700; color:var(--ink); margin:0 0 8px; line-height:1.35;}
   .friction-card-desc{font-family:var(--sans); font-size:13px; line-height:1.55; color:var(--ink-70); margin:0;}
+  .friction-link{
+    color:#1A73E8; cursor:pointer; background:none; border:none; padding:0; font:inherit; font-weight:600;
+    transition:color .2s ease;
+  }
+  .friction-link:hover{color:#0D5BC7; text-decoration:underline; text-underline-offset:2px;}
   @media (max-width:640px){ .friction-grid{grid-template-columns:1fr;} }
 
   /* persona — copied exactly from Trust's .layout-persona/.persona-card */
@@ -900,11 +905,11 @@
       <div class="friction-grid">
         <div class="friction-card">
           <p class="friction-card-title">Not a roadmap project</p>
-          <p class="friction-card-desc">Started as a Hack Week idea, not something already scoped and staffed — needed leadership buy-in afterward.</p>
+          <p class="friction-card-desc">Started as a Hack Week idea, not something already scoped and staffed — needed leadership buy-in to get fully productionized.</p>
         </div>
         <div class="friction-card">
           <p class="friction-card-title">Refactored the SDK's styling object</p>
-          <p class="friction-card-desc">A live preview meant the config had to be rebuilt first — close collaboration with eng. See "Branding."</p>
+          <p class="friction-card-desc">A smooth customization experience meant needing to clean up the actual styling config first. Required working closely with engineering. See <button class="friction-link" onclick="jumpToJourneyStep(2)">Branding</button>.</p>
         </div>
       </div>
     </section>
@@ -1980,6 +1985,15 @@
       item.querySelector('.step-nav-head').onclick = () => selectStep(idx);
     });
     selectStep(0);
+    // exposed so the "Challenges" slide's callout links can jump straight to
+    // a specific Journey step (n is 1-indexed, matching the visible step
+    // numbers) instead of just landing on the slide at whatever step it was
+    // last left on
+    window.jumpToJourneyStep = function(n){
+      idx = Array.from(slides).indexOf(journeySlide);
+      render();
+      selectStep(n - 1);
+    };
 
     // lets the deck's own next/prev arrows step through 1-4 first, only
     // advancing to the next/previous slide once already on the last/first

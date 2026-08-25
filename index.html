@@ -793,6 +793,7 @@
   .consent-mobile-list li{position:relative; padding-left:12px; font-family:var(--sans); font-size:9.5px; line-height:1.4; color:var(--ink);}
   .consent-mobile-list li::before{content:''; position:absolute; left:1px; top:5px; width:3px; height:3px; border-radius:50%; background:var(--ink);}
   .consent-mobile-terms{font-family:var(--sans); font-size:8px; line-height:1.4; color:var(--ink-45); text-align:center; margin:0 0 9px;}
+  .terms-link{color:var(--ink); text-decoration:underline; text-underline-offset:2px;}
   .consent-mobile-actions{display:flex; gap:7px;}
   .consent-mobile-allow, .consent-mobile-deny{flex:1; height:27px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:var(--sans); font-weight:600; font-size:10px;}
   .consent-mobile-allow{background:var(--ink); color:var(--cream);}
@@ -1806,7 +1807,7 @@
                           <li>Take action on your behalf</li>
                         </ul>
                         <div class="consent-mobile-divider"></div>
-                        <p class="consent-mobile-terms">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                        <p class="consent-mobile-terms">By allowing, you agree to the <span class="terms-link">Terms of Service</span> and <span class="terms-link">Privacy Policy</span>.</p>
                         <div class="consent-mobile-actions">
                           <div class="consent-mobile-allow">Allow</div>
                           <div class="consent-mobile-deny">Deny</div>
@@ -2057,7 +2058,7 @@
                           <li>Take action on your behalf</li>
                         </ul>
                         <div class="consent-mobile-divider"></div>
-                        <p class="consent-mobile-terms">By allowing, you agree to the Terms of Service and Privacy Policy.</p>
+                        <p class="consent-mobile-terms">By allowing, you agree to the <span class="terms-link">Terms of Service</span> and <span class="terms-link">Privacy Policy</span>.</p>
                         <div class="consent-mobile-actions">
                           <div class="consent-mobile-allow">Allow</div>
                           <div class="consent-mobile-deny">Deny</div>
