@@ -599,6 +599,19 @@
   .example-text{font-family:var(--sans); font-size:15px; line-height:1.6; color:var(--ink); margin:0;}
   .example-callout .example-text{color:var(--ink-70);}
 
+  /* "The Friction" slide — same flat light-grey/hairline fill as
+     .example-callout (reused, not reinvented), but as a scannable card grid
+     instead of one long bulleted list — per Kelly, the list read as too
+     text-heavy. Headline carries the point; the one-line detail underneath
+     is a clause, not a paragraph. */
+  .friction-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; max-width:720px; text-align:left;}
+  .friction-card{
+    background:rgba(23,22,27,.035); border:1px solid var(--line); border-radius:12px; padding:20px 22px;
+  }
+  .friction-card-title{font-family:var(--sans); font-size:15.5px; font-weight:700; color:var(--ink); margin:0 0 8px; line-height:1.35;}
+  .friction-card-desc{font-family:var(--sans); font-size:13px; line-height:1.55; color:var(--ink-70); margin:0;}
+  @media (max-width:720px){ .friction-grid{grid-template-columns:1fr;} }
+
   /* hover tooltip for inline glossary-style terms within teaser copy */
   .tooltip-term{position:relative; border-bottom:1px dotted var(--ink-45); cursor:help;}
   .tooltip-box{
@@ -4899,6 +4912,39 @@
         <div class="carousel-fade next"></div>
         <div class="carousel-chev next" onclick="scrollCarousel(this,1)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15.5. THE FRICTION — real constraints, not just finished screens.
+         Per reviewer feedback: the deck read "too smooth," a product pitch
+         rather than real process — this names four moments the design had
+         to adjust around while the product was still being built, sitting
+         right before Impact so the sequence reads as: the work → what
+         actually moved underneath it → what we're still validating.
+         Card grid (not a bulleted list) + one-line descriptions — per
+         Kelly, the earlier prose-list version read as too text-heavy. -->
+    <section class="slide layout-timeline">
+      <div class="text-block">
+        <p class="kicker">The Friction</p>
+        <h1>Challenges</h1>
+      </div>
+      <div class="friction-grid">
+        <div class="friction-card">
+          <p class="friction-card-title">Cross-team dependency</p>
+          <p class="friction-card-desc">HITL approval runs on Verify — another Twilio team's RCS infrastructure, and real cross-team coordination to secure.</p>
+        </div>
+        <div class="friction-card">
+          <p class="friction-card-title">A new bet, no playbook</p>
+          <p class="friction-card-desc">No existing customer base to design against yet — assumptions now being tested with design partners.</p>
+        </div>
+        <div class="friction-card">
+          <p class="friction-card-title">Standalone demos, before the product existed</p>
+          <p class="friction-card-desc">Built for board meetings, leadership review, and Signal — Twilio's annual conference — before parts of the product existed to show.</p>
+        </div>
+        <div class="friction-card">
+          <p class="friction-card-title">Scoping the API mid-design</p>
+          <p class="friction-card-desc">The Clients↔Identities link got cut from engineering under a tight timeline — the design adjusted with it. See "Who's Connected?"</p>
         </div>
       </div>
     </section>
