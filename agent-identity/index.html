@@ -2531,7 +2531,13 @@
      window as its own quiet column, sized like the deck's other side text
      but with a subtle bordered card treatment instead of running text */
   .live-callout{
-    flex:0 0 200px; display:flex; flex-direction:column; gap:10px;
+    /* widened from 200px — the guided-task copy (step list + longer intro
+       paragraph) was wrapping tightly at the old width. The window beside
+       it sizes via inset:0/margin:auto within .live-frame-col and is
+       height-bound at typical slide dimensions, not width-bound, so this
+       doesn't shrink it — see .cgpt-window-live below for the frame's own
+       actual sizing. */
+    flex:0 0 260px; display:flex; flex-direction:column; gap:10px;
     background:rgba(23,22,27,.035); border:1px solid var(--line); border-radius:12px;
     padding:20px;
   }
@@ -2562,9 +2568,10 @@
   .guided-step.current{color:var(--ink);}
   .guided-step.current .guided-step-num{border-color:var(--ink); color:var(--ink);}
   .guided-step.done{color:var(--ink-70);}
+  /* per Kelly: keep showing the plain 1/2/3 even once done — the filled
+     circle (vs. the outlined current/upcoming ones) already reads as
+     "complete" on its own, no glyph swap needed */
   .guided-step.done .guided-step-num{background:var(--ink); border-color:var(--ink); color:var(--cream);}
-  .guided-step.done .guided-step-num::before{content:'✓'; font-size:11px;}
-  .guided-step.done .guided-step-num span{display:none;}
   /* visibility:hidden (not the [hidden] attribute) — real jump Kelly caught:
      toggling [hidden] removes this from layout entirely, so the callout box
      was genuinely 31px shorter until this appeared, then grew + shifted
@@ -2619,11 +2626,32 @@
      banner on every step regardless of the hidden attribute JS sets on it
      (real bug Kelly hit — visible even on step 1's console view) */
   .guided-user-banner:not([hidden]){
-    display:flex; align-items:center; gap:8px; padding:8px 16px; flex-shrink:0;
+    display:flex; align-items:center; gap:10px; padding:12px 18px; flex-shrink:0;
     background:#FEF7E0; border-bottom:1px solid #F0E4B8;
-    font-family:var(--sans); font-size:12px; font-weight:600; color:var(--ink-70);
+    font-family:var(--sans); font-size:14px; font-weight:600; color:var(--ink-70);
   }
-  .guided-user-banner svg{width:15px; height:15px; flex-shrink:0; color:var(--ink-45);}
+  .guided-user-banner svg{width:18px; height:18px; flex-shrink:0; color:var(--ink-45);}
+  /* per Kelly: the per-substep instruction ("Click +...") used to live at
+     the bottom of the chat body, which made that one screen look different
+     from every other ChatGPT instance in the deck — it's folded into this
+     banner's own text now instead (see BANNER_HINT_TEXT etc. in JS), one
+     single left-aligned sentence rather than a separate right-aligned
+     fragment. The step-3 hand-off button still gets its own slot on the
+     right edge via margin-left:auto, styled as a plain link (matching the
+     console's own #1866EE link blue — --tw-blue itself isn't reachable
+     here, it's scoped to .cgpt-body-live, a sibling of this banner, not an
+     ancestor) rather than a filled pill, so it reads as "click through",
+     not a competing call-to-action next to the banner's own icon. Doesn't
+     set its own `display`, so toggling the plain `hidden` attribute from
+     JS is enough — no specificity fight with the UA's [hidden] rule like
+     the ones documented elsewhere here. */
+  .guided-banner-text{flex:1; min-width:0;}
+  .guided-banner-next{
+    flex-shrink:0; margin-left:auto; border:none; background:none; padding:0; cursor:pointer;
+    color:#1866EE; font-family:var(--sans); font-size:14px; font-weight:600;
+    white-space:nowrap; text-decoration:none;
+  }
+  .guided-banner-next:hover{text-decoration:underline;}
   /* :not([hidden]) rather than a bare .guided-body{display:flex} — a plain
      class rule here would tie in specificity with the UA's own
      [hidden]{display:none} and, since author styles win ties over UA
@@ -2645,6 +2673,14 @@
      size — bumps text/icons/padding up together, uniformly. */
   #guidedBodyChat .cgpt-body{zoom:1.3;}
   #guidedBodyLogin .ui-mock, #guidedBodyConsent .consent-mobile{zoom:1.35;}
+  /* .ui-avatar/.ui-title's own margins (12px/7px) are shared with several
+     other illustrative .ui-mock instances elsewhere in the deck — scoped
+     overrides here instead of touching those base rules, since this is the
+     one instance with two real stacked inputs, which read as cramped at
+     the shared spacing (real feedback: "spaced closely together"). */
+  #guidedBodyLogin .ui-avatar{margin-bottom:18px;}
+  #guidedBodyLogin .ui-title{margin-bottom:18px;}
+  #guidedBodyLogin .guided-real-input{margin-bottom:14px;}
   /* real bug hit while testing: a CLOSED .cgpt-popover is opacity:0 +
      pointer-events:none at its own level, but .cgpt-pop-view.active
      unconditionally sets pointer-events:auto on itself regardless of the
@@ -2665,15 +2701,6 @@
   }
   .guided-real-input:focus{outline:none; border-color:var(--ink-45);}
   .guided-real-input::placeholder{color:var(--ink-45);}
-  /* inline within .cgpt-main's normal flex-column flow now (2d's "connected"
-     state, same chat body as 2a) — not absolutely positioned, since there's
-     no separate frame to anchor against anymore */
-  .guided-next-btn-inline{
-    margin:20px auto 0; padding:10px 18px; border:none; border-radius:8px; cursor:pointer;
-    background:var(--ink); color:var(--cream); font-family:var(--sans); font-size:13px; font-weight:600;
-    transition:opacity .15s ease;
-  }
-  .guided-next-btn-inline:hover{opacity:.85;}
   .guided-deny-note{
     margin-top:10px; font-family:var(--sans); font-size:11.5px; color:var(--ink-45);
     text-align:center; opacity:0; transition:opacity .2s ease;
@@ -2688,7 +2715,12 @@
      clip an absolutely-positioned child hanging above the row's top edge. */
   .guided-row-tooltip{
     position:fixed; z-index:9999;
-    background:var(--ink); color:var(--cream); font-family:var(--sans);
+    /* solid grey rather than --ink's near-black — per Kelly. A literal hex
+       rather than the --ink-70 token: that token is a semi-transparent
+       rgba(), fine for text sitting on a known background, but this
+       tooltip floats via position:fixed over arbitrary table rows, so a
+       solid color keeps it reading the same regardless of what's under it. */
+    background:#4A4950; color:var(--cream); font-family:var(--sans);
     font-size:11.5px; font-weight:700; letter-spacing:.02em;
     padding:6px 12px; border-radius:7px; white-space:nowrap;
     opacity:0; transform:translateY(4px); pointer-events:none;
@@ -2696,7 +2728,7 @@
   }
   .guided-row-tooltip::after{
     content:''; position:absolute; top:100%; left:18px;
-    border:5px solid transparent; border-top-color:var(--ink);
+    border:5px solid transparent; border-top-color:#4A4950;
   }
   .guided-row-tooltip.show{opacity:1; transform:translateY(0);}
   /* narrows Clients/Identities down to just this scenario's agent + user in
@@ -2722,10 +2754,19 @@
      independently (percentage max-width on the frame, a separate flat zoom
      on just the content), which let them drift out of proportion with
      each other. */
+  /* 0.6 (was) rendered noticeably smaller than the console window on the
+     Customer Journey slide (.cgpt-window-console, which fills its own
+     column via aspect-ratio instead of this fixed-zoom approach) — bumped
+     to bring the two closer in scale. Bumping the constant here rather than
+     switching to that fill-via-aspect-ratio approach on purpose: that's the
+     "previous bug" described above this rule, where frame and content could
+     drift out of proportion — a plain zoom increase keeps everything inside
+     (titlebar, url bar, console content, and the guided-body zoom values
+     below that are tuned relative to this box) scaling together as one unit. */
   .cgpt-window.cgpt-window-live{
     position:absolute; inset:0; margin:auto;
     width:1440px; height:1024px; aspect-ratio:auto;
-    zoom:0.6;
+    zoom:0.8;
     transform:none;
   }
   /* palette + font-family live here (not just on .tw-console) because the
@@ -5243,7 +5284,12 @@
              of pushing the body down like a real one would. -->
           <div class="guided-user-banner" id="guidedBanner" hidden>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
-            You're standing in as the end user now — this is what they see, not the admin console.
+            <!-- textContent swapped by JS per state (see BANNER_*_TEXT in
+                 initGuidedTask) rather than three separate markup variants —
+                 default on login/consent, the "+" instruction folded in
+                 during 2a, and a shorter version once connected in 2d -->
+            <span class="guided-banner-text" id="guidedBannerText">You're standing in as the end user now — this is what they see, not the admin console.</span>
+            <button class="guided-banner-next" id="guidedNextBtn" type="button" hidden>Next: back to the Console →</button>
           </div>
           <div class="cgpt-body-live">
             <div class="tw-console" id="twConsole">
@@ -5520,7 +5566,15 @@
                         <div>
                           <h2 class="tw-h1">Customize consent screen</h2>
                           <p class="tw-lede" style="margin-bottom:28px;">Your application's logo that will appear on the consent screen.</p>
-                          <label class="tw-field tw-field-wide">
+                          <!-- .tw-field's own margin-bottom:20px (shared by every field
+                               in the deck) is meant as the gap between unrelated field
+                               groups — fine for Logo URL below, which has no hint of its
+                               own, but stacked with the hint's margin-top it read as way
+                               too much air between an input and ITS OWN caption right
+                               under it. Overriding just these three (the ones with a
+                               hint immediately after) tightens that pairing without
+                               touching the shared rule everywhere else it's used. -->
+                          <label class="tw-field tw-field-wide" style="margin-bottom:8px;">
                             <span class="tw-field-label">Friendly name</span>
                             <input class="tw-input" id="consentModalFriendlyNameInput" type="text" placeholder="Owl Trade">
                           </label>
@@ -5529,12 +5583,12 @@
                             <span class="tw-field-label">Logo URL</span>
                             <input class="tw-input" id="consentModalLogoInput" type="text" placeholder="https://yourlogourl.com">
                           </label>
-                          <label class="tw-field tw-field-wide">
+                          <label class="tw-field tw-field-wide" style="margin-bottom:8px;">
                             <span class="tw-field-label">Privacy policy URL</span>
                             <input class="tw-input" id="consentModalPrivacyInput" type="text" placeholder="https://yourcompany.com/privacy">
                           </label>
                           <p class="tw-field-hint" style="max-width:none; margin-top:6px;">URL to the customer's privacy policy.</p>
-                          <label class="tw-field tw-field-wide">
+                          <label class="tw-field tw-field-wide" style="margin-bottom:8px;">
                             <span class="tw-field-label">Terms of Service URL</span>
                             <input class="tw-input" id="consentModalTermsInput" type="text" placeholder="https://yourcompany.com/terms">
                           </label>
@@ -5921,8 +5975,11 @@
                     </div>
                   </div>
                 </div>
-                <p class="guided-substep-hint">Click <strong>+</strong>, then select the app you just configured to connect it.</p>
-                <button class="guided-next-btn guided-next-btn-inline" id="guidedNextBtn" type="button" hidden>Next: back to the admin console →</button>
+                <!-- per Kelly: the "click +" instruction and the step-3 hand-off
+                     now live in the banner above (#guidedBannerText /
+                     #guidedNextBtn) instead of here, so this screen ends the
+                     same way every other ChatGPT instance in the deck does. -->
+                <p class="cgpt-disclaimer">ChatGPT can make mistakes. Check important info.</p>
               </div>
             </div>
           </div>
@@ -5936,7 +5993,7 @@
               </div>
               <p class="ui-title" id="guidedLoginTitle">Log in to Owl Trade</p>
               <input class="guided-real-input" type="email" id="guidedLoginEmail" placeholder="you@example.com" autocomplete="off">
-              <input class="guided-real-input" type="password" id="guidedLoginPassword" placeholder="password" autocomplete="off">
+              <input class="guided-real-input" type="password" id="guidedLoginPassword" placeholder="Password" autocomplete="off">
               <button class="ui-btn ui-btn-primary ui-btn-no-press" id="guidedLoginBtn" type="button"><span>Log In</span></button>
             </div>
             <p class="guided-substep-hint">Not real — type any email and any password to continue.</p>
@@ -8031,6 +8088,15 @@
   (function initGuidedTask(){
     const liveWindowHome = document.getElementById('liveWindowHome');
     const banner = document.getElementById('guidedBanner');
+    const bannerText = document.getElementById('guidedBannerText');
+    // three variants of the same banner sentence — default for login/
+    // consent (2b/2c), the "+" instruction folded in during 2a, and a
+    // shorter version once connected in 2d (the "Next" link takes over
+    // explaining what's next at that point, so the sentence itself doesn't
+    // need to)
+    const BANNER_DEFAULT_TEXT = "You're standing in as the end user now — this is what they see, not the admin console.";
+    const BANNER_HINT_TEXT = "You're standing in as the end user now. Click +, then select the app you just configured to connect it.";
+    const BANNER_CONNECTED_TEXT = "You're standing in as the end user now.";
     const favTwilio = document.getElementById('guidedFavTwilio');
     const favChatgpt = document.getElementById('guidedFavChatgpt');
     const tabLabel = document.getElementById('guidedTabLabel');
@@ -8100,6 +8166,12 @@
       bodyLogin.hidden = (mode !== 'login');
       bodyConsent.hidden = (mode !== 'consent');
       banner.hidden = (mode === 'console');
+      // reset to the default sentence and hide the Next link on any body
+      // that isn't chat — showChatConnected() (called right after this, for
+      // chat) overrides both for its own 2a/2d states; login/consent keep
+      // this default as-is
+      if (mode !== 'console') bannerText.textContent = BANNER_DEFAULT_TEXT;
+      if (mode !== 'chat') nextBtn.hidden = true;
       favTwilio.hidden = (mode !== 'console');
       favChatgpt.hidden = (mode === 'console');
       if (mode === 'console') {
@@ -8201,6 +8273,7 @@
       // hides via .show (opacity/pointer-events), same mechanism every
       // other "+" menu in the deck uses, not the [hidden] attribute
       if (connected) chatPopover.classList.remove('show');
+      bannerText.textContent = connected ? BANNER_CONNECTED_TEXT : BANNER_HINT_TEXT;
       nextBtn.hidden = !connected;
       if (!connected) return;
       const {name, url} = savedIdentity();
@@ -8239,7 +8312,10 @@
         tip.className = 'guided-row-tooltip';
         tip.textContent = label;
         tip.style.left = (rect.left + 16) + 'px';
-        tip.style.top = (rect.top - 38) + 'px';
+        // was -38, then -30 — still read as floating above the row rather
+        // than pointing at it; closer still so the arrow tip sits right on
+        // the row's top edge
+        tip.style.top = (rect.top - 22) + 'px';
         document.body.appendChild(tip);
         activeTooltips.push(tip);
         requestAnimationFrame(() => tip.classList.add('show'));
@@ -8267,6 +8343,18 @@
     }
     function restoreRows(){
       document.querySelectorAll('.guided-row-tucked').forEach(row => row.classList.remove('guided-row-tucked'));
+    }
+    // full cleanup of everything this guided task leaves on the SHARED
+    // console singleton: un-tuck any narrowed Clients/Identities rows, and
+    // remove the fabricated #guidedIdentityRow entirely (restoreRows alone
+    // only un-hides real seed rows — the identity row isn't seed data, it's
+    // a clone inserted by showLoggedInIdentityRow, so it has to be deleted
+    // outright or it keeps showing up on every OTHER slide that reuses this
+    // same console, e.g. Customer Journey — real bug Kelly caught).
+    function cleanupGuidedArtifacts(){
+      restoreRows();
+      const idRow = document.getElementById('guidedIdentityRow');
+      if (idRow) idRow.remove();
     }
 
     // Identities has no seed row for an arbitrary typed-in email, so this
@@ -8361,8 +8449,8 @@
     // exposed for render()'s per-slide-entry hook (see the slideTryItYourself
     // check added there) — always restarts fresh on (re)entry, same
     // convention this deck uses for its other stateful slides
-    window.__guidedTaskReset = () => { restoreRows(); const r = document.getElementById('guidedIdentityRow'); if (r) r.remove(); enterStep1(); };
-    window.__guidedTaskRestoreRows = restoreRows;
+    window.__guidedTaskReset = () => { cleanupGuidedArtifacts(); enterStep1(); };
+    window.__guidedTaskRestoreRows = cleanupGuidedArtifacts;
     enterStep1();
   })();
 </script>
