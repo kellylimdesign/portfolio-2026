@@ -2569,8 +2569,14 @@
   .guided-step.current .guided-step-num{border-color:var(--ink); color:var(--ink);}
   .guided-step.done{color:var(--ink-70);}
   .guided-step.done .guided-step-num{background:var(--ink); border-color:var(--ink); color:var(--cream);}
-  .guided-step.done .guided-step-num::before{content:'✓'; font-size:11px;}
+  /* real SVG checkmark (same path the deck's own "Copied" state uses)
+     instead of a unicode ✓ — the glyph rendered inconsistently across
+     fonts/sizes inside this small a circle; an actual stroke path is crisp
+     and centers reliably at any size. Hidden by default, swapped in for
+     the number span once a step is done. */
+  .guided-step-check{display:none; width:11px; height:11px;}
   .guided-step.done .guided-step-num span{display:none;}
+  .guided-step.done .guided-step-check{display:block;}
   /* visibility:hidden (not the [hidden] attribute) — real jump Kelly caught:
      toggling [hidden] removes this from layout entirely, so the callout box
      was genuinely 31px shorter until this appeared, then grew + shifted
@@ -5208,9 +5214,9 @@
         <p class="kicker" style="margin:0;">Try it yourself</p>
         <p>Every screen here is real. Walk through the whole loop — customize your consent screen, see it as your end user, then return to the console to manage the new agent and user.</p>
         <div class="guided-steps" id="guidedSteps">
-          <div class="guided-step current" data-step="1"><span class="guided-step-num"><span>1</span></span><span>Customize your consent screen</span></div>
-          <div class="guided-step" data-step="2"><span class="guided-step-num"><span>2</span></span><span>See how your end user would see it</span></div>
-          <div class="guided-step" data-step="3"><span class="guided-step-num"><span>3</span></span><span>Manage the newly added app and user</span></div>
+          <div class="guided-step current" data-step="1"><span class="guided-step-num"><span>1</span><svg class="guided-step-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Customize your consent screen</span></div>
+          <div class="guided-step" data-step="2"><span class="guided-step-num"><span>2</span><svg class="guided-step-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>See how your end user would see it</span></div>
+          <div class="guided-step" data-step="3"><span class="guided-step-num"><span>3</span><svg class="guided-step-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Manage the newly added app and user</span></div>
         </div>
         <button class="guided-restart" id="guidedRestart" type="button">Start over</button>
       </div>
