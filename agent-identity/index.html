@@ -2531,7 +2531,13 @@
      window as its own quiet column, sized like the deck's other side text
      but with a subtle bordered card treatment instead of running text */
   .live-callout{
-    flex:0 0 200px; display:flex; flex-direction:column; gap:10px;
+    /* widened from 200px — the guided-task copy (step list + longer intro
+       paragraph) was wrapping tightly at the old width. The window beside
+       it sizes via inset:0/margin:auto within .live-frame-col and is
+       height-bound at typical slide dimensions, not width-bound, so this
+       doesn't shrink it — see .cgpt-window-live below for the frame's own
+       actual sizing. */
+    flex:0 0 260px; display:flex; flex-direction:column; gap:10px;
     background:rgba(23,22,27,.035); border:1px solid var(--line); border-radius:12px;
     padding:20px;
   }
@@ -2722,10 +2728,19 @@
      independently (percentage max-width on the frame, a separate flat zoom
      on just the content), which let them drift out of proportion with
      each other. */
+  /* 0.6 (was) rendered noticeably smaller than the console window on the
+     Customer Journey slide (.cgpt-window-console, which fills its own
+     column via aspect-ratio instead of this fixed-zoom approach) — bumped
+     to bring the two closer in scale. Bumping the constant here rather than
+     switching to that fill-via-aspect-ratio approach on purpose: that's the
+     "previous bug" described above this rule, where frame and content could
+     drift out of proportion — a plain zoom increase keeps everything inside
+     (titlebar, url bar, console content, and the guided-body zoom values
+     below that are tuned relative to this box) scaling together as one unit. */
   .cgpt-window.cgpt-window-live{
     position:absolute; inset:0; margin:auto;
     width:1440px; height:1024px; aspect-ratio:auto;
-    zoom:0.6;
+    zoom:0.8;
     transform:none;
   }
   /* palette + font-family live here (not just on .tw-console) because the
