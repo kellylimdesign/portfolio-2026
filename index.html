@@ -27,6 +27,11 @@
        back to that. */
     --card-bg:#FFFFFF;
     --card-shadow:0 1px 2px rgba(23,22,27,.05), 0 8px 20px rgba(23,22,27,.07);
+    /* r,g,b triplet (not a full color) — used for the ambient background
+       vignette on .static-mode (see there). Matches --cream's own value so
+       the corners read as a touch warmer/lighter than the flat --page-bg
+       gutter, same neutral family as everything else, not a new color. */
+    --depth-rgb:245,243,239;
   }
   /* dark theme — overrides the shell's own tokens only. The embedded product mocks
      (ChatGPT window, phone/SMS frame) intentionally reuse these SAME token names for
@@ -46,6 +51,7 @@
        top highlight standing in for the light-mode shadow's job */
     --card-bg:#28232F;
     --card-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 10px 24px rgba(0,0,0,.35);
+    --depth-rgb:30,27,36;
   }
   .pv-cgpt-wrap, .pv-phone-wrap{
     --cream:#FAF9F6; --ink:#17161B; --ink-70:#4A4950; --ink-45:#8A8891; --line:#E4E2DD; --bezel:#0E0E10;
@@ -103,6 +109,18 @@
     cursor:pointer; transition:background-color .15s ease, opacity .18s ease;
   }
   .lib-toggle-btn:hover{background:var(--hover-tint);}
+  /* #themeToggle is the one .lib-toggle-btn instance that also exists in
+     Plain view (as .static-theme-toggle there) — give it that same
+     outlined-circle look so the control reads consistently between modes.
+     Scoped to the ID, not the shared class, so the sidebar-collapse arrow
+     and preview-panel close/expand buttons stay the plain borderless icons
+     they're meant to be, matching Listening mode's Spotify-style language. */
+  #themeToggle{
+    border:1px solid var(--line); background:var(--cream); color:var(--ink-70);
+    box-shadow:var(--card-shadow);
+    transition:background-color .15s ease, opacity .18s ease, border-color .15s ease, color .15s ease;
+  }
+  #themeToggle:hover{background:var(--cream); border-color:var(--ink-45); color:var(--ink);}
   .lib-toggle-arrow{transition:transform .2s ease; transform-origin:7.5px 12px;}
   .library-sidebar.expanded .lib-toggle-arrow{transform:scaleX(-1);}
   .lib-toggle-btn::after{
@@ -530,7 +548,14 @@
      mesh in the site's own ink/accent palette, not tied to any actual project screenshot */
   .preview-image-bg{
     position:absolute; inset:-10%; overflow:hidden;
-    background-image:linear-gradient(150deg, #F5F1FC 0%, #E6DBF7 45%, #D4C2ED 100%);
+    /* was 3 evenly-spaced pastel stops, never getting past light lavender —
+       read as flat/clean rather than rich, especially vs. a photo-extracted
+       gradient (real album art has actual tonal range: light through
+       saturated through near-black). Same purple family, but now spans that
+       full range in one wash, so it naturally deepens into the overlay
+       scrim at the bottom instead of the two reading as separate flat
+       layers stacked on each other. */
+    background-image:linear-gradient(165deg, #F5F1FC 0%, #D9C4F0 22%, #A87FDE 50%, #6D3FD1 74%, #2E1657 100%);
     background-size:100% 100%;
   }
   /* three independently-timed blobs (different durations/directions/scales) rather than
@@ -560,7 +585,7 @@
      Twilio's default above — deeper and more saturated rather than a
      different hue, so the two projects read as distinct without breaking
      the page's single accent-color language (option "D — Deep Violet") */
-  .preview-image-bg.variant-b{background-image:linear-gradient(150deg, #E4D9F5 0%, #C5A9E8 45%, #8B5FC9 100%);}
+  .preview-image-bg.variant-b{background-image:linear-gradient(165deg, #E4D9F5 0%, #C5A9E8 20%, #9C6FD6 48%, #6B2FB0 72%, #240F42 100%);}
   .preview-image-bg.variant-b .mesh-blob-a{background:radial-gradient(circle, rgba(91,32,163,.62), rgba(91,32,163,0) 70%);}
   .preview-image-bg.variant-b .mesh-blob-b{background:radial-gradient(circle, rgba(140,84,214,.55), rgba(140,84,214,0) 70%);}
   .preview-image-bg.variant-b .mesh-blob-c{background:radial-gradient(circle, rgba(56,18,110,.55), rgba(56,18,110,0) 70%);}
@@ -1134,15 +1159,62 @@
     background:var(--cream); border:1px solid var(--line); color:var(--ink-70);
     padding:9px 14px 9px 12px; border-radius:20px; cursor:pointer;
     font-family:var(--sans); font-size:12.5px; font-weight:600;
-    box-shadow:0 4px 14px rgba(23,22,27,.12);
+    /* was a fixed rgba(23,22,27,...) shadow regardless of theme — read fine
+       in dark mode (blends into the already-dark backdrop) but as a heavy,
+       out-of-place smudge in light mode next to the otherwise-flat sidebar
+       icons. --card-shadow is already tuned per-theme for this exact
+       "present but not heavy" balance, used on the Overview/Credits cards
+       elsewhere — reuse it here instead of a one-off value. */
+    box-shadow:var(--card-shadow);
     transition:color .15s ease, border-color .15s ease, background-color .15s ease;
   }
   .mode-toggle:hover{color:var(--ink); border-color:var(--ink-45);}
   .mode-toggle svg{flex-shrink:0;}
+  /* lift+glow synced to the nudge bubble's own pop animation (see JS
+     playModeNudge()) — same border/shadow language as the hero card and
+     Overview/Credits cards, so the button reads as part of that family
+     while it's actively being pointed at, not just the tooltip alone */
+  .mode-toggle{transition:color .15s ease, border-color .15s ease, background-color .15s ease, transform .2s ease, box-shadow .2s ease;}
+  .mode-toggle.nudge-glow{transform:translateY(-2px); border-color:var(--ink-45); box-shadow:0 3px 8px rgba(23,22,27,.1), 0 12px 26px rgba(23,22,27,.16);}
+  html[data-theme="dark"] .mode-toggle.nudge-glow{box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 14px 30px rgba(0,0,0,.4);}
+  /* one-shot nudges toward each mode's entry point — visible without a hover
+     so they can't be missed on first arrival there, but self-dismissing (see
+     JS) so neither ever nags a returning visitor or sits there competing
+     with the rest of the sidebar. #modeToggleStatic ("Listening mode" button,
+     lives in Plain view) fires once on initial load since Plain view is the
+     default landing state; #modeToggleListening ("Plain view" button, lives
+     in Listening mode) fires once the first time a visitor actually switches
+     into Listening mode, pointing them back out again. */
+  #modeToggleStatic, #modeToggleListening{position:relative;}
+  .mode-nudge{
+    position:absolute; bottom:calc(100% + 11px); left:0;
+    background:var(--ink); color:var(--cream); font-family:var(--sans);
+    font-size:11.5px; font-weight:600; white-space:nowrap;
+    padding:6px 11px; border-radius:7px; pointer-events:none;
+    opacity:0; z-index:5;
+  }
+  .mode-nudge::after{
+    content:''; position:absolute; top:100%; left:16px;
+    border:5px solid transparent; border-top-color:var(--ink);
+  }
+  .mode-nudge.play{animation:modeNudgePop 4.2s ease forwards;}
+  @keyframes modeNudgePop{
+    0%{opacity:0; transform:translateY(5px);}
+    10%{opacity:1; transform:translateY(0);}
+    82%{opacity:1; transform:translateY(0);}
+    100%{opacity:0; transform:translateY(-3px);}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .mode-nudge.play{animation:none; opacity:1; transition:opacity .3s ease;}
+    .mode-toggle.nudge-glow{transform:none;}
+  }
   .static-theme-toggle{
     position:relative; display:flex; align-items:center; justify-content:center; width:34px; height:34px;
     background:var(--cream); border:1px solid var(--line); color:var(--ink-70);
-    border-radius:50%; cursor:pointer; box-shadow:0 4px 14px rgba(23,22,27,.12);
+    /* was a fixed rgba(23,22,27,...) shadow regardless of theme — same fix as
+       .mode-toggle's box-shadow above, same reason (reads fine in dark mode,
+       heavy smudge in light mode) */
+    border-radius:50%; cursor:pointer; box-shadow:var(--card-shadow);
     transition:color .15s ease, border-color .15s ease, background-color .15s ease;
   }
   .static-theme-toggle:hover{color:var(--ink); border-color:var(--ink-45);}
@@ -1172,7 +1244,31 @@
      bleed banner matching how .hero-band/.artist-hero sit flush in
      listening mode instead of a rounded inset card. */
   .static-mode{position:fixed; inset:0; z-index:100; background:var(--page-bg);}
-  .static-shell{display:flex; align-items:stretch; justify-content:center; height:100%;}
+  /* ambient background depth — the gutter around .static-sidebar/.static-main
+     (visible in the margin gap between/around those rounded panels) was a
+     completely flat --page-bg fill, part of why the page reads flat even
+     before scrolling to any card. Tried a purple-tinted version first — read
+     as distracting, dropped. This stays entirely in the existing beige/ink
+     family: a very soft corner vignette using --depth-rgb (the same neutral
+     value as --cream, just a touch lighter than --page-bg, so it reads as
+     ambient light rather than a new color) plus a grain layer, same texture
+     already used on body::before/.preview-image-bg — Plain view's own opaque
+     background otherwise sits above and fully hides that page-wide grain
+     (z-index:100 vs. its 50), so without this it never gets any texture at
+     all. z-index:1 on .static-shell below is required so real content paints
+     above both of these, not the reverse. */
+  .static-mode::before{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(640px circle at 6% 8%, rgba(var(--depth-rgb),.6), transparent 62%),
+      radial-gradient(720px circle at 96% 92%, rgba(var(--depth-rgb),.5), transparent 62%);
+  }
+  .static-mode::after{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:.16; mix-blend-mode:multiply;
+  }
+  .static-shell{position:relative; z-index:1; display:flex; align-items:stretch; justify-content:center; height:100%;}
   /* same floating-card chrome as .library-sidebar/.page in listening mode —
      rounded corners + margin gap revealing the page's own gutter color
      between/around the two containers, instead of a flush edge-to-edge
@@ -1233,12 +1329,16 @@
   .static-project-media{
     position:relative; width:100%; height:380px; border-radius:16px; overflow:hidden;
     background:var(--line); box-shadow:0 14px 34px rgba(23,22,27,.14); cursor:pointer;
-    transition:box-shadow .2s ease, transform .2s ease;
+    border:1px solid transparent;
+    transition:box-shadow .2s ease, transform .2s ease, border-color .2s ease;
   }
   /* the primary "click to open the case study" surface on the whole page had
      zero hover response before — cursor:pointer alone doesn't read as
-     interactive on a full-bleed image with no visible edge to react */
-  .static-project-media:hover{box-shadow:0 20px 44px rgba(23,22,27,.2); transform:translateY(-3px);}
+     interactive on a full-bleed image with no visible edge to react. Border
+     stays transparent at rest (would look odd as a visible frame on a
+     full-bleed photo) and only lights up on hover, same --ink-45 glow used
+     on the Overview/Credits cards below, so all three read as one family. */
+  .static-project-media:hover{box-shadow:0 20px 44px rgba(23,22,27,.2); transform:translateY(-3px); border-color:var(--ink-45);}
   .static-project-media img{width:100%; height:100%; object-fit:cover;}
   /* the cloned ChatGPT/Stytch scenes size themselves with a fixed px width +
      zoom (see .pv-cgpt-wrap etc.) rather than scaling to their container, so
@@ -1253,7 +1353,17 @@
     display:flex; align-items:flex-end; justify-content:space-between; gap:14px;
   }
   .static-project-overlay-text{min-width:0; flex:1;}
-  .static-project-title{font-size:26px; font-weight:800; letter-spacing:-.01em; color:#fff; margin:0 0 4px;}
+  /* bigger + a top-to-bottom fill (light lavender → solid white) instead of
+     flat white, so the title reads as picking up color from the gradient
+     behind it rather than sitting on top as a flat text layer — same idea
+     as the Spotify reference's title straddling its own gradient-to-black
+     seam, done here as a stylized fill on the glyphs themselves rather than
+     depending on exact pixel alignment with the card's own gradient. */
+  .static-project-title{
+    font-size:36px; font-weight:800; letter-spacing:-.01em; margin:0 0 4px;
+    background-image:linear-gradient(180deg, #C9A6EA 0%, #fff 55%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
   .static-project-subtitle{font-size:14px; color:rgba(255,255,255,.8); margin:0;}
   .static-project-expand{
     width:40px; height:40px; border-radius:50%; flex-shrink:0;
@@ -1269,6 +1379,20 @@
   .static-project-cards .preview-card-label{font-size:16px;}
   .static-project-cards .preview-desc{font-size:14.5px;}
   .static-project-cards .preview-callout{margin:0;}
+  /* Overview/Credits cards now open the case study too (see the click wiring
+     next to where cardsEl is built) — kept deliberately lighter than the big
+     media card's hover (no image to react, so a small lift + border/shadow
+     shift is enough signal without competing with it for attention) */
+  .static-project-cards .preview-card.preview-card-clickable{
+    cursor:pointer; transition:box-shadow .2s ease, transform .2s ease, border-color .2s ease;
+  }
+  .static-project-cards .preview-card.preview-card-clickable:hover{
+    transform:translateY(-2px); border-color:var(--ink-45);
+    box-shadow:0 4px 10px rgba(23,22,27,.08), 0 14px 28px rgba(23,22,27,.14);
+  }
+  html[data-theme="dark"] .static-project-cards .preview-card.preview-card-clickable:hover{
+    box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 16px 32px rgba(0,0,0,.45);
+  }
   @media (max-width:900px){
     .static-shell{flex-direction:column; height:auto;}
     .static-mode{overflow-y:auto;}
@@ -1302,6 +1426,7 @@
         <button class="mode-toggle" id="modeToggleListening" type="button" data-tooltip="Switch to Plain view" aria-label="Switch to Plain view">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
           <span>Plain view</span>
+          <span class="mode-nudge" id="modeNudgeListening" aria-hidden="true">Go back to list view</span>
         </button>
       </div>
       <div class="lib-list">
@@ -1553,15 +1678,15 @@
         <div class="artist-discog" id="artistDiscog" hidden>
           <h2 class="section-heading">Discography</h2>
           <div class="discog-grid">
-            <button class="discog-card" data-track="track-01" type="button">
+            <button class="discog-card" data-company="Twilio" type="button">
               <span class="discog-thumb"><img src="assets/icons/twilio-logo.svg" alt=""></span>
-              <span class="discog-title">Building Trust in the Age of AI</span>
-              <span class="discog-meta">Twilio · Case study</span>
+              <span class="discog-title">Twilio</span>
+              <span class="discog-meta">2025–present</span>
             </button>
-            <button class="discog-card" data-track="track-02" type="button">
+            <button class="discog-card" data-company="Stytch" type="button">
               <span class="discog-thumb"><img src="assets/icons/stytch-logo.svg" alt=""></span>
-              <span class="discog-title">Driving SDK Adoption</span>
-              <span class="discog-meta">Stytch · Case study</span>
+              <span class="discog-title">Stytch</span>
+              <span class="discog-meta">2022–2025</span>
             </button>
           </div>
         </div>
@@ -2190,6 +2315,7 @@
             <button class="mode-toggle" id="modeToggleStatic" type="button" aria-label="Switch to Listening mode">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
               <span>Listening mode</span>
+              <span class="mode-nudge" id="modeNudge" aria-hidden="true">Check it out!</span>
             </button>
           </div>
           <p class="static-desc" id="staticBioText"></p>
@@ -2869,12 +2995,16 @@
         });
       });
 
-      // Artist page's "Artist pick" callout and Discography grid point at the
-      // same underlying tracks as the main table — reuse openTrack so they
-      // open the same preview panel instead of duplicating that logic.
+      // Artist page's "Artist pick" callout points at a specific track —
+      // reuse openTrack so it opens the same preview panel instead of
+      // duplicating that logic. Discography is one card per company, not
+      // per track, so clicking one instead opens that company's album view
+      // (same destination + sidebar highlight as clicking it in the library
+      // rail — showAlbumView is defined further down but hoisted, so this
+      // forward reference resolves fine by the time a click actually fires).
       pickCard.addEventListener('click', function(){ openTrack('track-01'); });
       discogCards.forEach(function(card){
-        card.addEventListener('click', function(){ openTrack(card.dataset.track); });
+        card.addEventListener('click', function(){ showAlbumView(card.dataset.company); });
       });
 
       // whole album-art card opens the case study too, same destination as
@@ -3088,7 +3218,11 @@
         overlayEl.innerHTML =
           '<div class="static-project-overlay-text">' +
             '<p class="static-project-title">' + row.dataset.title + '</p>' +
-            '<p class="static-project-subtitle">' + row.dataset.subtitle + '</p>' +
+            /* company (Twilio/Stytch), not row.dataset.subtitle — that's "Kelly Lim",
+               shared with the Listening-mode transport bar + preview panel's own
+               "artist name" line (see tbSubtitle/previewImageSubtitle), which should
+               stay as-is; data-company already exists per row for this purpose */
+            '<p class="static-project-subtitle">' + row.dataset.company + '</p>' +
           '</div>' +
           expandHtml;
         mediaEl.appendChild(overlayEl);
@@ -3101,6 +3235,18 @@
         var cardsEl = document.createElement('div');
         cardsEl.className = 'static-project-cards';
         cardsEl.appendChild(tpl.content.cloneNode(true));
+        // Overview/Credits cards are the same "open the case study" target as
+        // the media card above and the expand button inside it — not just a
+        // decorative info block, so they should react the same way
+        if(row.dataset.href){
+          cardsEl.querySelectorAll('.preview-card').forEach(function(cardEl){
+            cardEl.classList.add('preview-card-clickable');
+            cardEl.addEventListener('click', function(e){
+              if(e.target.closest('a')) return;
+              window.location.href = row.dataset.href;
+            });
+          });
+        }
         section.appendChild(mediaEl);
         section.appendChild(cardsEl);
         staticProjects.appendChild(section);
@@ -3184,6 +3330,52 @@
       // set last so it flips visibility only after everything else above has
       // finished initializing against the (still on-screen) Listening mode markup
       setStaticMode(true);
+
+      // shared by both one-shot mode nudges below: pops the tooltip bubble in
+      // (see .mode-nudge/@keyframes modeNudgePop) and, in sync, lifts+glows
+      // the button it's pointing at (see .mode-toggle.nudge-glow) so the
+      // emphasis reads on the actual target, not just the floating bubble.
+      // Both clear together after the bubble's own animation duration, or
+      // immediately if the visitor clicks the button first.
+      function playModeNudge(btn, nudgeEl){
+        if(!nudgeEl) return;
+        nudgeEl.classList.add('play');
+        btn.classList.add('nudge-glow');
+        setTimeout(function(){
+          nudgeEl.remove();
+          btn.classList.remove('nudge-glow');
+        }, 4300);
+      }
+
+      // once-per-load nudge toward "Listening mode" — delayed so it doesn't
+      // compete with the page's own entrance, and removed afterward (rather
+      // than just left transparent) so it can never be re-triggered by
+      // toggling back to Plain view later in the session
+      var modeNudge = document.getElementById('modeNudge');
+      if(modeNudge){
+        setTimeout(function(){ playModeNudge(modeToggleStatic, modeNudge); }, 1400);
+        modeToggleStatic.addEventListener('click', function(){
+          modeNudge.remove();
+          modeToggleStatic.classList.remove('nudge-glow');
+        }, {once:true});
+      }
+
+      // mirror nudge back toward "Plain view" (list view) — only makes sense
+      // once a visitor has actually left it, so this fires once on the first
+      // switch into Listening mode rather than on page load
+      var modeNudgeListening = document.getElementById('modeNudgeListening');
+      if(modeNudgeListening){
+        var listeningNudgeShown = false;
+        modeToggleStatic.addEventListener('click', function(){
+          if(listeningNudgeShown) return;
+          listeningNudgeShown = true;
+          setTimeout(function(){ playModeNudge(modeToggleListening, modeNudgeListening); }, 1400);
+          modeToggleListening.addEventListener('click', function(){
+            modeNudgeListening.remove();
+            modeToggleListening.classList.remove('nudge-glow');
+          }, {once:true});
+        });
+      }
     })();
   </script>
 </body>
