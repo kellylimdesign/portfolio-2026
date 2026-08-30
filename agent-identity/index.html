@@ -1462,6 +1462,20 @@
        laptop-screen ratio) reads more like an actual browser window, which
        tends to be wider relative to its height than that. */
     aspect-ratio:736/460; box-sizing:border-box;
+    /* the "width is always the binding dimension" assumption above only
+       holds when the container is narrower/taller than 736:460 — on a
+       maximized browser on a wide-but-short monitor (confirmed: reproduces
+       at e.g. 2560x850), the CONTAINER's own aspect ratio flips wider than
+       736:460, so height becomes the real constraint instead. Without a
+       cap, aspect-ratio derives a width from the full available height
+       that overflows the container's actual height, clipping the window's
+       bottom edge (no shadow/rounded corner visible there, edge-to-edge —
+       exactly what Kelly saw on other slides, not something introduced by
+       recent guided-task work, just never surfaced before on a narrower
+       test screen). max-width/max-height together let whichever dimension
+       is actually scarce win, same fix as .guided-cgpt-window's own
+       earlier max-height for the same underlying issue. */
+    max-width:100%; max-height:100%;
     display:flex; flex-direction:column; background:var(--cream); overflow:hidden;
     border-radius:9px;
     box-shadow:0 16px 40px rgba(23,22,27,.10), 0 3px 10px rgba(23,22,27,.05);
@@ -2524,6 +2538,179 @@
   .live-callout svg{width:17px; height:17px; color:var(--ink-45); animation:liveCalloutTap 1.8s ease-in-out infinite;}
   .live-callout p{font-family:var(--sans); font-size:13px; line-height:1.5; color:var(--ink-70); margin:0;}
   @keyframes liveCalloutTap{0%,100%{transform:translateY(0);} 50%{transform:translateY(2px);}}
+
+  /* --- guided task (replaces free-roam "click around" per Kelly's review-
+     feedback fix — reviewer said the live console was disorienting with no
+     task) — a 3-step scenario: customize the consent screen (step 1, the
+     real console), see it as your end user (step 2, a new .consent-mobile
+     instance), then check it actually landed back in the console (step 3,
+     same console/step-frame as step 1, just a different tab + highlighted
+     rows). Only steps 1 and 3 share a frame since they're both the same
+     live console singleton (see mountLiveConsole); step 2 is a separate
+     .step-frame sibling. */
+  .guided-steps{display:flex; flex-direction:column; gap:2px; margin-top:4px;}
+  .guided-step{
+    display:flex; align-items:flex-start; gap:10px; padding:8px 0;
+    font-family:var(--sans); font-size:12.5px; line-height:1.4; color:var(--ink-45);
+    transition:color .2s ease;
+  }
+  .guided-step-num{
+    flex-shrink:0; width:20px; height:20px; border-radius:50%; border:1.5px solid var(--ink-45);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px;
+    transition:background-color .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .guided-step.current{color:var(--ink);}
+  .guided-step.current .guided-step-num{border-color:var(--ink); color:var(--ink);}
+  .guided-step.done{color:var(--ink-70);}
+  .guided-step.done .guided-step-num{background:var(--ink); border-color:var(--ink); color:var(--cream);}
+  .guided-step.done .guided-step-num::before{content:'✓'; font-size:11px;}
+  .guided-step.done .guided-step-num span{display:none;}
+  /* visibility:hidden (not the [hidden] attribute) — real jump Kelly caught:
+     toggling [hidden] removes this from layout entirely, so the callout box
+     was genuinely 31px shorter until this appeared, then grew + shifted
+     everything below it right as the identities reveal finished. Reserving
+     its space from the start means nothing else in the callout moves when
+     it fades in — see restartBtn.classList.toggle('show', ...) in JS. */
+  .guided-restart{
+    align-self:flex-start; margin-top:6px; background:none; border:none; padding:0;
+    font-family:var(--sans); font-size:12px; font-weight:600; color:var(--ink-45);
+    text-decoration:underline; text-underline-offset:2px; cursor:pointer;
+    visibility:hidden; opacity:0; transition:opacity .2s ease;
+  }
+  .guided-restart.show{visibility:visible; opacity:1;}
+  .guided-restart:hover{color:var(--ink);}
+
+  /* pulsing ring on whatever real console element the visitor should click
+     next — added/removed via JS as the guided task progresses, not tied to
+     any one element permanently */
+  @keyframes guidedPulseRing{
+    0%{box-shadow:0 0 0 0 rgba(109,63,209,.5);}
+    70%{box-shadow:0 0 0 8px rgba(109,63,209,0);}
+    100%{box-shadow:0 0 0 0 rgba(109,63,209,0);}
+  }
+  .guided-target{position:relative; animation:guidedPulseRing 1.8s ease-out infinite; border-radius:8px;}
+  @media (prefers-reduced-motion:reduce){.guided-target{animation:none; outline:2px solid #6D3FD1; outline-offset:2px;}}
+
+  /* one persistent window for the whole guided task (per Kelly: don't swap
+     the whole frame between admin/end-user phases, keep the same browser
+     chrome and just change what's inside it) — the banner floats over the
+     window's top edge to flag the perspective switch (an "unclear jump" per
+     earlier feedback) without needing its own separate frame; .guided-body
+     blocks are alternate BODY content for #liveWindowHome, siblings of
+     .cgpt-body-live, only one visible at a time.
+
+     #liveWindowHome also carries .step-frame.active permanently (not
+     toggled) now that it's the one persistent frame — a lot of reused
+     components nested inside it (.cgpt-msg-user, .cgpt-msg-assistant-wrap,
+     .ui-avatar, .ui-title, .ui-btn) only reveal themselves via a
+     ".step-frame.active ANCESTOR" trigger selector, which no longer existed
+     anywhere once the old two-frame wrapper was removed — they were
+     rendering permanently stuck at opacity:0 (real bug: found via a blank
+     chat thread in testing). This reuses that exact existing mechanism
+     rather than duplicating each animation's values in new rules. .cgpt-
+     window/.cgpt-window-live's own (higher-specificity, compound-class)
+     positioning rules still win over .step-frame's base ones for anything
+     they both declare — the one exception is .step-frame's own 1px border,
+     which nothing overrides by default, countered explicitly below. */
+  #liveWindowHome{border:none;}
+  /* :not([hidden]) — same specificity gotcha as .guided-body/.guided-step
+     below: a bare .guided-user-banner{display:flex} ties with the UA's own
+     [hidden]{display:none} and, since author styles win ties, showed the
+     banner on every step regardless of the hidden attribute JS sets on it
+     (real bug Kelly hit — visible even on step 1's console view) */
+  .guided-user-banner:not([hidden]){
+    display:flex; align-items:center; gap:8px; padding:8px 16px; flex-shrink:0;
+    background:#FEF7E0; border-bottom:1px solid #F0E4B8;
+    font-family:var(--sans); font-size:12px; font-weight:600; color:var(--ink-70);
+  }
+  .guided-user-banner svg{width:15px; height:15px; flex-shrink:0; color:var(--ink-45);}
+  /* :not([hidden]) rather than a bare .guided-body{display:flex} — a plain
+     class rule here would tie in specificity with the UA's own
+     [hidden]{display:none} and, since author styles win ties over UA
+     styles, would have silently shown every body at once regardless of the
+     hidden attribute JS sets on it (same gotcha as the earlier .guided-substep
+     version of this component) */
+  .guided-body:not([hidden]){flex:1; min-height:0; display:flex; overflow:hidden; background:#fff;}
+  #guidedBodyLogin:not([hidden]), #guidedBodyConsent:not([hidden]){
+    flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px;
+  }
+  /* this chat/login/consent content's font-sizes/icon-sizes/card widths were
+     all tuned for the much narrower ~640-736px .cgpt-window this deck's
+     other illustrative examples use — #liveWindowHome is considerably wider
+     (matches the admin console's own real-console proportions), so at 1:1
+     it just read as sparse/tiny with a lot of dead space around it (real
+     feedback: "looks really small"). zoom (not transform:scale, which
+     wouldn't affect layout) is the same fix the console's own content
+     already uses to fit its native design into this window at a different
+     size — bumps text/icons/padding up together, uniformly. */
+  #guidedBodyChat .cgpt-body{zoom:1.3;}
+  #guidedBodyLogin .ui-mock, #guidedBodyConsent .consent-mobile{zoom:1.35;}
+  /* real bug hit while testing: a CLOSED .cgpt-popover is opacity:0 +
+     pointer-events:none at its own level, but .cgpt-pop-view.active
+     unconditionally sets pointer-events:auto on itself regardless of the
+     popover's own open/closed state — so the invisible active view's
+     content (here, positioned close enough to the input bar in this
+     shorter chat body than in the popover's original context) still
+     intercepted clicks meant for the "+" button underneath it. Scoped to
+     this guided task's popover specifically, not the shared .cgpt-pop-view
+     rule other "+" menus in the deck rely on working as-is. */
+  #guidedChatPopover:not(.show) .cgpt-pop-view.active{pointer-events:none;}
+  .guided-substep-hint{
+    margin-top:14px; font-family:var(--sans); font-size:12px; color:var(--ink-45); text-align:center;
+  }
+  .guided-real-input{
+    width:100%; max-width:200px; height:36px; border:1.3px solid var(--line); border-radius:7px;
+    padding:0 12px; box-sizing:border-box; margin-bottom:10px;
+    font-family:var(--sans); font-size:12.5px; color:var(--ink); background:var(--cream);
+  }
+  .guided-real-input:focus{outline:none; border-color:var(--ink-45);}
+  .guided-real-input::placeholder{color:var(--ink-45);}
+  /* inline within .cgpt-main's normal flex-column flow now (2d's "connected"
+     state, same chat body as 2a) — not absolutely positioned, since there's
+     no separate frame to anchor against anymore */
+  .guided-next-btn-inline{
+    margin:20px auto 0; padding:10px 18px; border:none; border-radius:8px; cursor:pointer;
+    background:var(--ink); color:var(--cream); font-family:var(--sans); font-size:13px; font-weight:600;
+    transition:opacity .15s ease;
+  }
+  .guided-next-btn-inline:hover{opacity:.85;}
+  .guided-deny-note{
+    margin-top:10px; font-family:var(--sans); font-size:11.5px; color:var(--ink-45);
+    text-align:center; opacity:0; transition:opacity .2s ease;
+  }
+  .guided-deny-note.show{opacity:1;}
+  .guided-user-frame .consent-mobile{width:300px;}
+
+  /* a real tooltip (appears, holds, fades away) rather than a badge left
+     permanently stuck to the row — per Kelly. position:fixed + JS-computed
+     coordinates (see flashRow()) rather than anchoring to the row itself,
+     since the tables sit inside scroll containers that would otherwise
+     clip an absolutely-positioned child hanging above the row's top edge. */
+  .guided-row-tooltip{
+    position:fixed; z-index:9999;
+    background:var(--ink); color:var(--cream); font-family:var(--sans);
+    font-size:11.5px; font-weight:700; letter-spacing:.02em;
+    padding:6px 12px; border-radius:7px; white-space:nowrap;
+    opacity:0; transform:translateY(4px); pointer-events:none;
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .guided-row-tooltip::after{
+    content:''; position:absolute; top:100%; left:18px;
+    border:5px solid transparent; border-top-color:var(--ink);
+  }
+  .guided-row-tooltip.show{opacity:1; transform:translateY(0);}
+  /* narrows Clients/Identities down to just this scenario's agent + user in
+     step 3 — the other seed rows are real content elsewhere in the console,
+     just not the point of this specific reveal (see narrowRows() in JS) */
+  /* .tw-row.guided-row-tucked (compound, 2 classes) rather than a bare
+     .guided-row-tucked{display:none} — same specificity gotcha as the
+     .guided-body/.guided-user-banner ones above, just against an author
+     rule this time instead of the UA's [hidden]: .tw-row itself declares
+     display:grid, which tied with (and, being defined later in the
+     stylesheet, beat) a single-class .guided-row-tucked rule — the class
+     was correctly applied in testing but never actually hid anything,
+     which is exactly the bug Kelly saw (every seed row still visible). */
+  .tw-row.guided-row-tucked{display:none;}
   /* a bigger browser window for the live app — fills the slide with a little inset */
   /* the window is built at its native 1440x1024 size (matching the real page
      mocks exactly, so every px value inside — rail width, table columns,
@@ -5001,20 +5188,33 @@
     </section>
 
     <!-- 9. LIVE PROTOTYPE workspace — real HTML build of the Agent Identity console -->
-    <section class="slide layout-live">
+    <section class="slide layout-live" id="slideTryItYourself">
       <div class="live-callout">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2a2 2 0 0 1 2 2v7l1.3-.6a2.3 2.3 0 0 1 3.1 1.5l1.3 5a2.3 2.3 0 0 1-1.6 2.8l-4.8 1.3a4 4 0 0 1-4.5-1.7L3.4 15A2 2 0 0 1 5 12h1V4a2 2 0 0 1 2-2z"/><path d="M9 9V4"/></svg>
         <p class="kicker" style="margin:0;">Try it yourself</p>
-        <p>Every screen here is live — click around and explore the console for real.</p>
+        <p>Every screen here is real. Walk through the whole loop — customize your consent screen, see it as your end user, then return to the console to manage the new agent and user.</p>
+        <div class="guided-steps" id="guidedSteps">
+          <div class="guided-step current" data-step="1"><span class="guided-step-num"><span>1</span></span><span>Customize your consent screen</span></div>
+          <div class="guided-step" data-step="2"><span class="guided-step-num"><span>2</span></span><span>See how your end user would see it</span></div>
+          <div class="guided-step" data-step="3"><span class="guided-step-num"><span>3</span></span><span>Manage the newly added app and user</span></div>
+        </div>
+        <button class="guided-restart" id="guidedRestart" type="button">Start over</button>
       </div>
       <div class="live-frame-col">
-      <div class="step-frame step-browser active">
-        <div class="cgpt-window cgpt-window-live" id="liveWindowHome">
+      <!-- one persistent window for the whole guided task (per Kelly: don't
+           swap the whole frame between admin/end-user phases — keep the same
+           browser chrome, just change what's inside it, the way a real
+           browser navigates between tabs/pages). Tab favicon/label and the
+           URL bar swap between "Twilio Console" and "ChatGPT" contexts;
+           .cgpt-body-live (the console) and the three .guided-body blocks
+           below are alternate BODY content for the same window, only one
+           visible at a time — see showGuidedBody() in initGuidedTask(). -->
+      <div class="cgpt-window cgpt-window-live step-frame active" id="liveWindowHome">
           <div class="cgpt-titlebar">
             <div class="cgpt-dots"><span></span><span></span><span></span></div>
             <div class="cgpt-tab">
-              <span class="idp-tab-fav idp-fav-twilio"></span>
-              <span class="cgpt-tab-label">Twilio Console</span>
+              <span class="idp-tab-fav idp-fav-twilio" id="guidedFavTwilio"></span>
+              <span class="cgpt-tab-fav" id="guidedFavChatgpt" hidden><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
+              <span class="cgpt-tab-label" id="guidedTabLabel">Twilio Console</span>
               <svg class="cgpt-tab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </div>
             <span class="cgpt-tab-plus">+</span>
@@ -5035,6 +5235,15 @@
               <span class="cgpt-url-avatar"></span>
               <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
             </div>
+          </div>
+          <!-- reads as a native browser info bar (like a permissions/download
+             strip) sitting right under the chrome, not a colored overlay —
+             per Kelly: no purple, and it was overlapping the titlebar/urlbar
+             before since it floated position:absolute on top of them instead
+             of pushing the body down like a real one would. -->
+          <div class="guided-user-banner" id="guidedBanner" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            You're standing in as the end user now — this is what they see, not the admin console.
           </div>
           <div class="cgpt-body-live">
             <div class="tw-console" id="twConsole">
@@ -5628,8 +5837,139 @@
               </div>
             </div>
           </div>
+
+          <!-- BODY: ChatGPT — the same full sidebar+main structure as the
+               illustrative Owl Trade example elsewhere in the deck (.cgpt-body/
+               .cgpt-sidebar/.cgpt-nav-item/.cgpt-recent-item), not a trimmed
+               version. Covers both 2a (menu open, "Connect") and 2d
+               (connected) — same body, just the popover/message/Next-button
+               visibility toggles between those two states (see
+               showChatConnected() in initGuidedTask()) rather than being two
+               separate copies of the window. -->
+          <div class="guided-body" id="guidedBodyChat" hidden>
+            <div class="cgpt-body">
+              <div class="cgpt-sidebar">
+                <div class="cgpt-sidebar-head">
+                  <span class="cgpt-logo">ChatGPT</span>
+                  <div class="cgpt-sidebar-head-icons">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
+                  </div>
+                </div>
+                <div class="cgpt-nav-item cgpt-nav-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New chat</div>
+                <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M8 21h10a2 2 0 0 0 2-2V9"/></svg>Images</div>
+                <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7.5" height="16" rx="2"/><rect x="13.5" y="4" width="7.5" height="16" rx="2"/></svg>Library</div>
+                <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-4 7.5"/></svg>Plugins</div>
+                <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>Projects</div>
+                <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M9.5 10l-2 2 2 2M14.5 10l2 2-2 2"/></svg>Codex</div>
+                <div class="cgpt-nav-item"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</div>
+                <p class="cgpt-recents-label">Recents</p>
+                <div class="cgpt-recent-item">Plan my next vacation</div>
+                <div class="cgpt-recent-item">Help me organize my week</div>
+                <div class="cgpt-recent-item cgpt-recent-active">Monitor my trading account</div>
+                <div class="cgpt-recent-item">Plan a fun weekend</div>
+              </div>
+              <div class="cgpt-main">
+                <div class="cgpt-thread" id="guidedChatThread">
+                  <div class="cgpt-msg-user" id="guidedChatUserMsg">Can we connect my Owl Trade account to ChatGPT?</div>
+                  <div class="cgpt-msg-assistant-wrap">
+                    <div class="cgpt-msg-assistant" id="guidedChatAssistantMsg">I can help with that — first I'll need access to your account.</div>
+                  </div>
+                </div>
+                <!-- real ChatGPT "+" input bar — data-action="toggle-plus" and the
+                     .cgpt-popover below are picked up automatically by the deck's
+                     existing generic restartCgptPopovers() (see the giant IIFE
+                     near the bottom of this file), the same function that wires
+                     every other "+" menu in the deck. Nothing extra to hook up
+                     here beyond matching that exact markup shape. -->
+                <div class="cgpt-input" id="guidedChatInput">
+                  <span class="cgpt-plus-wrap">
+                    <button class="cgpt-input-plus guided-target" data-action="toggle-plus" id="guidedPlusBtn">+</button>
+                  </span>
+                  <span class="cgpt-input-ph">Ask anything</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+                  <span class="cgpt-input-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span>
+                </div>
+                <div class="cgpt-popover" id="guidedChatPopover">
+                  <div class="cgpt-pop-view active" data-view="menu">
+                    <!-- no separate icon-only quick-action row (Camera/Photos/
+                         Files) — matches Kelly's own documented decision a few
+                         lines up (.cgpt-pop-list's comment): real ChatGPT uses
+                         one unified list, not a quick-row + list split. That
+                         markup exists unstyled in the original illustrative
+                         slide too (dead leftover from before the decision,
+                         never cleaned up there) — worth flagging, not touched
+                         here since it's outside this guided task. -->
+                    <div class="cgpt-pop-list">
+                      <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="cgpt-pop-item-text"><p>Create image</p><span>Visualize anything</span></span></div>
+                      <div class="cgpt-pop-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span class="cgpt-pop-item-text"><p>Web search</p><span>Find real-time news and info</span></span></div>
+                      <!-- the configured app itself, right in the menu — no extra
+                           "Explore apps" hop, matching Kelly's "+ then the option
+                           to select whatever app was configured" ask directly.
+                           Deliberately no data-action here (restartCgptPopovers()
+                           would otherwise claim the click for its own generic
+                           openAppPage()/switchPopView() handlers) — wired by id
+                           in initGuidedTask() instead, same pattern as before. -->
+                      <button class="cgpt-pop-item" id="guidedConnectBtn" type="button">
+                        <span class="cgpt-owl-icon" style="width:22px; height:22px;">
+                          <svg id="guidedMenuIconSvg" viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>
+                          <img id="guidedMenuLogoImg" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                        </span>
+                        <span class="cgpt-pop-item-text"><p id="guidedMenuAppName">Owl Trade</p><span>Connect this app</span></span>
+                        <span class="cgpt-pop-item-connect">Connect</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <p class="guided-substep-hint">Click <strong>+</strong>, then select the app you just configured to connect it.</p>
+                <button class="guided-next-btn guided-next-btn-inline" id="guidedNextBtn" type="button" hidden>Next: back to the admin console →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- BODY: fake login — real inputs, deliberately unvalidated -->
+          <div class="guided-body" id="guidedBodyLogin" hidden>
+            <div class="ui-mock">
+              <div class="ui-avatar ui-avatar-app">
+                <svg id="guidedLoginIconSvg" viewBox="0 0 24 24" fill="none" stroke="var(--cream)" stroke-width="1.8"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+                <img id="guidedLoginLogoImg" alt="" style="display:none;">
+              </div>
+              <p class="ui-title" id="guidedLoginTitle">Log in to Owl Trade</p>
+              <input class="guided-real-input" type="email" id="guidedLoginEmail" placeholder="you@example.com" autocomplete="off">
+              <input class="guided-real-input" type="password" id="guidedLoginPassword" placeholder="password" autocomplete="off">
+              <button class="ui-btn ui-btn-primary ui-btn-no-press" id="guidedLoginBtn" type="button"><span>Log In</span></button>
+            </div>
+            <p class="guided-substep-hint">Not real — type any email and any password to continue.</p>
+          </div>
+
+          <!-- BODY: the same .consent-mobile component the console's own
+               Consent Screen tab previews — Allow/Deny are real here (every
+               other instance in the deck is decorative), since this is the
+               one place a visitor is actually standing in for the end user. -->
+          <div class="guided-body" id="guidedBodyConsent" hidden>
+            <div class="consent-mobile" id="guidedConsentCard">
+              <div class="consent-mobile-icon">
+                <svg id="guidedConsentIconSvg" viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>
+                <img alt="" class="consent-mobile-icon-logo" id="guidedConsentLogoImg" style="display:none;">
+              </div>
+              <p class="consent-mobile-heading" id="guidedConsentHeading">ChatGPT wants access to Owl Trade</p>
+              <div class="consent-mobile-divider"></div>
+              <p class="consent-mobile-label">ChatGPT will be allowed to:</p>
+              <ul class="consent-mobile-list">
+                <li>Verify your profile information</li>
+                <li>Verify your identity</li>
+                <li>Take action on your behalf</li>
+              </ul>
+              <div class="consent-mobile-divider"></div>
+              <p class="consent-mobile-terms">By allowing, you agree to the <span class="terms-link">Terms of Service</span> and <span class="terms-link">Privacy Policy</span>.</p>
+              <div class="consent-mobile-actions">
+                <button class="consent-mobile-allow" id="guidedAllowBtn" type="button" style="border:none; cursor:pointer;">Allow</button>
+                <button class="consent-mobile-deny" id="guidedDenyBtn" type="button" style="background:none; cursor:pointer;">Deny</button>
+              </div>
+            </div>
+            <p class="guided-deny-note" id="guidedDenyNote">Without allowing, ChatGPT can't act on your behalf — try Allow to keep going.</p>
+          </div>
         </div>
-      </div>
       </div>
     </section>
 
@@ -5654,6 +5994,11 @@
   const dots = dotsEl.querySelectorAll('.dot');
 
   document.getElementById('counterTotal').textContent = String(visibleSlides.length).padStart(2, '0');
+
+  // whether a slide is skipped by nav — currently just .hidden-slide sections
+  function isNavHidden(s){
+    return s.classList.contains('hidden-slide');
+  }
 
   // next/prev visible slide index, skipping over any .hidden-slide sections
   function nextVisibleIdx(from, dir){
@@ -5695,6 +6040,17 @@
     // the shared live console only belongs on slide 7 (mounted per-step below
     // via selectStepContext) or at home on slide 9 — anywhere else, send it home
     if (activeSlide.id !== 'slideCustomerJourney') ensureLiveConsoleHome();
+    // guided "Try it yourself" task (slide 9) always restarts fresh on entry,
+    // same convention as restartStepsNext/restartIdpProto etc. below — right
+    // after the ensureLiveConsoleHome() reset above, since step 1 needs the
+    // console on its Consent Screen tab specifically, not the Configurations
+    // default that call just set
+    if (activeSlide.id === 'slideTryItYourself' && window.__guidedTaskReset) window.__guidedTaskReset();
+    // leaving the guided task slide for any other one that also uses the
+    // shared console (e.g. back to Customer Journey) must not carry over
+    // its step-3 row-narrowing — that would silently hide real Clients/
+    // Identities content on a slide this guided task didn't build
+    else if (window.__guidedTaskRestoreRows) window.__guidedTaskRestoreRows();
     restartFadeHeadlines();
     restartStepSplit();
     restartStepsNext();
@@ -7202,9 +7558,25 @@
   }
 
   window.addEventListener('keydown', (e) => {
+    // ignore keystrokes while typing in a real form field (e.g. the guided
+    // "Try it yourself" task's consent-screen name/logo inputs) — without
+    // this, typing any word containing "r" hijacked navigation mid-keystroke,
+    // since the shortcuts below didn't check where the keypress came from
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
     if (e.key === 'ArrowRight') go(1);
     if (e.key === 'ArrowLeft') go(-1);
-    if (e.key === 'r' || e.key === 'R') { idx = 0; historySeenGroups.agents = false; historySeenGroups.consent = false; historySeenGroups['grant-access'] = false; consentPanelAutoScrollShown = false; render(); }
+    if (e.key === 'r' || e.key === 'R') {
+      // idx=0 is only a valid target when it isn't nav-hidden (see
+      // isNavHidden/nextVisibleIdx) — without this check, "R" could jump to
+      // a .hidden-slide section that nav otherwise always skips over.
+      idx = isNavHidden(slides[0]) ? nextVisibleIdx(0, 1) : 0;
+      historySeenGroups.agents = false;
+      historySeenGroups.consent = false;
+      historySeenGroups['grant-access'] = false;
+      consentPanelAutoScrollShown = false;
+      render();
+    }
   });
 
   // ---- live console prototype (slide 9) ----
@@ -7579,13 +7951,29 @@
       const modalHeading = document.getElementById('consentModalPreviewHeading');
       if (!logoInput || !nameInput || !modalCard) return;
       // the customer logo REPLACES the default agent icon in the same circle
-      // (not a separate small header badge) — only one of the two ever shows
-      const setIcon = (svgEl, imgEl, filled) => {
-        if (svgEl) svgEl.style.display = filled ? 'none' : 'block';
-        if (imgEl) imgEl.style.display = filled ? 'block' : 'none';
+      // (not a separate small header badge) — only one of the two ever shows.
+      // Per Kelly: this used to just toggle visibility on one hardcoded
+      // Owl Trade image regardless of what URL was typed ("simulating" the
+      // fetch) — now it's a real <img src>, so whatever URL a visitor
+      // actually enters really loads (with a fallback to the default icon
+      // if that URL doesn't resolve to an image, via onerror below).
+      window.__setConsentIcon = (svgEl, imgEl, url) => {
+        const trimmed = (url || '').trim();
+        if (!trimmed) {
+          if (imgEl) { imgEl.style.display = 'none'; imgEl.removeAttribute('src'); }
+          if (svgEl) svgEl.style.display = 'block';
+          return;
+        }
+        if (imgEl) {
+          imgEl.src = trimmed;
+          imgEl.style.display = 'block';
+          imgEl.onerror = () => { imgEl.style.display = 'none'; if (svgEl) svgEl.style.display = 'block'; };
+        }
+        if (svgEl) svgEl.style.display = 'none';
       };
+      const setIcon = window.__setConsentIcon;
       const syncModalPreview = () => {
-        setIcon(modalIconSvg, modalLogoImg, !!logoInput.value.trim());
+        setIcon(modalIconSvg, modalLogoImg, logoInput.value);
         modalHeading.textContent = 'ChatGPT wants access to ' + (nameInput.value.trim() || '[App name]');
       };
       logoInput.addEventListener('input', syncModalPreview);
@@ -7598,8 +7986,9 @@
         open: ['consentEditBtn'],
         close: ['consentModalClose', 'consentModalCancel'],
         onOpen: () => {
-          const filled = document.getElementById('consentEditBtn').dataset.filled === '1';
-          logoInput.value = filled ? 'https://owltrade.com/logo.png' : '';
+          // was a hardcoded placeholder URL whenever "filled" — now actually
+          // reopens with whatever URL was really saved last time
+          logoInput.value = savedOrBlank('consentLogoUrlVal');
           nameInput.value = savedOrBlank('consentFriendlyNameVal');
           privacyInput.value = savedOrBlank('consentPrivacyUrlVal');
           termsInput.value = savedOrBlank('consentTermsUrlVal');
@@ -7610,10 +7999,10 @@
           const logoImg = document.getElementById('consentPreviewLogoImg');
           const iconSvg = document.getElementById('consentPreviewIconSvg');
           const pageHeading = document.getElementById('consentPreviewHeading');
-          const filled = !!logoInput.value.trim();
-          document.getElementById('consentEditBtn').dataset.filled = filled ? '1' : '0';
-          if (urlVal) urlVal.textContent = filled ? logoInput.value.trim() : 'Not set';
-          setIcon(iconSvg, logoImg, filled);
+          const trimmedUrl = logoInput.value.trim();
+          document.getElementById('consentEditBtn').dataset.filled = trimmedUrl ? '1' : '0';
+          if (urlVal) urlVal.textContent = trimmedUrl || 'Not set';
+          setIcon(iconSvg, logoImg, trimmedUrl);
           document.getElementById('consentFriendlyNameVal').textContent = nameInput.value.trim() || 'Not set';
           document.getElementById('consentPrivacyUrlVal').textContent = privacyInput.value.trim() || 'Not set';
           document.getElementById('consentTermsUrlVal').textContent = termsInput.value.trim() || 'Not set';
@@ -7626,6 +8015,355 @@
     // relying solely on the mounted tab's own click handler to trigger it —
     // see the comment on mountLiveConsole for the bug this fixes.
     window.__resetConsoleDetailViews = () => { closeClient(); closeIdentity(); };
+  })();
+
+  // --- guided "Try it yourself" task (final slide) — see feedback-driven
+  // rewrite: reviewer said the old free-roam console gave no sense of what
+  // to click. Replaced with a 3-step scenario reusing real, already-live
+  // pieces: step 1 is the console's own Consent Screen tab + Edit modal
+  // (untouched, same as everywhere else it's used); step 2 is a fresh
+  // .consent-mobile instance standing in for "what your end user sees,"
+  // populated from whatever step 1 just saved; step 3 returns to the same
+  // console, now on Clients then Identities, highlighting the existing
+  // "ChatGPT" / "ryan.chen@owltrade.io" rows rather than fabricating new
+  // ones — those rows already represent exactly this relationship in the
+  // seed data, so the reveal is real, not staged.
+  (function initGuidedTask(){
+    const liveWindowHome = document.getElementById('liveWindowHome');
+    const banner = document.getElementById('guidedBanner');
+    const favTwilio = document.getElementById('guidedFavTwilio');
+    const favChatgpt = document.getElementById('guidedFavChatgpt');
+    const tabLabel = document.getElementById('guidedTabLabel');
+    const liveUrl = document.getElementById('liveUrl');
+    const bodyChat = document.getElementById('guidedBodyChat');
+    const bodyLogin = document.getElementById('guidedBodyLogin');
+    const bodyConsent = document.getElementById('guidedBodyConsent');
+    const chatPopover = document.getElementById('guidedChatPopover');
+    const chatThread = document.getElementById('guidedChatThread');
+    const stepsEl = document.getElementById('guidedSteps');
+    const restartBtn = document.getElementById('guidedRestart');
+    const allowBtn = document.getElementById('guidedAllowBtn');
+    const denyBtn = document.getElementById('guidedDenyBtn');
+    const denyNote = document.getElementById('guidedDenyNote');
+    const heading = document.getElementById('guidedConsentHeading');
+    const consentIconSvg = document.getElementById('guidedConsentIconSvg');
+    const consentLogoImg = document.getElementById('guidedConsentLogoImg');
+    const connectBtn = document.getElementById('guidedConnectBtn');
+    const loginBtn = document.getElementById('guidedLoginBtn');
+    const loginEmail = document.getElementById('guidedLoginEmail');
+    const nextBtn = document.getElementById('guidedNextBtn');
+    if (!liveWindowHome || !stepsEl || !allowBtn || !bodyChat) return;
+
+    let consentSaveListenerArmed = false;
+    let denyNoteTimer = null;
+    let chatFollowupTimer = null;
+    let step3Timers = [];
+    let loggedInEmail = '';
+    const setIcon = window.__setConsentIcon || function(){};
+
+    function setStepUI(n){
+      stepsEl.querySelectorAll('.guided-step').forEach(el => {
+        const s = Number(el.dataset.step);
+        el.classList.toggle('current', s === n);
+        el.classList.toggle('done', s < n);
+      });
+    }
+
+    function clearStep3Timers(){
+      step3Timers.forEach(clearTimeout);
+      step3Timers = [];
+      clearRowTooltips();
+    }
+
+    // whatever step 1 actually saved (or the same Owl Trade defaults the
+    // rest of the deck's illustrative example uses, if left blank) — read
+    // fresh each time rather than cached, since it can change between runs
+    function savedIdentity(){
+      const nameVal = document.getElementById('consentFriendlyNameVal');
+      const urlVal = document.getElementById('consentLogoUrlVal');
+      const name = (nameVal && nameVal.textContent !== 'Not set') ? nameVal.textContent : 'Owl Trade';
+      const url = (urlVal && urlVal.textContent !== 'Not set') ? urlVal.textContent : 'assets/owltrade-logo.png?v=3';
+      return {name, url};
+    }
+
+    // swaps which BODY is showing inside the one persistent #liveWindowHome
+    // (per Kelly: same frame throughout, not a different frame per phase) —
+    // toggles the console body via inline style rather than the [hidden]
+    // attribute, since .cgpt-body-live's own rule sets display:flex
+    // unconditionally and would otherwise tie/beat the UA's [hidden] rule
+    // (the exact specificity gotcha .guided-body itself is written to avoid,
+    // see its :not([hidden]) comment above)
+    function showGuidedBody(mode){
+      const consoleBody = document.querySelector('.cgpt-body-live');
+      if (consoleBody) consoleBody.style.display = (mode === 'console') ? '' : 'none';
+      bodyChat.hidden = (mode !== 'chat');
+      bodyLogin.hidden = (mode !== 'login');
+      bodyConsent.hidden = (mode !== 'consent');
+      banner.hidden = (mode === 'console');
+      favTwilio.hidden = (mode !== 'console');
+      favChatgpt.hidden = (mode === 'console');
+      if (mode === 'console') {
+        tabLabel.textContent = 'Twilio Console';
+        // URL text is owned by the console's own tab-click logic (initLiveConsole)
+        // once mountLiveConsole below clicks the target tab — not set here
+      } else {
+        tabLabel.textContent = 'ChatGPT';
+        const {name} = savedIdentity();
+        const domain = name.toLowerCase().replace(/[^a-z0-9]+/g, '') + '.com';
+        liveUrl.textContent = mode === 'chat' ? 'chatgpt.com' : mode === 'login' ? domain + '/login' : domain + '/consent';
+      }
+    }
+
+    function enterStep1(){
+      clearStep3Timers();
+      clearTimeout(chatFollowupTimer);
+      setStepUI(1);
+      restartBtn.classList.remove('show');
+      loggedInEmail = '';
+      if (loginEmail) loginEmail.value = '';
+      const loginPw = document.getElementById('guidedLoginPassword');
+      if (loginPw) loginPw.value = '';
+      mountLiveConsole(liveWindowHome, 'consent');
+      showGuidedBody('console');
+      const editBtn = document.getElementById('consentEditBtn');
+      if (editBtn) editBtn.classList.add('guided-target');
+      if (!consentSaveListenerArmed) {
+        consentSaveListenerArmed = true;
+        const saveBtn = document.getElementById('consentModalSave');
+        // real onSave handler (wired in initConsentModal, unrelated to this
+        // IIFE) writes consentFriendlyNameVal/consentLogoUrlVal on the same
+        // click — a tick's delay just guarantees this reads it after, not
+        // racing which listener runs first
+        if (saveBtn) saveBtn.addEventListener('click', () => setTimeout(enterStep2a, 350));
+        if (editBtn) editBtn.addEventListener('click', () => editBtn.classList.remove('guided-target'));
+      }
+    }
+
+    // 2a — ChatGPT's real "+" menu (see restartCgptPopovers() elsewhere in
+    // this file — it auto-wires the toggle/popover found here, same as
+    // every other "+" menu in the deck), showing whatever was just saved
+    function enterStep2a(){
+      setStepUI(2);
+      showGuidedBody('chat');
+      showChatConnected(false);
+      chatPopover.classList.remove('show');
+      if (typeof setPopView === 'function') setPopView(chatPopover, 'menu');
+      const plusBtn = document.getElementById('guidedPlusBtn');
+      if (plusBtn) plusBtn.classList.add('guided-target');
+      const {name, url} = savedIdentity();
+      document.getElementById('guidedChatUserMsg').textContent = 'Can we connect my ' + name + ' account to ChatGPT?';
+      document.getElementById('guidedMenuAppName').textContent = name;
+      setIcon(document.getElementById('guidedMenuIconSvg'), document.getElementById('guidedMenuLogoImg'), url);
+      // clear anything appended by a previous run through this same slide
+      // visit (the "Connected..." reply + the follow-up mention-chip
+      // question) so restarting doesn't stack duplicates onto the thread
+      document.querySelectorAll('#guidedChatThread .guided-dynamic-msg').forEach(el => el.remove());
+      clearTimeout(chatFollowupTimer);
+    }
+
+    // 2b — fake login, real inputs, deliberately unvalidated
+    function enterStep2b(){
+      showGuidedBody('login');
+      const {name, url} = savedIdentity();
+      document.getElementById('guidedLoginTitle').textContent = 'Log in to ' + name;
+      setIcon(document.getElementById('guidedLoginIconSvg'), document.getElementById('guidedLoginLogoImg'), url);
+    }
+
+    // 2c — the branded consent screen (same component the console's own
+    // Consent Screen tab previews)
+    function enterStep2c(){
+      showGuidedBody('consent');
+      const {name, url} = savedIdentity();
+      heading.textContent = 'ChatGPT wants access to ' + name;
+      setIcon(consentIconSvg, consentLogoImg, url);
+      denyNote.classList.remove('show');
+    }
+
+    // 2d — ChatGPT again, now connected. Same #guidedBodyChat as 2a (per
+    // Kelly: change the content, not the frame/body) — the original two
+    // messages stay put (per Kelly: "keep the previous messages showing"),
+    // this just appends a confirmation reply, then — after a beat — a new
+    // user message using the exact @mention-chip pattern the Owl Trade
+    // illustrative example uses elsewhere in the deck (app icon + name
+    // inline in the bubble), asking a natural follow-up now that it's
+    // actually connected.
+    function appendMsg(role, html){
+      const el = document.createElement('div');
+      el.className = role === 'user' ? 'cgpt-msg-user guided-dynamic-msg' : 'cgpt-msg-assistant-wrap guided-dynamic-msg';
+      el.innerHTML = role === 'user' ? html : `<div class="cgpt-msg-assistant">${html}</div>`;
+      chatThread.appendChild(el);
+      chatThread.scrollTop = chatThread.scrollHeight;
+      return el;
+    }
+    function showChatConnected(connected){
+      chatPopover.hidden = connected;
+      // .hidden alone doesn't actually close it — the real popover shows/
+      // hides via .show (opacity/pointer-events), same mechanism every
+      // other "+" menu in the deck uses, not the [hidden] attribute
+      if (connected) chatPopover.classList.remove('show');
+      nextBtn.hidden = !connected;
+      if (!connected) return;
+      const {name, url} = savedIdentity();
+      appendMsg('assistant', 'Connected to ' + name + ' — I can now access your account and act on your behalf.');
+      clearTimeout(chatFollowupTimer);
+      chatFollowupTimer = setTimeout(() => {
+        const iconHtml = `<span class="cgpt-owl-icon"><img src="${url}" alt=""></span>`;
+        appendMsg('user', `<span class="cgpt-mention-chip">${iconHtml}${name}</span> Can you check if my email is verified?`);
+        chatFollowupTimer = setTimeout(() => {
+          appendMsg('assistant', 'Yes, your email is verified.');
+        }, 1600);
+      }, 1800);
+    }
+    function enterStep2d(){
+      showGuidedBody('chat');
+      showChatConnected(true);
+    }
+
+    // a real tooltip — appears, holds, fades away — rather than a badge
+    // left permanently stuck to the row (per Kelly). document.body-appended
+    // + position:fixed so it isn't clipped by the table's own scroll
+    // container; tracked in activeTooltips so a restart mid-sequence can
+    // clean up anything still on screen.
+    let activeTooltips = [];
+    function flashRow(row, label){
+      if (!row) return;
+      // no scrollIntoView — real bug this caused: with rows narrowed down
+      // to just this one (already near the top, nothing to scroll to), the
+      // call still bubbled up to the page's own scroll container looking
+      // for SOMETHING scrollable, visibly jumping the whole window up a
+      // beat after it had already settled into its correct position.
+      // Just the tooltip now (no purple row-background flash) — per Kelly.
+      step3Timers.push(setTimeout(() => {
+        const rect = row.getBoundingClientRect();
+        const tip = document.createElement('div');
+        tip.className = 'guided-row-tooltip';
+        tip.textContent = label;
+        tip.style.left = (rect.left + 16) + 'px';
+        tip.style.top = (rect.top - 38) + 'px';
+        document.body.appendChild(tip);
+        activeTooltips.push(tip);
+        requestAnimationFrame(() => tip.classList.add('show'));
+        step3Timers.push(setTimeout(() => {
+          tip.classList.remove('show');
+          setTimeout(() => tip.remove(), 350);
+        }, 2800));
+      }, 550));
+    }
+    function clearRowTooltips(){
+      activeTooltips.forEach(t => t.remove());
+      activeTooltips = [];
+    }
+
+    // narrows the Clients/Identities tables down to just this scenario's
+    // agent + user — the other seed rows are real content elsewhere in the
+    // console (the free-roam exploration this guided task replaced), but
+    // showing all of them here would bury the one row that's actually the
+    // point. .guided-row-tucked rows are restored on restart, not deleted.
+    function narrowRows(container, keepPredicate){
+      if (!container) return;
+      container.querySelectorAll(':scope > .tw-row').forEach(row => {
+        row.classList.toggle('guided-row-tucked', !keepPredicate(row));
+      });
+    }
+    function restoreRows(){
+      document.querySelectorAll('.guided-row-tucked').forEach(row => row.classList.remove('guided-row-tucked'));
+    }
+
+    // Identities has no seed row for an arbitrary typed-in email, so this
+    // clones the structure of an existing row (keeping its real scope
+    // markup/styling intact) rather than hand-building one from scratch —
+    // relabeled with whatever email was actually typed at the login step
+    function showLoggedInIdentityRow(email){
+      const list = document.querySelector('.tw-table-identities');
+      if (!list) return null;
+      const template = list.querySelector(':scope > .tw-row');
+      if (!template) return null;
+      let row = list.querySelector('#guidedIdentityRow');
+      if (!row) {
+        row = template.cloneNode(true);
+        row.id = 'guidedIdentityRow';
+        list.insertBefore(row, template);
+      }
+      row.dataset.id = email;
+      const link = row.querySelector('a');
+      if (link) link.textContent = email;
+      return row;
+    }
+
+    function enterStep3(){
+      setStepUI(3);
+      showGuidedBody('console');
+      mountLiveConsole(liveWindowHome, 'clients');
+      // narrow SYNCHRONOUSLY, same tick as the mount — not inside the
+      // setTimeout below. Doing it after a delay let the browser paint all
+      // 5 seed rows for a frame first, then hide 4 of them a beat later — a
+      // real, visible "flash of other apps before they disappear" (bug
+      // Kelly hit). The setTimeout below is now purely for the *tooltip*
+      // reveal pacing, not for gating the narrowing itself.
+      narrowRows(document.querySelector('.tw-clients-list .tw-table'), row => row.dataset.name === 'ChatGPT');
+      step3Timers.push(setTimeout(() => {
+        flashRow(document.querySelector('.tw-row[data-name="ChatGPT"]'), 'The agent your user just approved');
+        step3Timers.push(setTimeout(() => {
+          mountLiveConsole(liveWindowHome, 'identities');
+          const email = loggedInEmail || 'you@example.com';
+          const idRow = showLoggedInIdentityRow(email);
+          // same synchronous-narrowing fix as Clients above — same tick as
+          // the row being created/mounted, not delayed
+          narrowRows(document.querySelector('.tw-table-identities'), row => row === idRow);
+          step3Timers.push(setTimeout(() => {
+            flashRow(idRow, 'The user who just granted access');
+            restartBtn.classList.add('show');
+          }, 900));
+        }, 4200));
+      }, 900));
+    }
+
+    connectBtn.addEventListener('click', () => {
+      chatPopover.classList.remove('show');
+      enterStep2b();
+    });
+    loginBtn.addEventListener('click', () => {
+      loggedInEmail = (loginEmail && loginEmail.value.trim()) || 'you@example.com';
+      enterStep2c();
+    });
+    nextBtn.addEventListener('click', enterStep3);
+    allowBtn.addEventListener('click', () => {
+      clearTimeout(denyNoteTimer);
+      denyNote.classList.remove('show');
+      enterStep2d();
+    });
+    denyBtn.addEventListener('click', () => {
+      denyNote.classList.add('show');
+      clearTimeout(denyNoteTimer);
+      denyNoteTimer = setTimeout(() => denyNote.classList.remove('show'), 3200);
+    });
+    restartBtn.addEventListener('click', () => {
+      // reset the console's own saved consent-screen values back to blank so
+      // a repeat run starts the same "Not set" state the first visit did
+      ['consentFriendlyNameVal','consentLogoUrlVal','consentPrivacyUrlVal','consentTermsUrlVal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = 'Not set';
+      });
+      const editBtn = document.getElementById('consentEditBtn');
+      if (editBtn) editBtn.dataset.filled = '0';
+      const previewHeading = document.getElementById('consentPreviewHeading');
+      if (previewHeading) previewHeading.textContent = 'ChatGPT wants access to [App name]';
+      const previewLogo = document.getElementById('consentPreviewLogoImg');
+      const previewIcon = document.getElementById('consentPreviewIconSvg');
+      if (previewLogo) { previewLogo.style.display = 'none'; previewLogo.removeAttribute('src'); }
+      if (previewIcon) previewIcon.style.display = 'block';
+      restoreRows();
+      const idRow = document.getElementById('guidedIdentityRow');
+      if (idRow) idRow.remove();
+      enterStep1();
+    });
+
+    // exposed for render()'s per-slide-entry hook (see the slideTryItYourself
+    // check added there) — always restarts fresh on (re)entry, same
+    // convention this deck uses for its other stateful slides
+    window.__guidedTaskReset = () => { restoreRows(); const r = document.getElementById('guidedIdentityRow'); if (r) r.remove(); enterStep1(); };
+    window.__guidedTaskRestoreRows = restoreRows;
+    enterStep1();
   })();
 </script>
 </body>
