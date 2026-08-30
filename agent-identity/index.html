@@ -8344,6 +8344,18 @@
     function restoreRows(){
       document.querySelectorAll('.guided-row-tucked').forEach(row => row.classList.remove('guided-row-tucked'));
     }
+    // full cleanup of everything this guided task leaves on the SHARED
+    // console singleton: un-tuck any narrowed Clients/Identities rows, and
+    // remove the fabricated #guidedIdentityRow entirely (restoreRows alone
+    // only un-hides real seed rows — the identity row isn't seed data, it's
+    // a clone inserted by showLoggedInIdentityRow, so it has to be deleted
+    // outright or it keeps showing up on every OTHER slide that reuses this
+    // same console, e.g. Customer Journey — real bug Kelly caught).
+    function cleanupGuidedArtifacts(){
+      restoreRows();
+      const idRow = document.getElementById('guidedIdentityRow');
+      if (idRow) idRow.remove();
+    }
 
     // Identities has no seed row for an arbitrary typed-in email, so this
     // clones the structure of an existing row (keeping its real scope
@@ -8437,8 +8449,8 @@
     // exposed for render()'s per-slide-entry hook (see the slideTryItYourself
     // check added there) — always restarts fresh on (re)entry, same
     // convention this deck uses for its other stateful slides
-    window.__guidedTaskReset = () => { restoreRows(); const r = document.getElementById('guidedIdentityRow'); if (r) r.remove(); enterStep1(); };
-    window.__guidedTaskRestoreRows = restoreRows;
+    window.__guidedTaskReset = () => { cleanupGuidedArtifacts(); enterStep1(); };
+    window.__guidedTaskRestoreRows = cleanupGuidedArtifacts;
     enterStep1();
   })();
 </script>
