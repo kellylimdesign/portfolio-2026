@@ -8254,7 +8254,9 @@
         tip.className = 'guided-row-tooltip';
         tip.textContent = label;
         tip.style.left = (rect.left + 16) + 'px';
-        tip.style.top = (rect.top - 38) + 'px';
+        // was -38 — sat with more of a gap above the row than intended; a
+        // touch closer reads more clearly as pointing at that specific row
+        tip.style.top = (rect.top - 30) + 'px';
         document.body.appendChild(tip);
         activeTooltips.push(tip);
         requestAnimationFrame(() => tip.classList.add('show'));
