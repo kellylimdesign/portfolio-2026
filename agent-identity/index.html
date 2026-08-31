@@ -829,6 +829,54 @@
   }
   .mock-callout-next:hover{color:#0D5BC7; text-decoration:underline; text-underline-offset:2px;}
 
+  /* reuses .mock-callout-next inside the always-visible "For Example" box
+     (#journeyExampleCallout) instead of one of the mock's own floating
+     banners — this box never hides itself the way a .mock-callout does
+     (it's static left-panel content, on screen for the whole step), so
+     the Next button needs its OWN hidden-until-gated state instead of
+     inheriting visibility from a parent .show toggle the way the mock's
+     callouts do. runGatedSequence still drives it the same way (adds/
+     removes .show on #journeyExampleCallout itself) — just keyed here
+     off a descendant instead of the whole box. */
+  .example-callout .mock-callout-next{display:none; margin-top:14px;}
+  .example-callout.show .mock-callout-next{display:inline-flex;}
+
+  /* "Why Upload, Not Paste" — the one mock callout left docked to the mock
+     itself — restyled as an actual tooltip pointing at the dropzone it's
+     explaining, not the wide left-edge banner .mock-callout otherwise
+     uses. Stays position:absolute (NOT fixed) against the same .substep
+     containing block the base .mock-callout rule already resolves against
+     (confirmed via offsetParent — .mock-callout sits as .substep's child,
+     a sibling of .step-frame, not nested inside it) — position:fixed
+     looked tempting (viewport-relative, like .guided-row-tooltip) but
+     .substep and .slide both animate via `transform`, and ANY transformed
+     ancestor becomes the containing block for its position:fixed
+     descendants instead of the viewport — so a fixed tooltip was landing
+     relative to whichever of those happened to be mid-transition, nowhere
+     near the dropzone. JS-computed coordinates (see
+     positionUploadTooltip()) are still needed since the live console this
+     points at can be mounted at different sizes, just measured relative
+     to .substep instead of the viewport. bottom:auto overrides the base
+     rule's bottom:16% so top+height determine position without the two
+     fighting each other. */
+  .mock-callout.mock-callout-tooltip{
+    position:absolute; top:0; left:0; bottom:auto; right:auto;
+    width:300px; max-width:300px;
+    background:var(--ink); border:none; border-radius:10px;
+    box-shadow:0 14px 32px rgba(23,22,27,.28);
+    transform:translateY(-6px);
+  }
+  .mock-callout-tooltip.show{transform:translateY(0);}
+  /* arrow above the tooltip, pointing up at the dropzone it's anchored
+     under — mirrors .guided-row-tooltip's arrow (pointing down at a row
+     above it), just flipped since this tooltip sits below its target. */
+  .mock-callout-tooltip::after{
+    content:''; position:absolute; bottom:100%; left:28px;
+    border:7px solid transparent; border-bottom-color:var(--ink);
+  }
+  .mock-callout-tooltip .mock-callout-kicker{color:rgba(255,255,255,.55);}
+  .mock-callout-tooltip p{color:rgba(255,255,255,.85);}
+
   /* "how we got here" pause overlay — a deliberate detour out of the main
      journey (see the go(1)/historySeenGroups JS), not another equal-weight
      step, so it takes over the full viewport rather than living inline like
@@ -4700,9 +4748,10 @@
           <div class="substep-callout">
           <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Verify a user is who they say they are</span><span class="substep-item-desc">Most customers already have their own system for managing users. Twilio doesn't need to replace it — we just need a way to trust the identity it hands over.</span></span></button>
         </div>
-          <div class="example-callout">
+          <div class="example-callout" id="journeyExampleCallout">
             <p class="example-kicker">For Example</p>
-            <p class="example-text">Owl Trade already uses Okta to manage their users. All Owl Trade needs is a way to hand that identity off to an agent.</p>
+            <p class="example-text" id="journeyExampleText">Owl Trade already uses Okta to manage their users. An Owl Trade admin goes into Okta to copy identity credentials.</p>
+            <button class="mock-callout-next" type="button">Next</button>
           </div>
         </div>
       </div>
@@ -4800,21 +4849,18 @@
                     <div class="idp-screen idp-screen-embed tw-console-embed" data-app="twilio" id="idpTwilioSlot"></div>
                   </div>
                 </div>
-                <div class="mock-callout" id="oktaToTwilioCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Gather Your Authentication System Credentials</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>Once you've copied the information from your authentication provider, head over to the Twilio Console.</p>
-                </div>
-                <div class="mock-callout" id="jwtModalCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Hand Over To Twilio For Verification</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>This is where those values go — paste what you copied from Okta so Twilio can use it to verify your users' identity.</p>
-                </div>
-                <div class="mock-callout" id="uploadCallout">
+                <!-- the two mid-walkthrough beats ("gather your credentials", "hand
+                     over to Twilio") no longer live here as their own floating
+                     banners — folded into the left panel's "For Example" callout
+                     (#journeyExampleCallout) instead, so the same explanation
+                     doesn't appear in two places on screen at once. "Why Upload,
+                     Not Paste" stays here since it's commentary on this specific
+                     control, not a beat in the connect-the-identity-provider
+                     narrative — restyled as an actual tooltip pointing at the
+                     dropzone (.mock-callout-tooltip) instead of the wide
+                     left-edge banner the deck's other mock-callouts use; see
+                     positionUploadTooltip() for how it's placed. -->
+                <div class="mock-callout mock-callout-tooltip" id="uploadCallout">
                   <div class="mock-callout-head">
                     <p class="mock-callout-kicker">Why Upload, Not Paste</p>
                     <button class="mock-callout-next" type="button">Got it</button>
@@ -6245,7 +6291,7 @@
     // shows it already revealed instead of hidden. Covers every gated
     // walkthrough callout (step 1's IdP proto, step 3's Clients/Identities
     // proto), not just the one this comment used to name.
-    ['uploadCallout','oktaToTwilioCallout','jwtModalCallout','consentPreviewCallout',
+    ['uploadCallout','journeyExampleCallout','consentPreviewCallout',
      'clientsListCallout','clientDetailCallout','identitiesListCallout','identityDetailCallout'
     ].forEach(id => { const c = document.getElementById(id); if (c) c.classList.remove('show'); });
   }
@@ -6833,15 +6879,17 @@
     if (urlText) urlText.textContent = idpUrls.okta;
     clearIdpFlowAutoplay();
     idpFlowSetState(proto, 'empty');
-    // these callouts live inside the shared live-console's Upload drawer (or
-    // float over this same window), which physically moves around the DOM
-    // (see mountLiveConsole) — look them up globally rather than within
-    // scope, since scope may not contain them wherever the console currently
-    // happens to be mounted
-    ['oktaToTwilioCallout','jwtModalCallout','uploadCallout'].forEach(id => {
+    // uploadCallout lives inside the shared live-console's Upload drawer (or
+    // floats over this same window), which physically moves around the DOM
+    // (see mountLiveConsole) — look it up globally rather than within scope,
+    // since scope may not contain it wherever the console currently happens
+    // to be mounted. journeyExampleCallout lives in the left panel, outside
+    // scope entirely, for the same reason.
+    ['uploadCallout','journeyExampleCallout'].forEach(id => {
       const c = document.getElementById(id);
       if (c) c.classList.remove('show');
     });
+    setJourneyExampleText(0);
   }
   function restartIdpProto(){
     const active = slides[idx];
@@ -7254,6 +7302,41 @@
       clickWithPulse(proto.querySelector('.tw-idsub-tab[data-idsub="identities"]'), 500);
     }, 2200));
   }
+  // the three "For Example" beats for step 1's walkthrough — Okta credentials
+  // -> handed to the Twilio console -> signature keys uploaded — shown one at
+  // a time in #journeyExampleText as the mock advances. Index-matched to the
+  // three gates in autoplayIdpProto's steps below (0 is also the resting
+  // state resetIdpProto restores between runs).
+  const JOURNEY_EXAMPLE_TEXT = [
+    "Owl Trade already uses Okta to manage their users. An Owl Trade admin goes into Okta to copy identity credentials.",
+    "The Owl Trade admin copies the values from Okta to the Twilio console.",
+    "The admin lastly uploads signature keys so Twilio can verify the identity credentials from Okta.",
+  ];
+  function setJourneyExampleText(i){
+    const el = document.getElementById('journeyExampleText');
+    if (el) el.textContent = JOURNEY_EXAMPLE_TEXT[i];
+  }
+  // positions the "Why Upload, Not Paste" tooltip under the live dropzone it
+  // points at — computed fresh each time rather than fixed in CSS, since the
+  // live console this sits over can differ in size/position depending on
+  // where it's currently mounted (see mountLiveConsole). #uploadCallout
+  // sits as a sibling of .step-frame (both children of .substep), NOT
+  // nested inside it, so .substep — confirmed via offsetParent — is its
+  // real position:absolute containing block (see the .mock-callout-tooltip
+  // CSS comment for why this isn't position:fixed against the viewport
+  // instead), not the raw viewport coordinates getBoundingClientRect()
+  // alone would suggest.
+  function positionUploadTooltip(){
+    const dz = document.getElementById('uploadKeysDropzone');
+    const tip = document.getElementById('uploadCallout');
+    if (!dz || !tip) return;
+    const frame = tip.closest('.substep');
+    if (!frame) return;
+    const dzRect = dz.getBoundingClientRect();
+    const frameRect = frame.getBoundingClientRect();
+    tip.style.left = (dzRect.left - frameRect.left) + 'px';
+    tip.style.top = (dzRect.bottom - frameRect.top + 18) + 'px';
+  }
   function autoplayIdpProto(scope){
     clearIdpAutoplay();
     const proto = scope.querySelector('#idpProto');
@@ -7270,9 +7353,14 @@
     // per Kelly: this whole "How We Got Here" walkthrough moved too fast to
     // follow on a first pass, and even slowed down it just auto-continued on
     // a timer with no explanation of *why* each screen matters. Now it pauses
-    // on three callouts (why head to Twilio, what the JWT modal is for, why
+    // on three beats (why head to Twilio, what the JWT modal is for, why
     // upload-not-paste) and waits for a "Next" click on each instead of
-    // guessing a reading time.
+    // guessing a reading time. The first two live in the left panel's "For
+    // Example" callout (one touchpoint with the mock's own state, instead of
+    // that same explanation appearing a second time in a floating banner);
+    // only the third — commentary on the upload control itself, not a beat
+    // in the connect-the-identity-provider narrative — stays on the mock,
+    // as a tooltip pointing at the dropzone.
     // copy buttons now show the pulse, then wait a beat before actually
     // flipping to "copied" — same "cursor lands, then screen reacts" gap
     // clickWithPulse gives every other scripted click, which copyBtns[0]
@@ -7289,29 +7377,35 @@
       {delay:1200, fn: () => doCopy(copyBtns[1])},
       {delay:1200, fn: () => { doCopy(copyBtns[2]); twilioTab.classList.add('pulse'); }},
       {delay:600,  fn: () => {}},
-      {callout:'oktaToTwilioCallout'},
+      // gate 1 — journeyExampleCallout is already showing JOURNEY_EXAMPLE_TEXT[0]
+      // (resetIdpProto's default), so no text-setting fn needed before this one
+      {callout:'journeyExampleCallout'},
       // switch to Twilio Console and mount the live prototype (Configurations
       // tab) — left live/interactive afterward rather than auto-resetting,
       // since it's the real console now, not a timed screenshot demo. Slowed
       // (400->900, 1200->1800) so the tab switch itself has time to register
       // before the Configure click fires — it was reading as one instant jump
-      // straight to the open modal.
-      {delay:900,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); }},
+      // straight to the open modal. Text advances to the second beat here,
+      // rather than waiting for the modal to actually open, so it's already
+      // reading correctly through the delay steps below.
+      {delay:900,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); setJourneyExampleText(1); }},
       // open the real "Configure JWT Profile" side modal — pause on it before
       // saving so the callout can explain what it's for
       {delay:1800, fn: () => clickWithPulse(document.getElementById('jwtConfigureBtn'))},
       {delay:900,  fn: () => {}},
-      {callout:'jwtModalCallout'},
+      // gate 2 — same callout, now on the second beat
+      {callout:'journeyExampleCallout'},
       // save so the JWT Configuration section on the page behind it appears
       // filled in — matches Okta values copied above, ending on the filled
-      // state, not mid-modal or bouncing off to some other tab
-      {delay:400,  fn: () => clickWithPulse(document.getElementById('jwtModalSave'))},
-      // then open the Upload public keys drawer for context, and slide the
-      // "why upload, not paste" callout in from outside the browser-chrome
-      // window — kept off the UI itself so it reads as commentary, not a
-      // real console element
+      // state, not mid-modal or bouncing off to some other tab. Text advances
+      // to the third (and last — no more Next button after this one) beat.
+      {delay:400,  fn: () => { clickWithPulse(document.getElementById('jwtModalSave')); setJourneyExampleText(2); }},
+      // then open the Upload public keys drawer for context, and position the
+      // "why upload, not paste" tooltip under its dropzone — kept off the
+      // console UI itself so it reads as commentary, not a real console
+      // element
       {delay:1500, fn: () => clickWithPulse(document.getElementById('uploadKeysBtn'))},
-      {delay:900,  fn: () => {}},
+      {delay:900,  fn: () => positionUploadTooltip()},
       {callout:'uploadCallout'},
     ];
     idpAutoplayStop = runGatedSequence(steps, idpAutoplayTimers);
