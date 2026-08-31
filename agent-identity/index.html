@@ -617,6 +617,17 @@
   }
   .example-text{font-family:var(--sans); font-size:15px; line-height:1.6; color:var(--ink); margin:0;}
   .example-callout .example-text{color:var(--ink-70);}
+  /* one-shot highlight each time #journeyExampleText's content actually
+     changes (see flashExampleCallout() in JS, triggered from
+     setJourneyExampleText) — a brief neutral ring + background lift
+     rather than introducing a new accent color, so it reads as "this box
+     just updated" and settles back to the deck's normal flat-grey fill */
+  @keyframes exampleCalloutFlash{
+    0%{box-shadow:0 0 0 0 rgba(23,22,27,0); background:rgba(23,22,27,.035); border-color:var(--line); transform:scale(1);}
+    25%{box-shadow:0 0 0 6px rgba(23,22,27,.14); background:rgba(23,22,27,.11); border-color:rgba(23,22,27,.4); transform:scale(1.012);}
+    100%{box-shadow:0 0 0 0 rgba(23,22,27,0); background:rgba(23,22,27,.035); border-color:var(--line); transform:scale(1);}
+  }
+  .example-callout.flash{animation:exampleCalloutFlash 1s ease;}
 
   /* "The Friction" slide — same flat light-grey/hairline fill as
      .example-callout (reused, not reinvented), but as a scannable card grid
@@ -837,9 +848,19 @@
      inheriting visibility from a parent .show toggle the way the mock's
      callouts do. runGatedSequence still drives it the same way (adds/
      removes .show on #journeyExampleCallout itself) — just keyed here
-     off a descendant instead of the whole box. */
-  .example-callout .mock-callout-next{display:none; margin-top:14px;}
-  .example-callout.show .mock-callout-next{display:inline-flex;}
+     off a descendant instead of the whole box.
+     Per Kelly: stays in place at all times (no display toggle, so it
+     never shifts the box's height) — just reads as disabled/dimmed until
+     the mock actually reaches that beat, then lights up. pointer-events
+     does the real work of blocking early clicks (dimming alone is only
+     the visual signal); runGatedSequence doesn't even attach its click
+     listener until the gate is due anyway, so this is belt-and-suspenders
+     for how it *reads*, not the only thing preventing a premature click. */
+  .example-callout .mock-callout-next{
+    margin-top:14px; opacity:.35; pointer-events:none; cursor:default;
+    transition:opacity .2s ease;
+  }
+  .example-callout.show .mock-callout-next{opacity:1; pointer-events:auto; cursor:pointer;}
 
   /* "Why Upload, Not Paste" — the one mock callout left docked to the mock
      itself — restyled as an actual tooltip pointing at the dropzone it's
@@ -876,6 +897,11 @@
   }
   .mock-callout-tooltip .mock-callout-kicker{color:rgba(255,255,255,.55);}
   .mock-callout-tooltip p{color:rgba(255,255,255,.85);}
+  /* base .mock-callout-next is link-blue, tuned for the light cream
+     callouts elsewhere — too muddy against this tooltip's dark fill, so
+     "Got it" goes white here instead for real contrast/prominence */
+  .mock-callout-tooltip .mock-callout-next{color:#fff;}
+  .mock-callout-tooltip .mock-callout-next:hover{color:#fff; text-decoration:underline; text-underline-offset:2px;}
 
   /* "how we got here" pause overlay — a deliberate detour out of the main
      journey (see the go(1)/historySeenGroups JS), not another equal-weight
@@ -7316,6 +7342,21 @@
     const el = document.getElementById('journeyExampleText');
     if (el) el.textContent = JOURNEY_EXAMPLE_TEXT[i];
   }
+  // brief highlight so the callout's content changing actually registers,
+  // rather than reading as if it were static copy the whole time — called
+  // only when the walkthrough advances the text (not from resetIdpProto's
+  // own setJourneyExampleText(0) call, since that's restoring the resting
+  // state before a run even starts, not "changing" anything a viewer has
+  // seen yet). Re-triggerable: removing the class and forcing a reflow
+  // before re-adding it restarts the animation even if it's called again
+  // before the previous flash finished.
+  function flashExampleCallout(){
+    const box = document.getElementById('journeyExampleCallout');
+    if (!box) return;
+    box.classList.remove('flash');
+    void box.offsetWidth;
+    box.classList.add('flash');
+  }
   // positions the "Why Upload, Not Paste" tooltip under the live dropzone it
   // points at — computed fresh each time rather than fixed in CSS, since the
   // live console this sits over can differ in size/position depending on
@@ -7388,7 +7429,7 @@
       // straight to the open modal. Text advances to the second beat here,
       // rather than waiting for the modal to actually open, so it's already
       // reading correctly through the delay steps below.
-      {delay:900,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); setJourneyExampleText(1); }},
+      {delay:900,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); setJourneyExampleText(1); flashExampleCallout(); }},
       // open the real "Configure JWT Profile" side modal — pause on it before
       // saving so the callout can explain what it's for
       {delay:1800, fn: () => clickWithPulse(document.getElementById('jwtConfigureBtn'))},
@@ -7399,7 +7440,7 @@
       // filled in — matches Okta values copied above, ending on the filled
       // state, not mid-modal or bouncing off to some other tab. Text advances
       // to the third (and last — no more Next button after this one) beat.
-      {delay:400,  fn: () => { clickWithPulse(document.getElementById('jwtModalSave')); setJourneyExampleText(2); }},
+      {delay:400,  fn: () => { clickWithPulse(document.getElementById('jwtModalSave')); setJourneyExampleText(2); flashExampleCallout(); }},
       // then open the Upload public keys drawer for context, and position the
       // "why upload, not paste" tooltip under its dropzone — kept off the
       // console UI itself so it reads as commentary, not a real console
