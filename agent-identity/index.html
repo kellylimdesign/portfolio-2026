@@ -829,6 +829,69 @@
   }
   .mock-callout-next:hover{color:#0D5BC7; text-decoration:underline; text-underline-offset:2px;}
 
+  /* reuses .mock-callout-next inside the always-visible "For Example" box
+     (#journeyExampleCallout) instead of one of the mock's own floating
+     banners — this box never hides itself the way a .mock-callout does
+     (it's static left-panel content, on screen for the whole step), so
+     the Next button needs its OWN hidden-until-gated state instead of
+     inheriting visibility from a parent .show toggle the way the mock's
+     callouts do. runGatedSequence still drives it the same way (adds/
+     removes .show on #journeyExampleCallout itself) — just keyed here
+     off a descendant instead of the whole box.
+     Per Kelly: stays in place at all times (no display toggle, so it
+     never shifts the box's height) — just reads as disabled/dimmed until
+     the mock actually reaches that beat, then lights up. pointer-events
+     does the real work of blocking early clicks (dimming alone is only
+     the visual signal); runGatedSequence doesn't even attach its click
+     listener until the gate is due anyway, so this is belt-and-suspenders
+     for how it *reads*, not the only thing preventing a premature click. */
+  .example-callout .mock-callout-next{
+    margin-top:14px; opacity:.35; pointer-events:none; cursor:default;
+    transition:opacity .2s ease;
+  }
+  .example-callout.show .mock-callout-next{opacity:1; pointer-events:auto; cursor:pointer;}
+
+  /* "Why Upload, Not Paste" — the one mock callout left docked to the mock
+     itself — restyled as an actual tooltip pointing at the dropzone it's
+     explaining, not the wide left-edge banner .mock-callout otherwise
+     uses. Stays position:absolute (NOT fixed) against the same .substep
+     containing block the base .mock-callout rule already resolves against
+     (confirmed via offsetParent — .mock-callout sits as .substep's child,
+     a sibling of .step-frame, not nested inside it) — position:fixed
+     looked tempting (viewport-relative, like .guided-row-tooltip) but
+     .substep and .slide both animate via `transform`, and ANY transformed
+     ancestor becomes the containing block for its position:fixed
+     descendants instead of the viewport — so a fixed tooltip was landing
+     relative to whichever of those happened to be mid-transition, nowhere
+     near the dropzone. JS-computed coordinates (see
+     positionUploadTooltip()) are still needed since the live console this
+     points at can be mounted at different sizes, just measured relative
+     to .substep instead of the viewport. bottom:auto overrides the base
+     rule's bottom:16% so top+height determine position without the two
+     fighting each other. */
+  .mock-callout.mock-callout-tooltip{
+    position:absolute; top:0; left:0; bottom:auto; right:auto;
+    width:300px; max-width:300px;
+    background:var(--ink); border:none; border-radius:10px;
+    box-shadow:0 14px 32px rgba(23,22,27,.28);
+    transform:translateY(-6px);
+  }
+  .mock-callout-tooltip.show{transform:translateY(0);}
+  /* arrow above the tooltip, pointing up at the dropzone it's anchored
+     under — mirrors .guided-row-tooltip's arrow (pointing down at a row
+     above it), just flipped since this tooltip sits below its target. */
+  .mock-callout-tooltip::after{
+    content:''; position:absolute; bottom:100%; left:28px;
+    border:7px solid transparent; border-bottom-color:var(--ink);
+  }
+  .mock-callout-tooltip .mock-callout-kicker{color:rgba(255,255,255,.55);}
+  .mock-callout-tooltip p{color:rgba(255,255,255,.85);}
+  /* base .mock-callout-next is link-blue, tuned for the light cream
+     callouts elsewhere — too muddy against this tooltip's dark fill, so
+     "Got it" goes white here instead for real contrast/prominence */
+  .mock-callout-tooltip .mock-callout-next{color:#fff;}
+  .mock-callout-tooltip .mock-callout-next:hover{color:#fff; text-decoration:underline; text-underline-offset:2px;}
+
   /* "how we got here" pause overlay — a deliberate detour out of the main
      journey (see the go(1)/historySeenGroups JS), not another equal-weight
      step, so it takes over the full viewport rather than living inline like
@@ -4700,9 +4763,10 @@
           <div class="substep-callout">
           <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Verify a user is who they say they are</span><span class="substep-item-desc">Most customers already have their own system for managing users. Twilio doesn't need to replace it — we just need a way to trust the identity it hands over.</span></span></button>
         </div>
-          <div class="example-callout">
+          <div class="example-callout" id="journeyExampleCallout">
             <p class="example-kicker">For Example</p>
-            <p class="example-text">Owl Trade already uses Okta to manage their users. All Owl Trade needs is a way to hand that identity off to an agent.</p>
+            <p class="example-text" id="journeyExampleText">Owl Trade already uses Okta to manage their users. An Owl Trade admin goes into Okta to copy identity credentials.</p>
+            <button class="mock-callout-next" type="button">Next</button>
           </div>
         </div>
       </div>
@@ -4710,8 +4774,12 @@
         <button class="step-nav-head"><span class="step-nav-num">2</span><span class="step-nav-title">Customize the consent screen</span></button>
         <div class="step-nav-body">
           <div class="substep-callout">
-          <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Owl Trade controls what the ask looks like, not just when it happens</span><span class="substep-item-desc">The consent screen ships with Twilio's default branding, but Owl Trade can drop in its own logo directly from the console — so approving an agent feels like part of their product, not a hand-off to someone else's.</span></span></button>
+          <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Owl Trade controls what the ask looks like, not just when it happens</span><span class="substep-item-desc">Owl Trade can drop in its own logo to the consent screen from the console UI — so approving an agent feels like part of their product, not a hand-off to someone else's.</span></span></button>
         </div>
+          <div class="example-callout" id="consentExampleCallout">
+            <p class="example-text" id="consentExampleText">The consent screen preview updates live as you type — so you can see exactly what your users will see before you save.</p>
+            <button class="mock-callout-next" type="button">Next</button>
+          </div>
           <button class="history-link" onclick="openHistoryOverlay('consent', false)">See how we got here <span aria-hidden="true">&rarr;</span></button>
         </div>
       </div>
@@ -4721,6 +4789,10 @@
           <div class="substep-callout">
           <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Easily view and manage every agent with access to your product</span><span class="substep-item-desc">No separate tooling needed. Owl Trade can view and adjust what any agent can do directly in the Twilio console, including what permissions an agent is allowed to ask a user for.</span></span></button>
         </div>
+          <div class="example-callout" id="clientsExampleCallout">
+            <p class="example-text" id="clientsExampleText">Every agent or app that's been granted access to Owl Trade lives here — no separate tool needed to see what's connected.</p>
+            <button class="mock-callout-next" type="button">Next</button>
+          </div>
           <button class="history-link" onclick="openHistoryOverlay('agents', false)">See how we got here <span aria-hidden="true">&rarr;</span></button>
         </div>
       </div>
@@ -4800,21 +4872,18 @@
                     <div class="idp-screen idp-screen-embed tw-console-embed" data-app="twilio" id="idpTwilioSlot"></div>
                   </div>
                 </div>
-                <div class="mock-callout" id="oktaToTwilioCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Gather Your Authentication System Credentials</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>Once you've copied the information from your authentication provider, head over to the Twilio Console.</p>
-                </div>
-                <div class="mock-callout" id="jwtModalCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Hand Over To Twilio For Verification</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>This is where those values go — paste what you copied from Okta so Twilio can use it to verify your users' identity.</p>
-                </div>
-                <div class="mock-callout" id="uploadCallout">
+                <!-- the two mid-walkthrough beats ("gather your credentials", "hand
+                     over to Twilio") no longer live here as their own floating
+                     banners — folded into the left panel's "For Example" callout
+                     (#journeyExampleCallout) instead, so the same explanation
+                     doesn't appear in two places on screen at once. "Why Upload,
+                     Not Paste" stays here since it's commentary on this specific
+                     control, not a beat in the connect-the-identity-provider
+                     narrative — restyled as an actual tooltip pointing at the
+                     dropzone (.mock-callout-tooltip) instead of the wide
+                     left-edge banner the deck's other mock-callouts use; see
+                     positionUploadTooltip() for how it's placed. -->
+                <div class="mock-callout mock-callout-tooltip" id="uploadCallout">
                   <div class="mock-callout-head">
                     <p class="mock-callout-kicker">Why Upload, Not Paste</p>
                     <button class="mock-callout-next" type="button">Got it</button>
@@ -4865,13 +4934,6 @@
                     <div class="cgpt-body-page tw-console-embed" id="s7ConsentSlot"></div>
                   </div>
                 </div>
-                <div class="mock-callout" id="consentPreviewCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Watch The Preview Update</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>The consent screen preview updates live as you type — so you can see exactly what your users will see before you save.</p>
-                </div>
               </div>
             </div>
           </div>
@@ -4915,34 +4977,6 @@
                     <!-- live-console mount point — Clients/Identities tabs -->
                     <div class="cgpt-body-page tw-console-embed" id="s7ClientsSlot"></div>
                   </div>
-                </div>
-                <div class="mock-callout" id="clientsListCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">One Place For Every Agent</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>Every agent or app that's been granted access to Owl Trade lives here — no separate tool needed to see what's connected.</p>
-                </div>
-                <div class="mock-callout" id="clientDetailCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Everything About One Agent</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>Name, description, grant types, redirect URLs — everything tied to this agent lives on a single page.</p>
-                </div>
-                <div class="mock-callout" id="identitiesListCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Or Look Up By User</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>The same access can be viewed the other way — by user instead of by agent. Useful when you're troubleshooting one person's access, like restricting or updating what an agent can do if a user's permissions change.</p>
-                </div>
-                <div class="mock-callout" id="identityDetailCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">One User's Access, In Full</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>The Authorized Clients tab shows exactly which agents this user has approved and what each one can currently do — a live picture of their permissions, not a static log.</p>
                 </div>
               </div>
             </div>
@@ -6245,8 +6279,7 @@
     // shows it already revealed instead of hidden. Covers every gated
     // walkthrough callout (step 1's IdP proto, step 3's Clients/Identities
     // proto), not just the one this comment used to name.
-    ['uploadCallout','oktaToTwilioCallout','jwtModalCallout','consentPreviewCallout',
-     'clientsListCallout','clientDetailCallout','identitiesListCallout','identityDetailCallout'
+    ['uploadCallout','journeyExampleCallout','consentExampleCallout','clientsExampleCallout'
     ].forEach(id => { const c = document.getElementById(id); if (c) c.classList.remove('show'); });
   }
 
@@ -6833,15 +6866,24 @@
     if (urlText) urlText.textContent = idpUrls.okta;
     clearIdpFlowAutoplay();
     idpFlowSetState(proto, 'empty');
-    // these callouts live inside the shared live-console's Upload drawer (or
-    // float over this same window), which physically moves around the DOM
-    // (see mountLiveConsole) — look them up globally rather than within
-    // scope, since scope may not contain them wherever the console currently
-    // happens to be mounted
-    ['oktaToTwilioCallout','jwtModalCallout','uploadCallout'].forEach(id => {
+    // uploadCallout lives inside the shared live-console's Upload drawer (or
+    // floats over this same window), which physically moves around the DOM
+    // (see mountLiveConsole) — look it up globally rather than within scope,
+    // since scope may not contain it wherever the console currently happens
+    // to be mounted. journeyExampleCallout lives in the left panel, outside
+    // scope entirely, for the same reason.
+    ['uploadCallout','journeyExampleCallout'].forEach(id => {
       const c = document.getElementById(id);
       if (c) c.classList.remove('show');
     });
+    setJourneyExampleText(0);
+    // clear the one-off "advance to step 2" handler the last beat wires onto
+    // this button (see autoplayIdpProto) — without this, replaying the
+    // sequence from the start and clicking Next at an EARLIER gate would
+    // also fire the stale handler leftover from a previous run's ending,
+    // jumping to step 2 instead of just advancing that gate
+    const exBtn = document.querySelector('#journeyExampleCallout .mock-callout-next');
+    if (exBtn) exBtn.onclick = null;
   }
   function restartIdpProto(){
     const active = slides[idx];
@@ -7071,10 +7113,10 @@
     consentAutoplayTimers.forEach(clearTimeout);
     consentAutoplayTimers = [];
     if (consentAutoplayStop) { consentAutoplayStop(); consentAutoplayStop = null; }
-    const c = document.getElementById('consentPreviewCallout');
+    const c = document.getElementById('consentExampleCallout');
     if (c) c.classList.remove('show');
   }
-  function autoplayConsentFlow(){
+  function autoplayConsentFlow(scope){
     clearConsentAutoplay();
     const root = document.querySelector('.cgpt-body-live');
     const editBtn = document.getElementById('consentEditBtn');
@@ -7108,10 +7150,32 @@
       // friendly name goes first (it's the first field) — preview heading
       // swaps live from the "[App name]" placeholder to "Owl Trade" as it types
       {delay:1300, fn: () => typeInto(nameInput, 'Owl Trade', 70)},
-      {delay:1700, fn: () => typeInto(input, 'https://owltrade.com/logo.png', 40)},
+      // real local asset, not a fake https:// URL — the <img> actually
+      // loads it (see initConsentModal's window.__setConsentIcon, real
+      // <img src> now instead of the old "simulate the fetch" toggle), so
+      // a URL that can't resolve just silently falls back to the default
+      // icon via onerror and the logo never visibly updates. Matches the
+      // same asset path the drawer's own default/fallback already uses
+      // elsewhere (see the 'assets/owltrade-logo.png?v=3' fallback below).
+      {delay:1700, fn: () => typeInto(input, 'assets/owltrade-logo.png?v=3', 40)},
       {delay:1800, fn: () => {}},
-      {callout:'consentPreviewCallout'},
-      {delay:400,  fn: () => clickWithPulse(saveBtn)},
+      {callout:'consentExampleCallout'},
+      // last beat — one Next click both saves AND carries the viewer
+      // forward, rather than requiring a second click on a re-lit button:
+      // per Kelly, that read as "Next just closes the edit" since nothing
+      // visibly follows the save without a second, separate click. Matches
+      // the global next-arrow's own established rule for leaving this step
+      // (see go(dir)'s curStep===2 check): first time through, pause on the
+      // "how we got here" wizard before advancing; historySeenGroups.consent
+      // flips true once it's been shown, so every visit after that just
+      // jumps straight to step 3.
+      {delay:400,  fn: () => {
+        clickWithPulse(saveBtn);
+        setTimeout(() => {
+          if (!historySeenGroups.consent) openHistoryOverlay('consent', true, 3);
+          else selectStepContext(scope, 3);
+        }, 900);
+      }},
     ];
     consentAutoplayStop = runGatedSequence(steps, consentAutoplayTimers);
   }
@@ -7119,11 +7183,32 @@
   // step 3 "Manage agents" — walks a client detail (scroll, edit, scroll,
   // close), back to the list, then an identity's Authorized Clients tab into
   // its own detail modal. All real clicks on the real console.
+  // the four narrative beats (Clients list -> one client's detail ->
+  // Identities list -> one identity's detail), same left-panel pattern as
+  // step 1's #journeyExampleCallout — one callout, rotating text, instead
+  // of four separate floating banners over the mock.
+  const CLIENTS_EXAMPLE_TEXT = [
+    "Every agent or app that's been granted access to Owl Trade lives here — no separate tool needed to see what's connected.",
+    "Name, description, grant types, redirect URLs — everything tied to this agent lives on a single page.",
+    "The same access can be viewed the other way — by user instead of by agent. Useful when you're troubleshooting one person's access, like restricting or updating what an agent can do if a user's permissions change.",
+    "The Authorized Clients tab shows exactly which agents this user has approved and what each one can currently do — a live picture of their permissions, not a static log.",
+  ];
+  function setClientsExampleText(i){
+    const el = document.getElementById('clientsExampleText');
+    if (el) el.textContent = CLIENTS_EXAMPLE_TEXT[i];
+  }
   let clientsAutoplayTimers = [];
   let clientsAutoplayStop = null;
-  const clientsCalloutIds = ['clientsListCallout','clientDetailCallout','identitiesListCallout','identityDetailCallout'];
   function hideClientsCallouts(){
-    clientsCalloutIds.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('show'); });
+    const c = document.getElementById('clientsExampleCallout');
+    if (c) c.classList.remove('show');
+    // clear the one-off "advance past this step" handler the last beat
+    // wires onto this button — same reason as resetIdpProto's equivalent:
+    // without this, replaying from the start and clicking Next at an
+    // earlier gate would also fire the stale handler from a previous run's
+    // ending, skipping straight to step 4 instead of just advancing that gate
+    const exBtn = c && c.querySelector('.mock-callout-next');
+    if (exBtn) exBtn.onclick = null;
   }
   function clearClientsAutoplay(){
     clientsAutoplayTimers.forEach(clearTimeout);
@@ -7131,39 +7216,83 @@
     if (clientsAutoplayStop) { clientsAutoplayStop(); clientsAutoplayStop = null; }
     hideClientsCallouts();
   }
-  function autoplayClientsFlow(){
+  function autoplayClientsFlow(scope){
     clearClientsAutoplay();
     const root = document.querySelector('.cgpt-body-live');
     if (!root) return;
+    setClientsExampleText(0);
     armAutoplayCancelGuard(root, clearClientsAutoplay);
     const click = (sel) => clickWithPulse(root.querySelector(sel));
     const scrollEl = (sel, top) => { const el = root.querySelector(sel) || document.querySelector(sel); if (el) el.scrollTo({top, behavior:'smooth'}); };
     // per Kelly: still too fast even after the first slowdown pass, and with
     // no explanation of *why* each screen matters — so this now pauses on
-    // four screens (Clients list, one client's detail, Identities list, one
-    // identity's detail), waiting for a "Next" click on each callout instead
-    // of guessing a reading time, matching step 1's pattern.
+    // four beats (Clients list, one client's detail, Identities list, one
+    // identity's Authorized Clients tab), waiting for a "Next" click on
+    // each instead of guessing a reading time, matching step 1's pattern.
+    // Gates 2-4 each play a short "here's what this page can do" peek
+    // automatically BEFORE their own Next lights up (open/close the edit
+    // drawer; drill into an identity; open a client's detail modal) —
+    // the peek is part of that beat's own demonstration, not a transition
+    // away from it, so it has to finish before the viewer can even click
+    // past it.
     const steps = [
       {delay:600,  fn: () => {}},
-      {callout:'clientsListCallout'},
-      {delay:400,  fn: () => click('.tw-clients-list .tw-client-link')},
+      // gate 1 — clientsExampleCallout is already showing CLIENTS_EXAMPLE_TEXT[0]
+      // (set above), so no text-setting fn needed before this one
+      {callout:'clientsExampleCallout'},
+      {delay:400,  fn: () => { click('.tw-clients-list .tw-client-link'); setClientsExampleText(1); }},
       {delay:600,  fn: () => {}},
-      {callout:'clientDetailCallout'},
+      // peek: open the edit drawer, scroll through it, close it — all
+      // before gate 2's Next is clickable
       {delay:400,  fn: () => scrollEl('.tw-content', 260)},
       {delay:1800, fn: () => scrollEl('.tw-content', 0)},
       {delay:1600, fn: () => click('#cdEditBtn')},
       {delay:1800, fn: () => scrollEl('#editClientOverlay .tw-drawer-body', 160)},
       {delay:1800, fn: () => scrollEl('#editClientOverlay .tw-drawer-body', 0)},
       {delay:1500, fn: () => click('#editClientClose')},
-      {delay:1600, fn: () => click('#twCrumbCur')},
-      {delay:1600, fn: () => click('.tw-tab[data-tab="identities"]')},
       {delay:500,  fn: () => {}},
-      {callout:'identitiesListCallout'},
-      {delay:400,  fn: () => click('.tw-identities-list .tw-id-link')},
-      {delay:1000, fn: () => {}},
-      {callout:'identityDetailCallout'},
-      {delay:400,  fn: () => click('.tw-idsub-tab[data-idsub="clients"]')},
-      {delay:1700, fn: () => click('#idClientsRows .tw-idc-name')},
+      // gate 2 — Next only becomes active once the peek above has finished
+      {callout:'clientsExampleCallout'},
+      // clicked -> leave the client detail entirely: back to the clients
+      // list, then straight on to the Identities tab
+      {delay:1600, fn: () => click('#twCrumbCur')},
+      // text advances here, not right after gate 2's click — this is the
+      // step that actually switches to the Identities tab, so the callout
+      // shouldn't say "identities" while still on the client detail page
+      {delay:1600, fn: () => { click('.tw-tab[data-tab="identities"]'); setClientsExampleText(2); }},
+      {delay:500,  fn: () => {}},
+      // peek: drill into one identity's own detail page — before gate 3's
+      // Next is clickable, same shape as gate 2's edit-drawer peek
+      {delay:800,  fn: () => click('.tw-identities-list .tw-id-link')},
+      {delay:800,  fn: () => {}},
+      // gate 3
+      {callout:'clientsExampleCallout'},
+      // clicked -> switch that identity's own view to its Authorized
+      // Clients tab and advance the text to describe it
+      {delay:400,  fn: () => { click('.tw-idsub-tab[data-idsub="clients"]'); setClientsExampleText(3); }},
+      {delay:500,  fn: () => {}},
+      // peek: open one authorized client's detail side modal — before
+      // gate 4's Next is clickable
+      {delay:1200, fn: () => click('#idClientsRows .tw-idc-name')},
+      // last beat — Next lights up once the peek above lands, and (same
+      // shape as steps 1/2's own final beat) carries the viewer forward
+      // instead of gating further text: mirrors the global next-arrow's
+      // own established rule for leaving this step (see go(dir)'s
+      // curStep===3 check) — first time through, pause on the "how we got
+      // here" wizard before advancing; historySeenGroups.agents flips true
+      // once it's been shown, so every visit after that jumps straight to
+      // step 4.
+      {delay:900,  fn: () => {
+        const box = document.getElementById('clientsExampleCallout');
+        const btn = box && box.querySelector('.mock-callout-next');
+        if (btn) {
+          box.classList.add('show');
+          btn.onclick = () => {
+            if (!historySeenGroups.agents) openHistoryOverlay('agents', true, 4);
+            else selectStepContext(scope, 4);
+          };
+        }
+      }},
     ];
     clientsAutoplayStop = runGatedSequence(steps, clientsAutoplayTimers);
   }
@@ -7254,6 +7383,41 @@
       clickWithPulse(proto.querySelector('.tw-idsub-tab[data-idsub="identities"]'), 500);
     }, 2200));
   }
+  // the three "For Example" beats for step 1's walkthrough — Okta credentials
+  // -> handed to the Twilio console -> signature keys uploaded — shown one at
+  // a time in #journeyExampleText as the mock advances. Index-matched to the
+  // three gates in autoplayIdpProto's steps below (0 is also the resting
+  // state resetIdpProto restores between runs).
+  const JOURNEY_EXAMPLE_TEXT = [
+    "Owl Trade already uses Okta to manage their users. An Owl Trade admin goes into Okta to copy identity credentials.",
+    "The Owl Trade admin copies the values from Okta to the Twilio console.",
+    "The admin lastly uploads signature keys so Twilio can verify the identity credentials from Okta.",
+  ];
+  function setJourneyExampleText(i){
+    const el = document.getElementById('journeyExampleText');
+    if (el) el.textContent = JOURNEY_EXAMPLE_TEXT[i];
+  }
+  // positions the "Why Upload, Not Paste" tooltip under the live dropzone it
+  // points at — computed fresh each time rather than fixed in CSS, since the
+  // live console this sits over can differ in size/position depending on
+  // where it's currently mounted (see mountLiveConsole). #uploadCallout
+  // sits as a sibling of .step-frame (both children of .substep), NOT
+  // nested inside it, so .substep — confirmed via offsetParent — is its
+  // real position:absolute containing block (see the .mock-callout-tooltip
+  // CSS comment for why this isn't position:fixed against the viewport
+  // instead), not the raw viewport coordinates getBoundingClientRect()
+  // alone would suggest.
+  function positionUploadTooltip(){
+    const dz = document.getElementById('uploadKeysDropzone');
+    const tip = document.getElementById('uploadCallout');
+    if (!dz || !tip) return;
+    const frame = tip.closest('.substep');
+    if (!frame) return;
+    const dzRect = dz.getBoundingClientRect();
+    const frameRect = frame.getBoundingClientRect();
+    tip.style.left = (dzRect.left - frameRect.left) + 'px';
+    tip.style.top = (dzRect.bottom - frameRect.top + 18) + 'px';
+  }
   function autoplayIdpProto(scope){
     clearIdpAutoplay();
     const proto = scope.querySelector('#idpProto');
@@ -7270,9 +7434,14 @@
     // per Kelly: this whole "How We Got Here" walkthrough moved too fast to
     // follow on a first pass, and even slowed down it just auto-continued on
     // a timer with no explanation of *why* each screen matters. Now it pauses
-    // on three callouts (why head to Twilio, what the JWT modal is for, why
+    // on three beats (why head to Twilio, what the JWT modal is for, why
     // upload-not-paste) and waits for a "Next" click on each instead of
-    // guessing a reading time.
+    // guessing a reading time. The first two live in the left panel's "For
+    // Example" callout (one touchpoint with the mock's own state, instead of
+    // that same explanation appearing a second time in a floating banner);
+    // only the third — commentary on the upload control itself, not a beat
+    // in the connect-the-identity-provider narrative — stays on the mock,
+    // as a tooltip pointing at the dropzone.
     // copy buttons now show the pulse, then wait a beat before actually
     // flipping to "copied" — same "cursor lands, then screen reacts" gap
     // clickWithPulse gives every other scripted click, which copyBtns[0]
@@ -7289,29 +7458,48 @@
       {delay:1200, fn: () => doCopy(copyBtns[1])},
       {delay:1200, fn: () => { doCopy(copyBtns[2]); twilioTab.classList.add('pulse'); }},
       {delay:600,  fn: () => {}},
-      {callout:'oktaToTwilioCallout'},
+      // gate 1 — journeyExampleCallout is already showing JOURNEY_EXAMPLE_TEXT[0]
+      // (resetIdpProto's default), so no text-setting fn needed before this one
+      {callout:'journeyExampleCallout'},
       // switch to Twilio Console and mount the live prototype (Configurations
       // tab) — left live/interactive afterward rather than auto-resetting,
       // since it's the real console now, not a timed screenshot demo. Slowed
       // (400->900, 1200->1800) so the tab switch itself has time to register
       // before the Configure click fires — it was reading as one instant jump
-      // straight to the open modal.
-      {delay:900,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); }},
+      // straight to the open modal. Text advances to the second beat here,
+      // rather than waiting for the modal to actually open, so it's already
+      // reading correctly through the delay steps below.
+      {delay:900,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); setJourneyExampleText(1); }},
       // open the real "Configure JWT Profile" side modal — pause on it before
       // saving so the callout can explain what it's for
       {delay:1800, fn: () => clickWithPulse(document.getElementById('jwtConfigureBtn'))},
       {delay:900,  fn: () => {}},
-      {callout:'jwtModalCallout'},
+      // gate 2 — same callout, now on the second beat
+      {callout:'journeyExampleCallout'},
       // save so the JWT Configuration section on the page behind it appears
       // filled in — matches Okta values copied above, ending on the filled
-      // state, not mid-modal or bouncing off to some other tab
-      {delay:400,  fn: () => clickWithPulse(document.getElementById('jwtModalSave'))},
-      // then open the Upload public keys drawer for context, and slide the
-      // "why upload, not paste" callout in from outside the browser-chrome
-      // window — kept off the UI itself so it reads as commentary, not a
-      // real console element
+      // state, not mid-modal or bouncing off to some other tab. Text advances
+      // to the third (and last) beat.
+      {delay:400,  fn: () => { clickWithPulse(document.getElementById('jwtModalSave')); setJourneyExampleText(2); }},
+      // then open the Upload public keys drawer for context, and position the
+      // "why upload, not paste" tooltip under its dropzone — kept off the
+      // console UI itself so it reads as commentary, not a real console
+      // element
       {delay:1500, fn: () => clickWithPulse(document.getElementById('uploadKeysBtn'))},
-      {delay:900,  fn: () => {}},
+      // this is the last beat — nothing left to gate on the left panel's own
+      // Next after this, so instead of a third runGatedSequence callout
+      // stop, its Next lights up here and just carries the viewer forward
+      // into step 2 once clicked (same "arrive here -> Next moves you on"
+      // shape as steps 2/3's own final beat) — .show only controls the
+      // button's enabled look (see .example-callout.show .mock-callout-next),
+      // it isn't wired through runGatedSequence here since there's no
+      // further text/gate for it to advance
+      {delay:900,  fn: () => {
+        positionUploadTooltip();
+        const box = document.getElementById('journeyExampleCallout');
+        const btn = box && box.querySelector('.mock-callout-next');
+        if (btn) { box.classList.add('show'); btn.onclick = () => selectStepContext(scope, 2); }
+      }},
       {callout:'uploadCallout'},
     ];
     idpAutoplayStop = runGatedSequence(steps, idpAutoplayTimers);
@@ -8229,8 +8417,20 @@
         // real onSave handler (wired in initConsentModal, unrelated to this
         // IIFE) writes consentFriendlyNameVal/consentLogoUrlVal on the same
         // click — a tick's delay just guarantees this reads it after, not
-        // racing which listener runs first
-        if (saveBtn) saveBtn.addEventListener('click', () => setTimeout(enterStep2a, 350));
+        // racing which listener runs first.
+        // Armed once, globally — but #consentModalSave is the one shared
+        // live-console singleton's Save button, also driven by Customer
+        // Journey's own step 2 walkthrough (mounted in s7ConsentSlot, not
+        // here). Confirmed bug: once this had fired here even once, EVERY
+        // later Save click anywhere — including Customer Journey's —
+        // advanced the guided task to enterStep2a(), which calls
+        // showGuidedBody('chat') and hides .cgpt-body-live out from under
+        // whoever actually owns it right now. Only advance if the guided
+        // task's own mount (liveWindowHome, set above) still owns the
+        // console at click time.
+        if (saveBtn) saveBtn.addEventListener('click', () => {
+          if (document.querySelector('.cgpt-body-live').parentElement === liveWindowHome) setTimeout(enterStep2a, 350);
+        });
         if (editBtn) editBtn.addEventListener('click', () => editBtn.classList.remove('guided-target'));
       }
     }
