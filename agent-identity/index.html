@@ -7115,13 +7115,6 @@
     if (consentAutoplayStop) { consentAutoplayStop(); consentAutoplayStop = null; }
     const c = document.getElementById('consentExampleCallout');
     if (c) c.classList.remove('show');
-    // clear the one-off "advance past this step" handler the last beat
-    // wires onto this button — same reason as resetIdpProto's equivalent:
-    // without this, replaying from the start and clicking Next at the
-    // (only) gate would also fire the stale handler from a previous run's
-    // ending, skipping the Save click and jumping straight past the step
-    const exBtn = c && c.querySelector('.mock-callout-next');
-    if (exBtn) exBtn.onclick = null;
   }
   function autoplayConsentFlow(scope){
     clearConsentAutoplay();
@@ -7167,24 +7160,20 @@
       {delay:1700, fn: () => typeInto(input, 'assets/owltrade-logo.png?v=3', 40)},
       {delay:1800, fn: () => {}},
       {callout:'consentExampleCallout'},
-      // last beat — same shape as step 1's final "Next lights back up and
-      // carries you forward" pattern, matching the global next-arrow's own
-      // established rule for leaving this step (see go(dir)'s curStep===2
-      // check): first time through, pause on the "how we got here" wizard
-      // before advancing; historySeenGroups.consent flips true once it's
-      // been shown, so every visit after that just jumps straight to step 3
+      // last beat — one Next click both saves AND carries the viewer
+      // forward, rather than requiring a second click on a re-lit button:
+      // per Kelly, that read as "Next just closes the edit" since nothing
+      // visibly follows the save without a second, separate click. Matches
+      // the global next-arrow's own established rule for leaving this step
+      // (see go(dir)'s curStep===2 check): first time through, pause on the
+      // "how we got here" wizard before advancing; historySeenGroups.consent
+      // flips true once it's been shown, so every visit after that just
+      // jumps straight to step 3.
       {delay:400,  fn: () => {
         clickWithPulse(saveBtn);
         setTimeout(() => {
-          const box = document.getElementById('consentExampleCallout');
-          const btn = box && box.querySelector('.mock-callout-next');
-          if (btn) {
-            box.classList.add('show');
-            btn.onclick = () => {
-              if (!historySeenGroups.consent) openHistoryOverlay('consent', true, 3);
-              else selectStepContext(scope, 3);
-            };
-          }
+          if (!historySeenGroups.consent) openHistoryOverlay('consent', true, 3);
+          else selectStepContext(scope, 3);
         }, 900);
       }},
     ];
@@ -7213,6 +7202,13 @@
   function hideClientsCallouts(){
     const c = document.getElementById('clientsExampleCallout');
     if (c) c.classList.remove('show');
+    // clear the one-off "advance past this step" handler the last beat
+    // wires onto this button — same reason as resetIdpProto's equivalent:
+    // without this, replaying from the start and clicking Next at an
+    // earlier gate would also fire the stale handler from a previous run's
+    // ending, skipping straight to step 4 instead of just advancing that gate
+    const exBtn = c && c.querySelector('.mock-callout-next');
+    if (exBtn) exBtn.onclick = null;
   }
   function clearClientsAutoplay(){
     clientsAutoplayTimers.forEach(clearTimeout);
@@ -7220,7 +7216,7 @@
     if (clientsAutoplayStop) { clientsAutoplayStop(); clientsAutoplayStop = null; }
     hideClientsCallouts();
   }
-  function autoplayClientsFlow(){
+  function autoplayClientsFlow(scope){
     clearClientsAutoplay();
     const root = document.querySelector('.cgpt-body-live');
     if (!root) return;
@@ -7230,9 +7226,15 @@
     const scrollEl = (sel, top) => { const el = root.querySelector(sel) || document.querySelector(sel); if (el) el.scrollTo({top, behavior:'smooth'}); };
     // per Kelly: still too fast even after the first slowdown pass, and with
     // no explanation of *why* each screen matters — so this now pauses on
-    // four screens (Clients list, one client's detail, Identities list, one
-    // identity's detail), waiting for a "Next" click on each beat instead
-    // of guessing a reading time, matching step 1's pattern.
+    // four beats (Clients list, one client's detail, Identities list, one
+    // identity's Authorized Clients tab), waiting for a "Next" click on
+    // each instead of guessing a reading time, matching step 1's pattern.
+    // Gates 2-4 each play a short "here's what this page can do" peek
+    // automatically BEFORE their own Next lights up (open/close the edit
+    // drawer; drill into an identity; open a client's detail modal) —
+    // the peek is part of that beat's own demonstration, not a transition
+    // away from it, so it has to finish before the viewer can even click
+    // past it.
     const steps = [
       {delay:600,  fn: () => {}},
       // gate 1 — clientsExampleCallout is already showing CLIENTS_EXAMPLE_TEXT[0]
@@ -7240,28 +7242,57 @@
       {callout:'clientsExampleCallout'},
       {delay:400,  fn: () => { click('.tw-clients-list .tw-client-link'); setClientsExampleText(1); }},
       {delay:600,  fn: () => {}},
-      // gate 2
-      {callout:'clientsExampleCallout'},
+      // peek: open the edit drawer, scroll through it, close it — all
+      // before gate 2's Next is clickable
       {delay:400,  fn: () => scrollEl('.tw-content', 260)},
       {delay:1800, fn: () => scrollEl('.tw-content', 0)},
       {delay:1600, fn: () => click('#cdEditBtn')},
       {delay:1800, fn: () => scrollEl('#editClientOverlay .tw-drawer-body', 160)},
       {delay:1800, fn: () => scrollEl('#editClientOverlay .tw-drawer-body', 0)},
       {delay:1500, fn: () => click('#editClientClose')},
+      {delay:500,  fn: () => {}},
+      // gate 2 — Next only becomes active once the peek above has finished
+      {callout:'clientsExampleCallout'},
+      // clicked -> leave the client detail entirely: back to the clients
+      // list, then straight on to the Identities tab
       {delay:1600, fn: () => click('#twCrumbCur')},
       // text advances here, not right after gate 2's click — this is the
       // step that actually switches to the Identities tab, so the callout
       // shouldn't say "identities" while still on the client detail page
       {delay:1600, fn: () => { click('.tw-tab[data-tab="identities"]'); setClientsExampleText(2); }},
       {delay:500,  fn: () => {}},
+      // peek: drill into one identity's own detail page — before gate 3's
+      // Next is clickable, same shape as gate 2's edit-drawer peek
+      {delay:800,  fn: () => click('.tw-identities-list .tw-id-link')},
+      {delay:800,  fn: () => {}},
       // gate 3
       {callout:'clientsExampleCallout'},
-      {delay:400,  fn: () => { click('.tw-identities-list .tw-id-link'); setClientsExampleText(3); }},
-      {delay:1000, fn: () => {}},
-      // gate 4
-      {callout:'clientsExampleCallout'},
-      {delay:400,  fn: () => click('.tw-idsub-tab[data-idsub="clients"]')},
-      {delay:1700, fn: () => click('#idClientsRows .tw-idc-name')},
+      // clicked -> switch that identity's own view to its Authorized
+      // Clients tab and advance the text to describe it
+      {delay:400,  fn: () => { click('.tw-idsub-tab[data-idsub="clients"]'); setClientsExampleText(3); }},
+      {delay:500,  fn: () => {}},
+      // peek: open one authorized client's detail side modal — before
+      // gate 4's Next is clickable
+      {delay:1200, fn: () => click('#idClientsRows .tw-idc-name')},
+      // last beat — Next lights up once the peek above lands, and (same
+      // shape as steps 1/2's own final beat) carries the viewer forward
+      // instead of gating further text: mirrors the global next-arrow's
+      // own established rule for leaving this step (see go(dir)'s
+      // curStep===3 check) — first time through, pause on the "how we got
+      // here" wizard before advancing; historySeenGroups.agents flips true
+      // once it's been shown, so every visit after that jumps straight to
+      // step 4.
+      {delay:900,  fn: () => {
+        const box = document.getElementById('clientsExampleCallout');
+        const btn = box && box.querySelector('.mock-callout-next');
+        if (btn) {
+          box.classList.add('show');
+          btn.onclick = () => {
+            if (!historySeenGroups.agents) openHistoryOverlay('agents', true, 4);
+            else selectStepContext(scope, 4);
+          };
+        }
+      }},
     ];
     clientsAutoplayStop = runGatedSequence(steps, clientsAutoplayTimers);
   }
