@@ -4764,6 +4764,7 @@
           <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Verify a user is who they say they are</span><span class="substep-item-desc">Most customers already have their own system for managing users. Twilio doesn't need to replace it — we just need a way to trust the identity it hands over.</span></span></button>
         </div>
           <div class="example-callout" id="journeyExampleCallout">
+            <p class="example-kicker">For Example</p>
             <p class="example-text" id="journeyExampleText">Owl Trade already uses Okta to manage their users. An Owl Trade admin goes into Okta to copy identity credentials.</p>
             <button class="mock-callout-next" type="button">Next</button>
           </div>
@@ -4773,7 +4774,7 @@
         <button class="step-nav-head"><span class="step-nav-num">2</span><span class="step-nav-title">Customize the consent screen</span></button>
         <div class="step-nav-body">
           <div class="substep-callout">
-          <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Owl Trade controls what the ask looks like, not just when it happens</span><span class="substep-item-desc">The consent screen ships with Twilio's default branding, but Owl Trade can drop in its own logo directly from the console — so approving an agent feels like part of their product, not a hand-off to someone else's.</span></span></button>
+          <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Owl Trade controls what the ask looks like, not just when it happens</span><span class="substep-item-desc">Owl Trade can drop in its own logo to the consent screen from the console UI — so approving an agent feels like part of their product, not a hand-off to someone else's.</span></span></button>
         </div>
           <div class="example-callout" id="consentExampleCallout">
             <p class="example-text" id="consentExampleText">The consent screen preview updates live as you type — so you can see exactly what your users will see before you save.</p>
@@ -6876,6 +6877,13 @@
       if (c) c.classList.remove('show');
     });
     setJourneyExampleText(0);
+    // clear the one-off "advance to step 2" handler the last beat wires onto
+    // this button (see autoplayIdpProto) — without this, replaying the
+    // sequence from the start and clicking Next at an EARLIER gate would
+    // also fire the stale handler leftover from a previous run's ending,
+    // jumping to step 2 instead of just advancing that gate
+    const exBtn = document.querySelector('#journeyExampleCallout .mock-callout-next');
+    if (exBtn) exBtn.onclick = null;
   }
   function restartIdpProto(){
     const active = slides[idx];
@@ -7107,8 +7115,15 @@
     if (consentAutoplayStop) { consentAutoplayStop(); consentAutoplayStop = null; }
     const c = document.getElementById('consentExampleCallout');
     if (c) c.classList.remove('show');
+    // clear the one-off "advance past this step" handler the last beat
+    // wires onto this button — same reason as resetIdpProto's equivalent:
+    // without this, replaying from the start and clicking Next at the
+    // (only) gate would also fire the stale handler from a previous run's
+    // ending, skipping the Save click and jumping straight past the step
+    const exBtn = c && c.querySelector('.mock-callout-next');
+    if (exBtn) exBtn.onclick = null;
   }
-  function autoplayConsentFlow(){
+  function autoplayConsentFlow(scope){
     clearConsentAutoplay();
     const root = document.querySelector('.cgpt-body-live');
     const editBtn = document.getElementById('consentEditBtn');
@@ -7142,10 +7157,36 @@
       // friendly name goes first (it's the first field) — preview heading
       // swaps live from the "[App name]" placeholder to "Owl Trade" as it types
       {delay:1300, fn: () => typeInto(nameInput, 'Owl Trade', 70)},
-      {delay:1700, fn: () => typeInto(input, 'https://owltrade.com/logo.png', 40)},
+      // real local asset, not a fake https:// URL — the <img> actually
+      // loads it (see initConsentModal's window.__setConsentIcon, real
+      // <img src> now instead of the old "simulate the fetch" toggle), so
+      // a URL that can't resolve just silently falls back to the default
+      // icon via onerror and the logo never visibly updates. Matches the
+      // same asset path the drawer's own default/fallback already uses
+      // elsewhere (see the 'assets/owltrade-logo.png?v=3' fallback below).
+      {delay:1700, fn: () => typeInto(input, 'assets/owltrade-logo.png?v=3', 40)},
       {delay:1800, fn: () => {}},
       {callout:'consentExampleCallout'},
-      {delay:400,  fn: () => clickWithPulse(saveBtn)},
+      // last beat — same shape as step 1's final "Next lights back up and
+      // carries you forward" pattern, matching the global next-arrow's own
+      // established rule for leaving this step (see go(dir)'s curStep===2
+      // check): first time through, pause on the "how we got here" wizard
+      // before advancing; historySeenGroups.consent flips true once it's
+      // been shown, so every visit after that just jumps straight to step 3
+      {delay:400,  fn: () => {
+        clickWithPulse(saveBtn);
+        setTimeout(() => {
+          const box = document.getElementById('consentExampleCallout');
+          const btn = box && box.querySelector('.mock-callout-next');
+          if (btn) {
+            box.classList.add('show');
+            btn.onclick = () => {
+              if (!historySeenGroups.consent) openHistoryOverlay('consent', true, 3);
+              else selectStepContext(scope, 3);
+            };
+          }
+        }, 900);
+      }},
     ];
     consentAutoplayStop = runGatedSequence(steps, consentAutoplayTimers);
   }
@@ -7407,14 +7448,27 @@
       // save so the JWT Configuration section on the page behind it appears
       // filled in — matches Okta values copied above, ending on the filled
       // state, not mid-modal or bouncing off to some other tab. Text advances
-      // to the third (and last — no more Next button after this one) beat.
+      // to the third (and last) beat.
       {delay:400,  fn: () => { clickWithPulse(document.getElementById('jwtModalSave')); setJourneyExampleText(2); }},
       // then open the Upload public keys drawer for context, and position the
       // "why upload, not paste" tooltip under its dropzone — kept off the
       // console UI itself so it reads as commentary, not a real console
       // element
       {delay:1500, fn: () => clickWithPulse(document.getElementById('uploadKeysBtn'))},
-      {delay:900,  fn: () => positionUploadTooltip()},
+      // this is the last beat — nothing left to gate on the left panel's own
+      // Next after this, so instead of a third runGatedSequence callout
+      // stop, its Next lights up here and just carries the viewer forward
+      // into step 2 once clicked (same "arrive here -> Next moves you on"
+      // shape as steps 2/3's own final beat) — .show only controls the
+      // button's enabled look (see .example-callout.show .mock-callout-next),
+      // it isn't wired through runGatedSequence here since there's no
+      // further text/gate for it to advance
+      {delay:900,  fn: () => {
+        positionUploadTooltip();
+        const box = document.getElementById('journeyExampleCallout');
+        const btn = box && box.querySelector('.mock-callout-next');
+        if (btn) { box.classList.add('show'); btn.onclick = () => selectStepContext(scope, 2); }
+      }},
       {callout:'uploadCallout'},
     ];
     idpAutoplayStop = runGatedSequence(steps, idpAutoplayTimers);
@@ -8332,8 +8386,20 @@
         // real onSave handler (wired in initConsentModal, unrelated to this
         // IIFE) writes consentFriendlyNameVal/consentLogoUrlVal on the same
         // click — a tick's delay just guarantees this reads it after, not
-        // racing which listener runs first
-        if (saveBtn) saveBtn.addEventListener('click', () => setTimeout(enterStep2a, 350));
+        // racing which listener runs first.
+        // Armed once, globally — but #consentModalSave is the one shared
+        // live-console singleton's Save button, also driven by Customer
+        // Journey's own step 2 walkthrough (mounted in s7ConsentSlot, not
+        // here). Confirmed bug: once this had fired here even once, EVERY
+        // later Save click anywhere — including Customer Journey's —
+        // advanced the guided task to enterStep2a(), which calls
+        // showGuidedBody('chat') and hides .cgpt-body-live out from under
+        // whoever actually owns it right now. Only advance if the guided
+        // task's own mount (liveWindowHome, set above) still owns the
+        // console at click time.
+        if (saveBtn) saveBtn.addEventListener('click', () => {
+          if (document.querySelector('.cgpt-body-live').parentElement === liveWindowHome) setTimeout(enterStep2a, 350);
+        });
         if (editBtn) editBtn.addEventListener('click', () => editBtn.classList.remove('guided-target'));
       }
     }
