@@ -617,17 +617,6 @@
   }
   .example-text{font-family:var(--sans); font-size:15px; line-height:1.6; color:var(--ink); margin:0;}
   .example-callout .example-text{color:var(--ink-70);}
-  /* one-shot highlight each time #journeyExampleText's content actually
-     changes (see flashExampleCallout() in JS, triggered from
-     setJourneyExampleText) — a brief neutral ring + background lift
-     rather than introducing a new accent color, so it reads as "this box
-     just updated" and settles back to the deck's normal flat-grey fill */
-  @keyframes exampleCalloutFlash{
-    0%{box-shadow:0 0 0 0 rgba(23,22,27,0); background:rgba(23,22,27,.035); border-color:var(--line); transform:scale(1);}
-    25%{box-shadow:0 0 0 6px rgba(23,22,27,.14); background:rgba(23,22,27,.11); border-color:rgba(23,22,27,.4); transform:scale(1.012);}
-    100%{box-shadow:0 0 0 0 rgba(23,22,27,0); background:rgba(23,22,27,.035); border-color:var(--line); transform:scale(1);}
-  }
-  .example-callout.flash{animation:exampleCalloutFlash 1s ease;}
 
   /* "The Friction" slide — same flat light-grey/hairline fill as
      .example-callout (reused, not reinvented), but as a scannable card grid
@@ -4775,7 +4764,6 @@
           <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Verify a user is who they say they are</span><span class="substep-item-desc">Most customers already have their own system for managing users. Twilio doesn't need to replace it — we just need a way to trust the identity it hands over.</span></span></button>
         </div>
           <div class="example-callout" id="journeyExampleCallout">
-            <p class="example-kicker">For Example</p>
             <p class="example-text" id="journeyExampleText">Owl Trade already uses Okta to manage their users. An Owl Trade admin goes into Okta to copy identity credentials.</p>
             <button class="mock-callout-next" type="button">Next</button>
           </div>
@@ -4787,6 +4775,10 @@
           <div class="substep-callout">
           <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Owl Trade controls what the ask looks like, not just when it happens</span><span class="substep-item-desc">The consent screen ships with Twilio's default branding, but Owl Trade can drop in its own logo directly from the console — so approving an agent feels like part of their product, not a hand-off to someone else's.</span></span></button>
         </div>
+          <div class="example-callout" id="consentExampleCallout">
+            <p class="example-text" id="consentExampleText">The consent screen preview updates live as you type — so you can see exactly what your users will see before you save.</p>
+            <button class="mock-callout-next" type="button">Next</button>
+          </div>
           <button class="history-link" onclick="openHistoryOverlay('consent', false)">See how we got here <span aria-hidden="true">&rarr;</span></button>
         </div>
       </div>
@@ -4796,6 +4788,10 @@
           <div class="substep-callout">
           <button class="substep-item active" data-substep="1"><span class="substep-item-marker"></span><span class="substep-item-body"><span class="substep-item-title">Easily view and manage every agent with access to your product</span><span class="substep-item-desc">No separate tooling needed. Owl Trade can view and adjust what any agent can do directly in the Twilio console, including what permissions an agent is allowed to ask a user for.</span></span></button>
         </div>
+          <div class="example-callout" id="clientsExampleCallout">
+            <p class="example-text" id="clientsExampleText">Every agent or app that's been granted access to Owl Trade lives here — no separate tool needed to see what's connected.</p>
+            <button class="mock-callout-next" type="button">Next</button>
+          </div>
           <button class="history-link" onclick="openHistoryOverlay('agents', false)">See how we got here <span aria-hidden="true">&rarr;</span></button>
         </div>
       </div>
@@ -4937,13 +4933,6 @@
                     <div class="cgpt-body-page tw-console-embed" id="s7ConsentSlot"></div>
                   </div>
                 </div>
-                <div class="mock-callout" id="consentPreviewCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Watch The Preview Update</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>The consent screen preview updates live as you type — so you can see exactly what your users will see before you save.</p>
-                </div>
               </div>
             </div>
           </div>
@@ -4987,34 +4976,6 @@
                     <!-- live-console mount point — Clients/Identities tabs -->
                     <div class="cgpt-body-page tw-console-embed" id="s7ClientsSlot"></div>
                   </div>
-                </div>
-                <div class="mock-callout" id="clientsListCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">One Place For Every Agent</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>Every agent or app that's been granted access to Owl Trade lives here — no separate tool needed to see what's connected.</p>
-                </div>
-                <div class="mock-callout" id="clientDetailCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Everything About One Agent</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>Name, description, grant types, redirect URLs — everything tied to this agent lives on a single page.</p>
-                </div>
-                <div class="mock-callout" id="identitiesListCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">Or Look Up By User</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>The same access can be viewed the other way — by user instead of by agent. Useful when you're troubleshooting one person's access, like restricting or updating what an agent can do if a user's permissions change.</p>
-                </div>
-                <div class="mock-callout" id="identityDetailCallout">
-                  <div class="mock-callout-head">
-                    <p class="mock-callout-kicker">One User's Access, In Full</p>
-                    <button class="mock-callout-next" type="button">Next</button>
-                  </div>
-                  <p>The Authorized Clients tab shows exactly which agents this user has approved and what each one can currently do — a live picture of their permissions, not a static log.</p>
                 </div>
               </div>
             </div>
@@ -6317,8 +6278,7 @@
     // shows it already revealed instead of hidden. Covers every gated
     // walkthrough callout (step 1's IdP proto, step 3's Clients/Identities
     // proto), not just the one this comment used to name.
-    ['uploadCallout','journeyExampleCallout','consentPreviewCallout',
-     'clientsListCallout','clientDetailCallout','identitiesListCallout','identityDetailCallout'
+    ['uploadCallout','journeyExampleCallout','consentExampleCallout','clientsExampleCallout'
     ].forEach(id => { const c = document.getElementById(id); if (c) c.classList.remove('show'); });
   }
 
@@ -7145,7 +7105,7 @@
     consentAutoplayTimers.forEach(clearTimeout);
     consentAutoplayTimers = [];
     if (consentAutoplayStop) { consentAutoplayStop(); consentAutoplayStop = null; }
-    const c = document.getElementById('consentPreviewCallout');
+    const c = document.getElementById('consentExampleCallout');
     if (c) c.classList.remove('show');
   }
   function autoplayConsentFlow(){
@@ -7184,7 +7144,7 @@
       {delay:1300, fn: () => typeInto(nameInput, 'Owl Trade', 70)},
       {delay:1700, fn: () => typeInto(input, 'https://owltrade.com/logo.png', 40)},
       {delay:1800, fn: () => {}},
-      {callout:'consentPreviewCallout'},
+      {callout:'consentExampleCallout'},
       {delay:400,  fn: () => clickWithPulse(saveBtn)},
     ];
     consentAutoplayStop = runGatedSequence(steps, consentAutoplayTimers);
@@ -7193,11 +7153,25 @@
   // step 3 "Manage agents" — walks a client detail (scroll, edit, scroll,
   // close), back to the list, then an identity's Authorized Clients tab into
   // its own detail modal. All real clicks on the real console.
+  // the four narrative beats (Clients list -> one client's detail ->
+  // Identities list -> one identity's detail), same left-panel pattern as
+  // step 1's #journeyExampleCallout — one callout, rotating text, instead
+  // of four separate floating banners over the mock.
+  const CLIENTS_EXAMPLE_TEXT = [
+    "Every agent or app that's been granted access to Owl Trade lives here — no separate tool needed to see what's connected.",
+    "Name, description, grant types, redirect URLs — everything tied to this agent lives on a single page.",
+    "The same access can be viewed the other way — by user instead of by agent. Useful when you're troubleshooting one person's access, like restricting or updating what an agent can do if a user's permissions change.",
+    "The Authorized Clients tab shows exactly which agents this user has approved and what each one can currently do — a live picture of their permissions, not a static log.",
+  ];
+  function setClientsExampleText(i){
+    const el = document.getElementById('clientsExampleText');
+    if (el) el.textContent = CLIENTS_EXAMPLE_TEXT[i];
+  }
   let clientsAutoplayTimers = [];
   let clientsAutoplayStop = null;
-  const clientsCalloutIds = ['clientsListCallout','clientDetailCallout','identitiesListCallout','identityDetailCallout'];
   function hideClientsCallouts(){
-    clientsCalloutIds.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('show'); });
+    const c = document.getElementById('clientsExampleCallout');
+    if (c) c.classList.remove('show');
   }
   function clearClientsAutoplay(){
     clientsAutoplayTimers.forEach(clearTimeout);
@@ -7209,20 +7183,24 @@
     clearClientsAutoplay();
     const root = document.querySelector('.cgpt-body-live');
     if (!root) return;
+    setClientsExampleText(0);
     armAutoplayCancelGuard(root, clearClientsAutoplay);
     const click = (sel) => clickWithPulse(root.querySelector(sel));
     const scrollEl = (sel, top) => { const el = root.querySelector(sel) || document.querySelector(sel); if (el) el.scrollTo({top, behavior:'smooth'}); };
     // per Kelly: still too fast even after the first slowdown pass, and with
     // no explanation of *why* each screen matters — so this now pauses on
     // four screens (Clients list, one client's detail, Identities list, one
-    // identity's detail), waiting for a "Next" click on each callout instead
+    // identity's detail), waiting for a "Next" click on each beat instead
     // of guessing a reading time, matching step 1's pattern.
     const steps = [
       {delay:600,  fn: () => {}},
-      {callout:'clientsListCallout'},
-      {delay:400,  fn: () => click('.tw-clients-list .tw-client-link')},
+      // gate 1 — clientsExampleCallout is already showing CLIENTS_EXAMPLE_TEXT[0]
+      // (set above), so no text-setting fn needed before this one
+      {callout:'clientsExampleCallout'},
+      {delay:400,  fn: () => { click('.tw-clients-list .tw-client-link'); setClientsExampleText(1); }},
       {delay:600,  fn: () => {}},
-      {callout:'clientDetailCallout'},
+      // gate 2
+      {callout:'clientsExampleCallout'},
       {delay:400,  fn: () => scrollEl('.tw-content', 260)},
       {delay:1800, fn: () => scrollEl('.tw-content', 0)},
       {delay:1600, fn: () => click('#cdEditBtn')},
@@ -7230,12 +7208,17 @@
       {delay:1800, fn: () => scrollEl('#editClientOverlay .tw-drawer-body', 0)},
       {delay:1500, fn: () => click('#editClientClose')},
       {delay:1600, fn: () => click('#twCrumbCur')},
-      {delay:1600, fn: () => click('.tw-tab[data-tab="identities"]')},
+      // text advances here, not right after gate 2's click — this is the
+      // step that actually switches to the Identities tab, so the callout
+      // shouldn't say "identities" while still on the client detail page
+      {delay:1600, fn: () => { click('.tw-tab[data-tab="identities"]'); setClientsExampleText(2); }},
       {delay:500,  fn: () => {}},
-      {callout:'identitiesListCallout'},
-      {delay:400,  fn: () => click('.tw-identities-list .tw-id-link')},
+      // gate 3
+      {callout:'clientsExampleCallout'},
+      {delay:400,  fn: () => { click('.tw-identities-list .tw-id-link'); setClientsExampleText(3); }},
       {delay:1000, fn: () => {}},
-      {callout:'identityDetailCallout'},
+      // gate 4
+      {callout:'clientsExampleCallout'},
       {delay:400,  fn: () => click('.tw-idsub-tab[data-idsub="clients"]')},
       {delay:1700, fn: () => click('#idClientsRows .tw-idc-name')},
     ];
@@ -7342,21 +7325,6 @@
     const el = document.getElementById('journeyExampleText');
     if (el) el.textContent = JOURNEY_EXAMPLE_TEXT[i];
   }
-  // brief highlight so the callout's content changing actually registers,
-  // rather than reading as if it were static copy the whole time — called
-  // only when the walkthrough advances the text (not from resetIdpProto's
-  // own setJourneyExampleText(0) call, since that's restoring the resting
-  // state before a run even starts, not "changing" anything a viewer has
-  // seen yet). Re-triggerable: removing the class and forcing a reflow
-  // before re-adding it restarts the animation even if it's called again
-  // before the previous flash finished.
-  function flashExampleCallout(){
-    const box = document.getElementById('journeyExampleCallout');
-    if (!box) return;
-    box.classList.remove('flash');
-    void box.offsetWidth;
-    box.classList.add('flash');
-  }
   // positions the "Why Upload, Not Paste" tooltip under the live dropzone it
   // points at — computed fresh each time rather than fixed in CSS, since the
   // live console this sits over can differ in size/position depending on
@@ -7429,7 +7397,7 @@
       // straight to the open modal. Text advances to the second beat here,
       // rather than waiting for the modal to actually open, so it's already
       // reading correctly through the delay steps below.
-      {delay:900,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); setJourneyExampleText(1); flashExampleCallout(); }},
+      {delay:900,  fn: () => { twilioTab.classList.remove('pulse'); showClickPulseOnEl(twilioTab); switchTo('twilio'); mountLiveConsole(document.getElementById('idpTwilioSlot'), 'configurations'); setJourneyExampleText(1); }},
       // open the real "Configure JWT Profile" side modal — pause on it before
       // saving so the callout can explain what it's for
       {delay:1800, fn: () => clickWithPulse(document.getElementById('jwtConfigureBtn'))},
@@ -7440,7 +7408,7 @@
       // filled in — matches Okta values copied above, ending on the filled
       // state, not mid-modal or bouncing off to some other tab. Text advances
       // to the third (and last — no more Next button after this one) beat.
-      {delay:400,  fn: () => { clickWithPulse(document.getElementById('jwtModalSave')); setJourneyExampleText(2); flashExampleCallout(); }},
+      {delay:400,  fn: () => { clickWithPulse(document.getElementById('jwtModalSave')); setJourneyExampleText(2); }},
       // then open the Upload public keys drawer for context, and position the
       // "why upload, not paste" tooltip under its dropzone — kept off the
       // console UI itself so it reads as commentary, not a real console
