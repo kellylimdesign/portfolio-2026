@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuthKit: Integration Builder — Kelly Lim</title>
+<meta name="description" content="Prebuilt UI was supposed to be the fastest path to auth — no components to build. Adoption said otherwise. A case study on Stytch's SDK Integration Builder.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/site.css">
+</head>
+<body>
+
+  <header class="nav">
+    <a class="nav-wordmark" href="../../">Kelly Lim</a>
+    <div class="cs-nav-links">
+      <a href="../../work/">Work</a>
+      <span>About</span>
+      <span>Notes</span>
+    </div>
+  </header>
+
+  <section class="cs-hero">
+    <div class="cs-hero-eyebrow">
+      <span class="company">02 / Stytch</span>
+      <span class="readtime">2 min read</span>
+    </div>
+    <h1 class="cs-hero-title">AuthKit: Integration Builder</h1>
+    <p class="cs-hero-subhead">Prebuilt UI was supposed to be the fastest path to auth — no components to build. Adoption said otherwise.</p>
+    <div class="cs-hero-cta">
+      <a class="btn-pill" href="../">Open the interactive walkthrough</a>
+    </div>
+  </section>
+
+  <section class="cs-meta-problem">
+    <div class="cs-meta">
+      <div class="cs-meta-row"><span class="label">Role</span><span class="value">Designer</span></div>
+      <div class="cs-meta-row"><span class="label">Year</span><span class="value">2024</span></div>
+      <div class="cs-meta-row"><span class="label">Status</span><span class="value accent">Shipped</span></div>
+    </div>
+    <div class="cs-problem">
+      <p class="cs-problem-label">The problem</p>
+      <p class="cs-problem-body">
+        The Stytch SDK's whole pitch was fast auth — nothing to build. But evaluating it wasn't fast at all:
+        customers had no way to know if the SDK actually fit their product <em>without integrating it first</em>.
+        Our team's first read was a capability gap, so we closed every remaining API difference —
+        and customers still said the SDK didn't meet their needs anyway.
+      </p>
+    </div>
+  </section>
+
+  <section class="cs-figure">
+    <img class="cs-figure-image" src="figure.png" alt="The SDK Integration Builder: a product catalog, a live styling panel, and a working preview of the auth flow.">
+    <p class="cs-figure-caption">Fig. 01 — the Integration Builder: browse products, restyle live, test the real flow, then ship the code.</p>
+  </section>
+
+  <section class="cs-outcomes">
+    <div class="cs-outcomes-cols">
+      <div class="cs-outcome-col">
+        <p class="cs-outcome-title">Fast, easy preview</p>
+        <p class="cs-outcome-desc">Replaced the SE-built custom demo as the default way a customer evaluates Stytch.</p>
+      </div>
+      <div class="cs-outcome-col">
+        <p class="cs-outcome-title">Reduced time to value</p>
+        <p class="cs-outcome-desc">View Code turns the end of evaluation directly into a working integration.</p>
+      </div>
+      <div class="cs-outcome-col">
+        <p class="cs-outcome-title">Better decision-making</p>
+        <p class="cs-outcome-desc">Customers validate product fit, brand fit, and real UX flows themselves.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="cs-next">
+    <span class="cs-next-label">Next</span>
+    <a class="cs-next-link" href="../../agent-identity/case-study/">
+      <span class="cs-next-index">01</span>
+      <span class="cs-next-title">Building trust in the age of AI</span>
+    </a>
+  </footer>
+
+</body>
+</html>

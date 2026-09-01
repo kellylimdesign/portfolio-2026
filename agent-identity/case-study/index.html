@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building Trust in the Age of AI — Kelly Lim</title>
+<meta name="description" content="Setting up identity for a new kind of actor — the AI agent. A case study on Twilio's Agent Identity.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/site.css">
+</head>
+<body>
+
+  <header class="nav">
+    <a class="nav-wordmark" href="../../">Kelly Lim</a>
+    <div class="cs-nav-links">
+      <a href="../../work/">Work</a>
+      <span>About</span>
+      <span>Notes</span>
+    </div>
+  </header>
+
+  <section class="cs-hero">
+    <div class="cs-hero-eyebrow">
+      <span class="company">01 / Twilio</span>
+      <span class="readtime">2 min read</span>
+    </div>
+    <h1 class="cs-hero-title">Building trust in the age of AI</h1>
+    <p class="cs-hero-subhead">Setting up identity for a new kind of actor — the AI agent.</p>
+    <div class="cs-hero-cta">
+      <a class="btn-pill" href="../">Open the interactive walkthrough</a>
+    </div>
+  </section>
+
+  <section class="cs-meta-problem">
+    <div class="cs-meta">
+      <div class="cs-meta-row"><span class="label">Role</span><span class="value">Designer</span></div>
+      <div class="cs-meta-row"><span class="label">Team</span><span class="value">1 designer · 1 PM · 5 eng</span></div>
+      <div class="cs-meta-row"><span class="label">Year</span><span class="value">2025–present</span></div>
+      <div class="cs-meta-row"><span class="label">Status</span><span class="value accent">Design partner testing</span></div>
+    </div>
+    <div class="cs-problem">
+      <p class="cs-problem-label">The problem</p>
+      <p class="cs-problem-body">
+        Twilio already had identity tools built for humans — ways to verify a person is who they say they are.
+        But there was no way to safely authenticate or authorize the AI agents now acting alongside them:
+        software making requests, and sometimes decisions, <em>on a user's behalf, without a person watching every step</em>.
+        Imagine a financial tool, Owl Trade, whose end users want to connect ChatGPT to make trades for them —
+        there was no secure way to do that yet.
+      </p>
+    </div>
+  </section>
+
+  <section class="cs-figure">
+    <img class="cs-figure-image" src="figure.png" alt="The Agent Identity consent screen inside the Twilio Console, showing what an agent is asking permission to do.">
+    <p class="cs-figure-caption">Fig. 01 — the consent screen an end user sees before an agent can act on their behalf.</p>
+  </section>
+
+  <section class="cs-outcomes">
+    <p class="cs-outcomes-note">
+      Agent Identity is pre-launch — currently in testing with 5 design partners ahead of a private beta in Fall 2026.
+      Rather than invent outcomes that don't exist yet, here's what that testing is actually working to answer:
+    </p>
+    <div class="cs-outcomes-list">
+      <div class="cs-outcome-row">
+        <span class="cs-outcome-index">01</span>
+        <span class="cs-outcome-text">How much consent-screen customization partners need beyond a logo</span>
+      </div>
+      <div class="cs-outcome-row">
+        <span class="cs-outcome-index">02</span>
+        <span class="cs-outcome-text">What would make configuration more intuitive</span>
+      </div>
+      <div class="cs-outcome-row">
+        <span class="cs-outcome-index">03</span>
+        <span class="cs-outcome-text">What actions on their platform would need human-in-the-loop approval</span>
+      </div>
+      <div class="cs-outcome-row">
+        <span class="cs-outcome-index">04</span>
+        <span class="cs-outcome-text">What custom scopes they'd need to define</span>
+      </div>
+      <div class="cs-outcome-row">
+        <span class="cs-outcome-index">05</span>
+        <span class="cs-outcome-text">What problem they'd want solved next</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="cs-next">
+    <span class="cs-next-label">Next</span>
+    <a class="cs-next-link" href="../../stytch-sdk-integration-builder/case-study/">
+      <span class="cs-next-index">02</span>
+      <span class="cs-next-title">AuthKit: Integration Builder</span>
+    </a>
+  </footer>
+
+</body>
+</html>
