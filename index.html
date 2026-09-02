@@ -9,19 +9,49 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/site.css">
+<script src="assets/js/daynight.js" defer></script>
 <script src="assets/js/weather.js" defer></script>
+<script src="assets/js/plants.js" defer></script>
 </head>
 <body>
 
   <section class="hero hero-full">
     <div class="hero-figure">
-      <img
-        id="heroIllustration"
-        class="hero-illustration"
-        src="assets/illustration/windowsill.webp"
-        alt="Windowsill with potted plants — placeholder for an interactive illustration"
-      >
-      <p class="hero-caption">Kelly's window</p>
+      <div class="hero-image-wrap">
+        <img
+          id="heroIllustration"
+          class="hero-illustration"
+          src="assets/illustration/windowsill-clear.webp?v=3"
+          alt="Kelly's windowsill, empty of plants — they're layered on separately"
+        >
+        <img class="plant-lift-layer" id="plantLiftYellowKalanchoe" src="assets/illustration/plant-yellow-kalanchoe-clear.webp?v=2" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftViolet" src="assets/illustration/plant-violet-clear.webp?v=2" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftOrchid" src="assets/illustration/plant-orchid-clear.webp?v=2" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftKalanchoe" src="assets/illustration/plant-kalanchoe-clear.webp?v=2" alt="" aria-hidden="true">
+        <img
+          class="plant-lift-layer"
+          id="plantLiftFiddleFig"
+          src="assets/illustration/plant-fiddle-fig-clear.webp?v=2"
+          alt=""
+          aria-hidden="true"
+        >
+        <button class="plant-hotspot" id="plantHotspotYellowKalanchoe" type="button" aria-label="See the yellow kalanchoe"></button>
+        <button class="plant-hotspot" id="plantHotspotViolet" type="button" aria-label="See the African violet"></button>
+        <button class="plant-hotspot" id="plantHotspotOrchid" type="button" aria-label="See the orchid"></button>
+        <button class="plant-hotspot" id="plantHotspotKalanchoe" type="button" aria-label="See the kalanchoe"></button>
+        <button
+          class="plant-hotspot"
+          id="plantHotspotFiddleFig"
+          type="button"
+          aria-label="See the fiddle-leaf fig"
+        ></button>
+        <div class="plant-info" id="plantInfo" hidden>
+          <p class="plant-info-name" id="plantInfoName">Fiddle-leaf fig</p>
+          <p class="plant-info-detail">Last watered — <span id="plantInfoWatered">3 days ago</span></p>
+          <p class="plant-info-detail">Needs — <span id="plantInfoNeeds">bright, indirect light; water when the top inch of soil is dry</span></p>
+        </div>
+      </div>
+      <button class="hero-caption" id="heroCaption" type="button">Kelly's window</button>
     </div>
     <div class="hero-copy">
       <p class="hero-blurb">
@@ -39,6 +69,11 @@
       <a class="home-work-link" href="stytch-sdk-integration-builder/case-study/">AuthKit: Integration Builder <span class="home-work-company">Stytch</span></a>
     </div>
   </section>
+
+  <!-- temporary — testing aids, remove once signed off. Each cycles
+       through its options on click. See daynight.js / weather.js. -->
+  <button id="dayNightToggle" class="debug-toggle daynight-toggle" type="button">Time: Day (click to cycle)</button>
+  <button id="weatherToggle" class="debug-toggle weather-toggle" type="button">Weather: Clear (click to cycle)</button>
 
 </body>
 </html>
