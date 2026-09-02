@@ -70,10 +70,11 @@
     </div>
   </section>
 
-  <!-- temporary — testing aids, remove once signed off. Each cycles
-       through its options on click. See daynight.js / weather.js. -->
-  <button id="dayNightToggle" class="debug-toggle daynight-toggle" type="button">Time: Day (click to cycle)</button>
-  <button id="weatherToggle" class="debug-toggle weather-toggle" type="button">Weather: Clear (click to cycle)</button>
+  <!-- temporary — testing aids, remove once signed off. Hidden from
+       regular viewers; add ?debug=1 to the URL to reveal them. Each
+       cycles through its options on click. See daynight.js / weather.js. -->
+  <button id="dayNightToggle" class="debug-toggle daynight-toggle" type="button" hidden>Time: Day (click to cycle)</button>
+  <button id="weatherToggle" class="debug-toggle weather-toggle" type="button" hidden>Weather: Clear (click to cycle)</button>
 
 </body>
 </html>

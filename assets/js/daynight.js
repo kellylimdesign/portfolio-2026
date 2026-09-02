@@ -63,6 +63,9 @@
 
   var toggle = document.getElementById('dayNightToggle');
   if (toggle) {
+    // hidden by default (see index.html) — ?debug=1 reveals it, so
+    // regular viewers never see a raw testing control on the page
+    if (new URLSearchParams(location.search).get('debug') === '1') toggle.hidden = false;
     toggle.addEventListener('click', function () {
       var current = PHASES.indexOf(document.body.dataset.daypart);
       setPhase(PHASES[(current + 1) % PHASES.length]);
