@@ -4,25 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kelly Lim — Product Designer</title>
-<meta name="description" content="Kelly Lim is a product designer at Twilio, previously Stytch and Patio, focused on identity, trust, and consent design.">
+<meta name="description" content="Kelly Lim is a product designer at Twilio, previously Stytch (acquired by Twilio), focused on identity, trust, and consent design.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/site.css">
+<script src="assets/js/weather.js" defer></script>
 </head>
 <body>
 
   <section class="hero hero-full">
-    <img
-      class="hero-illustration"
-      src="assets/illustration/windowsill.png"
-      alt="Windowsill with potted plants — placeholder for an interactive illustration"
-    >
+    <div class="hero-figure">
+      <img
+        id="heroIllustration"
+        class="hero-illustration"
+        src="assets/illustration/windowsill.webp"
+        alt="Windowsill with potted plants — placeholder for an interactive illustration"
+      >
+      <p class="hero-caption">Kelly's window</p>
+    </div>
     <div class="hero-copy">
       <p class="hero-blurb">
-        <strong>Kelly</strong> is a product designer at <strong>Twilio</strong>,
-        previously <span class="accent">Stytch</span> and <span class="accent">Patio</span>.
-        She currently lives in <strong>New York</strong>.
+        <strong>Kelly</strong> is a product designer at <a href="https://twilio.com" target="_blank" rel="noopener noreferrer"><strong>Twilio</strong></a>,
+        previously <a href="https://stytch.com" target="_blank" rel="noopener noreferrer"><strong>Stytch</strong></a> (acquired by Twilio).
+        She currently lives in <strong>New York</strong><span id="weatherClause">.</span>
       </p>
     </div>
   </section>
@@ -30,8 +35,8 @@
   <section class="home-work">
     <h2 class="home-work-heading">Work</h2>
     <div class="home-work-list">
-      <a class="home-work-link" href="agent-identity/case-study/">Agent Identity <span class="home-work-year">2025</span></a>
-      <a class="home-work-link" href="stytch-sdk-integration-builder/case-study/">AuthKit: Integration Builder <span class="home-work-year">2024</span></a>
+      <a class="home-work-link" href="agent-identity/case-study/">Agent Identity <span class="home-work-company">Twilio</span></a>
+      <a class="home-work-link" href="stytch-sdk-integration-builder/case-study/">AuthKit: Integration Builder <span class="home-work-company">Stytch</span></a>
     </div>
   </section>
 

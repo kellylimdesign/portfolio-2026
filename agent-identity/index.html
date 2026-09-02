@@ -8757,6 +8757,14 @@
   // doesn't overflow on typical widths; on anything narrower, the bottom
   // just gets cropped by the iframe edge, same tradeoff as everywhere else
   // this deck fills an arbitrary embed rather than letterboxing it.
+  // ?zoomRef=<px> overrides the 1440 reference width the zoom is computed
+  // against — used to make this window's chrome (titlebar/urlbar, which
+  // share the exact same CSS as .cgpt-window's, just at a 1440-native vs
+  // 920-native canvas) render at the same on-screen scale as the End User
+  // card's browser-chrome embed sitting right next to it (which fits
+  // against a 920 reference — see fitStepWindow() below), rather than
+  // each card computing its own independent "fill this box" zoom and
+  // ending up at two different visual scales side by side.
   function fitLiveWindow(){
     if (!document.body.classList.contains('embed-bare')) return;
     const col = document.querySelector('.live-frame-col');
@@ -8764,7 +8772,8 @@
     if (!col || !win) return;
     const w = col.clientWidth;
     if (!w) return;
-    win.style.zoom = w / 1440;
+    const ref = Number(new URLSearchParams(location.search).get('zoomRef')) || 1440;
+    win.style.zoom = w / ref;
   }
   window.addEventListener('resize', fitLiveWindow);
   window.addEventListener('load', fitLiveWindow);
