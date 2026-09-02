@@ -131,21 +131,218 @@ a { color: inherit; text-decoration: none; }
   gap: 5px;
 }
 
-.hero-illustration {
-  max-width: 620px;
-  max-height: 62vh;
-  width: 100%;
-  height: auto;
-  object-fit: contain;
+/* wraps just the <img> (not the caption/plant-info below it) so a
+   hotspot's percentage position lines up with the image itself, not the
+   whole .hero-figure stack */
+.hero-image-wrap {
+  position: relative;
 }
 
+.hero-illustration {
+  max-width: 560px;
+  max-height: 56vh;
+  width: 100%;
+  /* fixed aspect ratio (~average of the 6 weather backgrounds, which
+     aren't all cropped to exactly the same proportions) instead of
+     height:auto — height:auto would size this box to whatever image is
+     currently loaded, so swapping to a plant portrait (a very different,
+     taller aspect ratio) shifted everything below it on the page. With a
+     fixed ratio + object-fit:contain, both the background and any plant
+     portrait fit inside the same unchanging box instead. */
+  aspect-ratio: 1.02 / 1;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* also doubles as the "back to the window" control once a plant is open
+   (see plants.js showPlant()/showWindow(), which swap its text) instead
+   of a separate button — a <button> reset to look identical to the old
+   <p> when idle, only picking up pointer affordance while
+   .hero-image-wrap has .detail-open (adjacent-sibling: this element
+   always immediately follows it in the markup) */
 .hero-caption {
+  display: block;
   margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+  cursor: default;
+}
+
+.hero-image-wrap.detail-open + .hero-caption {
+  cursor: pointer;
+}
+
+.hero-image-wrap.detail-open + .hero-caption:hover,
+.hero-image-wrap.detail-open + .hero-caption:focus-visible {
+  color: var(--ink);
+}
+
+/* invisible click target over a plant in the illustration — per-plant
+   position/size set inline (style="left/top/width/height") since it
+   varies plant to plant. No visible hover state of its own — the
+   lift-layer's float (below) is the only feedback for a mouse, matching
+   "click a leaf, it grows a little" from the original brief: discoverable,
+   not a loud call-to-action. Keyboard focus still gets a plain outline
+   (not a color fill) so it stays accessible without reintroducing a tint. */
+.plant-hotspot {
+  position: absolute;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.plant-hotspot:focus-visible {
+  outline: 2px solid var(--faint);
+  outline-offset: 2px;
+}
+
+/* the isolated plant cutout, layered directly over its baked-in position
+   in the background scene (positioned/sized in JS — see plants.js) so it
+   can "lift" independently on hover; nothing here happens on its own,
+   .plant-hotspot's :hover/:focus-visible toggles the .lifted class via JS
+   since these two elements aren't siblings in an order CSS could target
+   with a combinator */
+.plant-lift-layer {
+  position: absolute;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  /* filter is composed from two independently-toggled pieces — the hover
+     lift's drop-shadow and the day/night dimming — so setting one doesn't
+     clobber the other regardless of which combination is active */
+  --lift-filter: drop-shadow(0 0 0 rgba(23, 22, 27, 0));
+  --daynight-filter: none;
+  /* left/top/width/height animate the "push to the detail position" move
+     (JS just updates these inline styles — see plants.js showPlant());
+     transform/filter still handle the separate hover lift + day/night dim */
+  transition: left 0.5s cubic-bezier(.4,0,.2,1), top 0.5s cubic-bezier(.4,0,.2,1),
+    width 0.5s cubic-bezier(.4,0,.2,1), height 0.5s cubic-bezier(.4,0,.2,1),
+    transform 0.25s ease, filter 0.25s ease, opacity 0.4s ease;
+  filter: var(--daynight-filter) var(--lift-filter);
+}
+
+.plant-lift-layer.lifted {
+  transform: translateY(-6px) scale(1.02);
+  --lift-filter: drop-shadow(0 12px 16px rgba(23, 22, 27, 0.16));
+}
+
+/* the background fades out (not swapped/hidden outright) while a plant's
+   detail view is open, entirely within .hero-image-wrap's own fixed-size
+   box — nothing outside this box changes size or position, so the
+   caption/care-card/bio-blurb below never shift */
+.hero-illustration {
+  --daynight-filter: none;
+  filter: var(--daynight-filter);
+  transition: opacity 0.4s ease, filter 0.6s ease;
+}
+
+.hero-image-wrap.detail-open .hero-illustration {
+  opacity: 0;
+}
+
+/* five time-of-day looks, each just a flat filter applied to background
+   + plants alike, composed through --daynight-filter (see
+   .plant-lift-layer above) rather than a flat filter override, so none
+   of them fight the hover-lift's own drop-shadow. No new time-of-day art;
+   same illustrations, just lit differently. body[data-daypart] is set
+   once on load in daynight.js, based on the current hour in New York
+   specifically (this is Kelly's NYC window), not the visitor's own time
+   zone. "day" is the true baseline/default look, so it needs no rule
+   here at all.
+   (Tried a directional "lamp in the corner" treatment for night — a warm
+   offset drop-shadow on the plants, and before that a full-box gradient
+   overlay — neither read well, so night is back to one plain blanket
+   dim, and the other four phases follow the same flat-filter approach.) */
+body[data-daypart="night"] .hero-illustration,
+body[data-daypart="night"] .plant-lift-layer {
+  --daynight-filter: brightness(0.55) saturate(0.85) hue-rotate(-6deg);
+}
+
+/* pre-dawn — still dim, but not as dark as full night, with a cool
+   blue-gray cast rather than night's cast */
+body[data-daypart="earlyMorning"] .hero-illustration,
+body[data-daypart="earlyMorning"] .plant-lift-layer {
+  --daynight-filter: brightness(0.72) saturate(0.78) hue-rotate(-10deg);
+}
+
+/* warm, soft, brightening light — close to full brightness but with a
+   gentle pink/orange cast rather than the neutral daytime look */
+body[data-daypart="sunrise"] .hero-illustration,
+body[data-daypart="sunrise"] .plant-lift-layer {
+  --daynight-filter: brightness(0.94) saturate(1.05) hue-rotate(6deg) sepia(0.08);
+}
+
+/* golden hour — warmer and slightly dimmer than daytime, more saturated
+   toward orange as the light lowers */
+body[data-daypart="sunset"] .hero-illustration,
+body[data-daypart="sunset"] .plant-lift-layer {
+  --daynight-filter: brightness(0.85) saturate(1.12) hue-rotate(12deg) sepia(0.12);
+}
+
+/* every other plant fades out along with the background while one is open
+   in detail view — the active one is marked with .active-detail (see
+   plants.js showPlant()) so this rule can target everyone *except* it */
+.hero-image-wrap.detail-open .plant-lift-layer:not(.active-detail) {
+  opacity: 0;
+}
+
+/* :not([hidden]), not a plain .plant-info{display:flex} rule — [hidden]
+   and a class selector are equal specificity, and this stylesheet loads
+   after the UA one, so a plain display:flex here would silently beat
+   [hidden]{display:none} and the card would show regardless of the
+   attribute (same gotcha the agent-identity deck's own CSS has a comment
+   about, on .guided-body's :not([hidden]) rule).
+   Positioned in the right portion of .hero-image-wrap's fixed-size stage
+   (not normal document flow) so it appears beside the now-left-shifted
+   plant without affecting anything below the image — fades in via .show
+   after a delay (see plants.js) so it lands once the plant's slide has
+   actually arrived, not simultaneously with it.
+   Anchored to bottom (not vertically centered) so it lands in the same
+   spot regardless of which plant is open — every plant's detailAnchor
+   shares the same bottom: 0.90 (10% up from the sill line), so bottom:
+   10% here keeps the card sitting at that same baseline instead of
+   drifting up/down with each plant's differing detail height. */
+.plant-info:not([hidden]) {
+  position: absolute;
+  bottom: 10%;
+  right: 4%;
+  width: 42%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.plant-info.show {
+  opacity: 1;
+}
+
+.plant-info-name {
+  margin: 0 0 2px;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.plant-info-detail {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .hero-copy {
@@ -171,16 +368,16 @@ a { color: inherit; text-decoration: none; }
   color: var(--brand);
 }
 
-/* Twilio/Stytch links — no accent color for now (see .hero-blurb .accent
-   above, kept in case that comes back), just a hairline underline so
-   they still read as clickable against the plain bold strong text */
-.hero-blurb a {
-  border-bottom: 1px solid var(--faint);
-}
-
-.hero-blurb a:hover {
-  color: var(--ink);
-  border-bottom-color: currentColor;
+/* Twilio/Stytch links — same treatment as .home-work-link below: no
+   underline, just a shift to the brand accent color on hover. Also
+   targets the nested <strong> explicitly — "Twilio"/"Stytch" are
+   <strong> inside the <a> (bold like the rest of the intro sentence),
+   and .hero-blurb strong's own color rule sets color directly on that
+   element, which wins over whatever the parent <a> inherits down to it
+   regardless of the anchor's specificity. */
+.hero-blurb a:hover,
+.hero-blurb a:hover strong {
+  color: var(--brand);
 }
 
 /* ---- Home: inline Work section (below the fold on landing) ---- */
@@ -764,4 +961,38 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+/* temporary — testing aids for the time-of-day lighting (daynight.js) and
+   weather illustration (weather.js), remove both buttons + this whole
+   block once those are signed off. Shared look, stacked above each other
+   via the bottom offset on each specific class rather than the shared
+   one. */
+.debug-toggle {
+  position: fixed;
+  right: 16px;
+  z-index: 999;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.debug-toggle:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.daynight-toggle {
+  bottom: 16px;
+}
+
+.weather-toggle {
+  bottom: 56px;
 }
