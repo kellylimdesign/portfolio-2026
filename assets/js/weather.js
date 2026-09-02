@@ -124,6 +124,9 @@
 
   var weatherToggle = document.getElementById('weatherToggle');
   if (weatherToggle) {
+    // hidden by default (see index.html) — ?debug=1 reveals it, so
+    // regular viewers never see a raw testing control on the page
+    if (new URLSearchParams(location.search).get('debug') === '1') weatherToggle.hidden = false;
     weatherToggle.addEventListener('click', function () {
       var current = CATEGORIES.indexOf(window.__weatherCategory || 'clear');
       setTestWeather(CATEGORIES[(current + 1) % CATEGORIES.length]);
