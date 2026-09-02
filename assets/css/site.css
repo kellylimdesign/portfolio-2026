@@ -120,6 +120,17 @@ a { color: inherit; text-decoration: none; }
   box-sizing: border-box;
 }
 
+/* groups the illustration + its caption at their own tight 10px gap,
+   independent of .hero's own 40px gap (which now applies between this
+   whole group and .hero-copy below it, not between the image and its
+   caption specifically) */
+.hero-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
 .hero-illustration {
   max-width: 620px;
   max-height: 62vh;
@@ -129,6 +140,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .hero-caption {
+  margin: 0;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -145,7 +157,7 @@ a { color: inherit; text-decoration: none; }
 
 .hero-blurb {
   margin: 0;
-  font-size: 19px;
+  font-size: 21px;
   line-height: 1.65;
   color: var(--secondary);
 }
@@ -157,6 +169,18 @@ a { color: inherit; text-decoration: none; }
 
 .hero-blurb .accent {
   color: var(--brand);
+}
+
+/* Twilio/Stytch links — no accent color for now (see .hero-blurb .accent
+   above, kept in case that comes back), just a hairline underline so
+   they still read as clickable against the plain bold strong text */
+.hero-blurb a {
+  border-bottom: 1px solid var(--faint);
+}
+
+.hero-blurb a:hover {
+  color: var(--ink);
+  border-bottom-color: currentColor;
 }
 
 /* ---- Home: inline Work section (below the fold on landing) ---- */
@@ -189,13 +213,13 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink);
 }
 
-.home-work-year {
+.home-work-company {
   color: var(--faint);
   margin-left: 0.4em;
 }
 
 .home-work-link:hover { color: var(--brand); }
-.home-work-link:hover .home-work-year { color: var(--brand); opacity: 0.6; }
+.home-work-link:hover .home-work-company { color: var(--brand); opacity: 0.6; }
 
 
 /* ---- Work index ---- */
@@ -295,11 +319,12 @@ a { color: inherit; text-decoration: none; }
   max-width: 52ch;
 }
 
-.work-year {
+.work-company {
   font-family: var(--font-mono);
   font-size: 11px;
+  letter-spacing: 0.04em;
   color: var(--muted);
-  width: 52px;
+  width: 64px;
   text-align: right;
   flex-shrink: 0;
 }
@@ -308,7 +333,7 @@ a { color: inherit; text-decoration: none; }
   .work-row { flex-wrap: wrap; gap: 16px 24px; padding: 24px 0; }
   .work-thumb, .work-thumb-placeholder { width: 120px; height: 72px; }
   .work-body { order: 1; flex-basis: 100%; }
-  .work-year { order: 2; text-align: left; }
+  .work-company { order: 2; text-align: left; }
   .work-heading { font-size: 34px; }
 }
 
