@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Building Trust in the Age of AI</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%AA%B4</text></svg>">
 <meta name="description" content="Identity for AI Agents — a case study on letting AI agents securely authenticate and act on a user's behalf, illustrated through a fictional trading app connecting to ChatGPT.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Building Trust in the Age of AI">
@@ -8757,14 +8758,23 @@
   // doesn't overflow on typical widths; on anything narrower, the bottom
   // just gets cropped by the iframe edge, same tradeoff as everywhere else
   // this deck fills an arbitrary embed rather than letterboxing it.
-  // ?zoomRef=<px> overrides the 1440 reference width the zoom is computed
-  // against — used to make this window's chrome (titlebar/urlbar, which
-  // share the exact same CSS as .cgpt-window's, just at a 1440-native vs
-  // 920-native canvas) render at the same on-screen scale as the End User
-  // card's browser-chrome embed sitting right next to it (which fits
-  // against a 920 reference — see fitStepWindow() below), rather than
-  // each card computing its own independent "fill this box" zoom and
-  // ending up at two different visual scales side by side.
+  // ?zoomRef=<px> overrides the 1440 reference width the whole-window zoom
+  // below is computed against, so this window's overall box (chrome +
+  // content together) fits its container without side letterboxing —
+  // same mechanism fitStepWindow() uses for the End User card's window
+  // (at a 920 reference there, since that window's native content is
+  // narrower). A single zoom value can't make BOTH the chrome read at a
+  // consistent scale AND the content fit correctly at the same time when
+  // the two cards' native content widths differ (920 vs 1440) — zooming
+  // the whole window by content-width alone also shrinks the chrome
+  // along with it, so titlebar/urlbar end up visibly smaller here than
+  // on the End User card even though they're the exact same component.
+  // The corrective zoom below fixes that: it's applied on TOP of the
+  // whole-window zoom already set on #liveWindowHome, specifically to
+  // just .cgpt-titlebar/.cgpt-urlbar, nested zooms multiply — so their
+  // effective on-screen scale becomes (w/ref) * (ref/920) = w/920,
+  // independent of ref, matching the End User card's chrome exactly
+  // regardless of what reference width this window's content needed.
   function fitLiveWindow(){
     if (!document.body.classList.contains('embed-bare')) return;
     const col = document.querySelector('.live-frame-col');
@@ -8774,6 +8784,11 @@
     if (!w) return;
     const ref = Number(new URLSearchParams(location.search).get('zoomRef')) || 1440;
     win.style.zoom = w / ref;
+    const chromeCorrection = ref / 920;
+    const titlebar = win.querySelector('.cgpt-titlebar');
+    const urlbar = win.querySelector('.cgpt-urlbar');
+    if (titlebar) titlebar.style.zoom = chromeCorrection;
+    if (urlbar) urlbar.style.zoom = chromeCorrection;
   }
   window.addEventListener('resize', fitLiveWindow);
   window.addEventListener('load', fitLiveWindow);

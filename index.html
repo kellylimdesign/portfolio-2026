@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kelly Lim — Product Designer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%AA%B4</text></svg>">
 <meta name="description" content="Kelly Lim is a product designer at Twilio, previously Stytch (acquired by Twilio), focused on identity, trust, and consent design.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,17 +22,17 @@
         <img
           id="heroIllustration"
           class="hero-illustration"
-          src="assets/illustration/windowsill-clear.webp?v=3"
+          src="assets/illustration/windowsill-clear.webp?v=4"
           alt="Kelly's windowsill, empty of plants — they're layered on separately"
         >
-        <img class="plant-lift-layer" id="plantLiftYellowKalanchoe" src="assets/illustration/plant-yellow-kalanchoe-clear.webp?v=2" alt="" aria-hidden="true">
-        <img class="plant-lift-layer" id="plantLiftViolet" src="assets/illustration/plant-violet-clear.webp?v=2" alt="" aria-hidden="true">
-        <img class="plant-lift-layer" id="plantLiftOrchid" src="assets/illustration/plant-orchid-clear.webp?v=2" alt="" aria-hidden="true">
-        <img class="plant-lift-layer" id="plantLiftKalanchoe" src="assets/illustration/plant-kalanchoe-clear.webp?v=2" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftYellowKalanchoe" src="assets/illustration/plant-yellow-kalanchoe-clear.webp?v=3" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftViolet" src="assets/illustration/plant-violet-clear.webp?v=3" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftOrchid" src="assets/illustration/plant-orchid-clear.webp?v=3" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftKalanchoe" src="assets/illustration/plant-kalanchoe-clear.webp?v=3" alt="" aria-hidden="true">
         <img
           class="plant-lift-layer"
           id="plantLiftFiddleFig"
-          src="assets/illustration/plant-fiddle-fig-clear.webp?v=2"
+          src="assets/illustration/plant-fiddle-fig-clear.webp?v=3"
           alt=""
           aria-hidden="true"
         >
@@ -46,12 +47,15 @@
           aria-label="See the fiddle-leaf fig"
         ></button>
         <div class="plant-info" id="plantInfo" hidden>
-          <p class="plant-info-name" id="plantInfoName">Fiddle-leaf fig</p>
-          <p class="plant-info-detail">Last watered — <span id="plantInfoWatered">3 days ago</span></p>
+          <div class="plant-info-header">
+            <p class="plant-info-name" id="plantInfoName">Fiddle-leaf fig</p>
+            <p class="plant-info-detail">Last watered — <span id="plantInfoWatered">3 days ago</span></p>
+          </div>
           <p class="plant-info-detail">Needs — <span id="plantInfoNeeds">bright, indirect light; water when the top inch of soil is dry</span></p>
+          <button class="plant-info-back" id="plantInfoBack" type="button">← Back to Kelly's window</button>
         </div>
       </div>
-      <button class="hero-caption" id="heroCaption" type="button">Kelly's window</button>
+      <p class="hero-caption" id="heroCaption">Kelly's window</p>
     </div>
     <div class="hero-copy">
       <p class="hero-blurb">
@@ -60,9 +64,14 @@
         She currently lives in <strong>New York</strong><span id="weatherClause">.</span>
       </p>
     </div>
+    <a class="scroll-indicator" href="#work" aria-label="Scroll to work">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M4 7L10 13L16 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
   </section>
 
-  <section class="home-work">
+  <section class="home-work" id="work">
     <h2 class="home-work-heading">Work</h2>
     <div class="home-work-list">
       <a class="home-work-link" href="agent-identity/case-study/">Agent Identity <span class="home-work-company">Twilio</span></a>

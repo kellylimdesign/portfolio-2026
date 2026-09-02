@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Building Trust in the Age of AI — Kelly Lim</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%AA%B4</text></svg>">
 <meta name="description" content="Setting up identity for a new kind of actor — the AI agent. A case study on Twilio's Agent Identity.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,17 +34,6 @@
     </div>
   </section>
 
-  <section class="cs-ts-row">
-    <div class="cs-ts-col">
-      <p class="cs-ts-label">The team</p>
-      <p class="cs-ts-value">1 Designer · 1 PM · 5 Engineers</p>
-    </div>
-    <div class="cs-ts-col cs-ts-col--end">
-      <p class="cs-ts-label">Status</p>
-      <p class="cs-ts-value"><span class="accent">Private beta — Fall 2026</span></p>
-    </div>
-  </section>
-
   <section class="cs-section">
     <div class="cs-section-inner">
       <p class="cs-label">Who this is for</p>
@@ -67,12 +57,12 @@
         <div class="cs-audience-pair-card cs-audience-pair-card--wide">
           <div class="cs-audience-pair-head">
             <p class="cs-audience-title">The Builder</p>
-            <p class="cs-audience-desc">Configures identity and approvals ahead of time, for their whole platform.</p>
+            <p class="cs-audience-desc">The admin or customer who wants to make their product usable by agents — configuring identity and approvals ahead of time, for their whole platform.</p>
           </div>
           <div class="cs-audience-mock">
             <iframe
               class="cs-audience-mock-frame"
-              src="../index.html?start=slideTryItYourself&bare=1&zoomRef=920"
+              src="../index.html?start=slideTryItYourself&bare=1&zoomRef=1300"
               title="The Twilio Console — Agent Identity, from the Identity for AI Agents deck"
               loading="lazy"
             ></iframe>
@@ -85,9 +75,54 @@
 
   <section class="cs-section">
     <div class="cs-section-inner">
+      <p class="cs-label">For example</p>
+      <h2 class="cs-subhead cs-subhead--narrow">Can ChatGPT Trade For You — Safely?</h2>
+      <p class="cs-body">Alex is a commodities trader with a theory about this year's unusually warm winter — and what it means for orange crop yields. While researching it in ChatGPT, he finds that Owl Trade has a ChatGPT integration — and connects it right there.</p>
+    </div>
+  </section>
+
+  <section class="cs-section">
+    <div class="cs-section-inner">
       <p class="cs-label">The flow, end to end</p>
-      <p class="cs-flow-lede">A trader connects ChatGPT to Owl Trade to watch the market and act on his behalf — securely, end to end.</p>
-      <p class="cs-flow-note">See how an admin configures Agent Identity and what the end user sees, all in one continuous flow.</p>
+      <p class="cs-flow-lede">Watch how Owl Trade allows Alex to connect ChatGPT to his account.</p>
+
+      <div class="cs-journey-summary">
+        <div class="cs-journey-col">
+          <p class="cs-journey-col-title">The end user journey</p>
+          <ol class="cs-journey-steps">
+            <li>
+              <span class="cs-journey-step-num">01</span>
+              <div><span class="cs-journey-step-title">Request</span><span class="cs-journey-step-desc"> — asks ChatGPT to watch the market</span></div>
+            </li>
+            <li>
+              <span class="cs-journey-step-num">02</span>
+              <div><span class="cs-journey-step-title">Log in</span><span class="cs-journey-step-desc"> — signs in to Owl Trade, as usual</span></div>
+            </li>
+            <li>
+              <span class="cs-journey-step-num">03</span>
+              <div><span class="cs-journey-step-title">Grant access</span><span class="cs-journey-step-desc"> — sees and approves the request</span></div>
+            </li>
+          </ol>
+        </div>
+        <div class="cs-journey-divider"></div>
+        <div class="cs-journey-col">
+          <p class="cs-journey-col-title">The admin journey</p>
+          <ol class="cs-journey-steps">
+            <li>
+              <span class="cs-journey-step-num">01</span>
+              <div><span class="cs-journey-step-title">Connect, don't rebuild</span><span class="cs-journey-step-desc"> — trusts the identity Okta already manages</span></div>
+            </li>
+            <li>
+              <span class="cs-journey-step-num">02</span>
+              <div><span class="cs-journey-step-title">Customize consent</span><span class="cs-journey-step-desc"> — their branding, not a hand-off</span></div>
+            </li>
+            <li>
+              <span class="cs-journey-step-num">03</span>
+              <div><span class="cs-journey-step-title">Manage agents</span><span class="cs-journey-step-desc"> — one place for every agent's access</span></div>
+            </li>
+          </ol>
+        </div>
+      </div>
 
       <div class="cs-mock-wrap">
         <iframe
