@@ -65,6 +65,13 @@
   }
   .exit-link:hover{color:var(--ink); max-width:125px;}
 
+  /* bare embed mode — see initDeepLink()'s ?bare=1 handling. Hides the
+     deck's own chrome (topbar, exit link) so an iframed case study embed
+     shows just the actual prototype, not the slide-deck shell around it. */
+  body.embed-bare .topbar,
+  body.embed-bare .exit-link{display:none !important;}
+  body.embed-bare .slide{top:0; height:100vh;}
+
   /* counter + dots + prev/next arrows, one combined group centered in the
      topbar — counterNow/counterTotal bookend the dot track at fixed
      positions, but counterNow's text still tracks the current slide (see
@@ -436,15 +443,6 @@
   }
   .sk3-success-body{font-size:13px; line-height:1.5; color:var(--sk-ink-70); margin:0 0 14px; text-align:center;}
 
-  /* live callout, matches Trust's slide-9 pattern */
-  .live-callout{
-    display:inline-flex; align-items:center; gap:9px; align-self:flex-start;
-    background:rgba(23,22,27,.03); border:1px solid var(--line); border-radius:999px;
-    padding:8px 16px 8px 12px; font-size:13px; font-weight:500; margin-bottom:18px;
-  }
-  .live-callout svg{width:15px; height:15px; color:var(--ink-45); animation:liveTap 1.8s ease-in-out infinite;}
-  @keyframes liveTap{0%,100%{transform:translateY(0);} 50%{transform:translateY(2px);}}
-  .live-callout-note{font-size:12px; color:var(--ink-45); margin:-10px 0 18px; align-self:flex-start;}
 
   /* layout-text / layout-hero — copied exactly from Trust's slides 1 & 2.
      No height:100% — same reasoning as .layout-persona/.layout-timeline
@@ -709,7 +707,7 @@
     </div>
   </div>
 
-  <a class="exit-link" href="../" aria-label="Exit to landing page">Exit&nbsp;to landing page</a>
+  <a class="exit-link" href="case-study/" aria-label="Exit to case study">Exit&nbsp;to case study</a>
 
   <div class="deck" id="deck">
 
@@ -966,10 +964,6 @@
 
     <!-- 9. LIVE PROTOTYPE -->
     <section class="slide" id="liveSlide" style="padding:24px 48px;">
-      <div class="live-callout">
-        <span>Try it yourself — toggle products, restyle it, view the code</span>
-      </div>
-      <p class="live-callout-note">Product and styling changes are fully live — email/SMS delivery isn't connected in this demo, so a real message won't send.</p>
       <div id="stytchToolMount" style="flex:1; min-height:0;"></div>
     </section>
 
@@ -2054,6 +2048,150 @@
       stopStep4Demo();
       stopStep3Anim();
     };
+  })();
+
+  // scripted, hands-off demo for the "Try it yourself" live tool
+  // (#liveSlide/#stytchToolMount) when embedded with &autoplay=1 — cycles
+  // toggling a few products, restyling a couple of fields, then viewing
+  // the generated code, driven entirely through the tool's own real
+  // elements (never an internal API — same rule as the Journey slide's
+  // per-step demos above, and reusing their exact .journey-click-pulse
+  // component + scroll-into-view technique rather than duplicating new
+  // ones), so a viewer can watch what's about to change and why instead
+  // of the tool just jumping between states.
+  (function initLiveSlideAutoplay(){
+    const liveSlide = document.getElementById('liveSlide');
+    const liveToolMount = document.getElementById('stytchToolMount');
+    if (!liveSlide || !liveToolMount) return;
+
+    let pulseEl = null;
+    function showClickPulseOnEl(el){
+      if (!el) return;
+      if (!pulseEl) {
+        pulseEl = document.createElement('div');
+        pulseEl.className = 'journey-click-pulse';
+        document.body.appendChild(pulseEl);
+      }
+      const r = el.getBoundingClientRect();
+      pulseEl.style.left = (r.left + r.width / 2) + 'px';
+      pulseEl.style.top = (r.top + r.height / 2) + 'px';
+      pulseEl.classList.remove('fire');
+      void pulseEl.offsetWidth;
+      pulseEl.classList.add('fire');
+    }
+    function clickWithPulse(el, delay){
+      if (!el) return;
+      showClickPulseOnEl(el);
+      setTimeout(() => el.click(), delay == null ? 260 : delay);
+    }
+    // same technique as the Journey slide's scrollConfigPaneToCenter —
+    // scrolls only the tool's own config pane (computed manually), so it
+    // can never chain into scrolling the outer case-study page once this
+    // scroller is exhausted
+    function scrollConfigPaneToCenter(el){
+      if (!el) return;
+      const scroller = el.closest('.sk-config-scroll');
+      if (!scroller) return;
+      const scrollerRect = scroller.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const elCenterInScroller = (elRect.top - scrollerRect.top) + scroller.scrollTop + elRect.height / 2;
+      const targetScrollTop = elCenterInScroller - scroller.clientHeight / 2;
+      scroller.scrollTo({top: Math.max(0, targetScrollTop), behavior: 'smooth'});
+    }
+    function setStyleHex(idPrefix, hex){
+      const el = liveToolMount.querySelector('#' + idPrefix + 'Input');
+      if (el) { el.value = hex; el.dispatchEvent(new Event('input')); }
+    }
+    function setStyleNumber(idPrefix, value){
+      const el = liveToolMount.querySelector('#' + idPrefix + 'Input');
+      if (el) { el.value = String(value); el.dispatchEvent(new Event('input')); }
+    }
+
+    // hand-built palindromes (end back where they started) so the loop
+    // restarts clean instead of drifting further from the default theme
+    // every pass — same reasoning as the Journey slide's own sequences.
+    // B93521 is the portfolio's own brand red, not an arbitrary color.
+    const PRODUCT_SEQUENCE = ['google', 'passwords', 'emailOtp', 'web3', 'emailOtp', 'passwords', 'google'];
+    const STYLE_STEPS = [
+      {sel: '#skPBtnBgInput', run: () => { setStyleHex('skPBtnBg', 'B93521'); setStyleHex('skPBtnBorder', 'B93521'); }},
+      {sel: '#skRadiusInput', run: () => setStyleNumber('skRadius', 20)},
+      {sel: '#skRadiusInput', run: () => setStyleNumber('skRadius', 4)},
+      {sel: '#skPBtnBgInput', run: () => { setStyleHex('skPBtnBg', '161616'); setStyleHex('skPBtnBorder', '161616'); }},
+    ];
+
+    function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    // bumped by any real (isTrusted) click anywhere — a visitor actually
+    // using the live tool themselves should get full control back, not
+    // have the script keep clicking things out from under them
+    let runId = 0;
+    document.addEventListener('click', (e) => { if (e.isTrusted) runId++; }, true);
+
+    async function loop(){
+      const id = ++runId;
+      const current = () => id === runId && liveSlide.classList.contains('active');
+      if (liveToolMount.__skSetCodeMode) liveToolMount.__skSetCodeMode(false);
+
+      while (current()) {
+        const configScroll = liveToolMount.querySelector('.sk-config-scroll');
+        if (configScroll) configScroll.scrollTo({top: 0, behavior: 'smooth'});
+        await sleep(700);
+
+        for (const productId of PRODUCT_SEQUENCE) {
+          if (!current()) return;
+          const chip = liveToolMount.querySelector('.sk-chip[data-id="' + productId + '"]');
+          clickWithPulse(chip, 260);
+          await sleep(1200);
+        }
+        if (!current()) return;
+        await sleep(600);
+
+        for (const step of STYLE_STEPS) {
+          if (!current()) return;
+          const el = liveToolMount.querySelector(step.sel);
+          scrollConfigPaneToCenter(el);
+          await sleep(500);
+          if (!current()) return;
+          showClickPulseOnEl(el);
+          await sleep(260);
+          step.run();
+          await sleep(1500);
+        }
+        if (!current()) return;
+        await sleep(700);
+
+        const viewCodeBtn = liveToolMount.querySelector('#skViewCodeBtn');
+        clickWithPulse(viewCodeBtn, 350);
+        await sleep(4800);
+        if (!current()) return;
+        clickWithPulse(viewCodeBtn, 350);
+        await sleep(2600);
+      }
+    }
+
+    window.__startLiveSlideAutoplay = loop;
+  })();
+
+  // optional deep link — ?start=<slide-id> jumps straight to a specific
+  // slide on load. Used to embed a single moment of the deck (e.g. the
+  // live Integration Builder tool) inside a case study page instead of
+  // always opening on slide 1. &bare=1 additionally hides the deck's own
+  // chrome (topbar/dots/exit-link) so only the actual prototype shows.
+  // &autoplay=1 starts the scripted live-tool demo above, when landing on
+  // #liveSlide. All three are no-ops if absent, so the deck's normal
+  // standalone behavior is unaffected.
+  (function initDeepLink(){
+    const params = new URLSearchParams(location.search);
+    if (params.get('bare') === '1') document.body.classList.add('embed-bare');
+    const startId = params.get('start');
+    if (!startId) return;
+    const target = Array.from(slides).findIndex(s => s.id === startId);
+    if (target === -1) return;
+    idx = target;
+    render();
+    if (startId === 'liveSlide' && params.get('autoplay') === '1' && window.__startLiveSlideAutoplay) {
+      window.__startLiveSlideAutoplay();
+    }
   })();
 </script>
 </body>

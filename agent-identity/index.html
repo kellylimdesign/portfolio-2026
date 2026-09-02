@@ -86,6 +86,48 @@
   }
   .exit-link:hover{color:var(--ink); max-width:125px;}
 
+  /* bare embed mode — see initDeepLink()'s ?bare=1 handling. Hides the
+     deck's own chrome (topbar, exit link) and, on the live guided-task
+     slide, its side callout card, so an iframed case study embed shows
+     just the actual browser-chrome prototype, not the slide-deck shell
+     around it. */
+  body.embed-bare .topbar,
+  body.embed-bare .exit-link,
+  body.embed-bare .live-callout{display:none !important;}
+  body.embed-bare .slide{top:0; padding:0;}
+
+  /* bare embed of the End User Journey slide (slide 6) — hide the step-nav
+     list/kicker (its text is redundant with the case study's own copy) and
+     let .substep-panel take the full slide instead of leaving room for
+     that nav column, so only the browser-chrome mock itself shows. */
+  body.embed-bare #slideEndUserJourney .step-nav,
+  body.embed-bare #slideEndUserJourney .text-block,
+  body.embed-bare #slideEndUserJourney .substep-progress{display:none !important;}
+  body.embed-bare #slideEndUserJourney .substep-panel{top:0; right:0; bottom:0; left:0;}
+  /* .cgpt-window's aspect-ratio + max-width/height:100% only constrains
+     the OUTER box — its children (.consent-mobile at a fixed 280px,
+     titlebar/url text at fixed font-sizes, etc.) aren't written in fluid
+     units, so shrinking that outer box to card size doesn't shrink them
+     with it; they just overflow it instead. Same underlying issue as
+     .cgpt-window-live, same fix: give it a fixed native canvas and scale
+     the whole thing — chrome and content together — with a computed zoom
+     instead (see fitStepWindow()).
+     The canvas here (920x575) is deliberately bigger than the box's own
+     736:460 aspect ratio's "natural" size, same ratio just scaled up 25% —
+     fitStepWindow() still zooms it down to exactly fill the card (no
+     leftover background around it), but because the canvas it's zooming
+     down FROM is bigger, the chrome/content inside reads smaller within
+     that same outer box, i.e. zoomed out, rather than the whole box
+     shrinking and leaving a gap around it.
+     .cgpt-window's -25px translateY was also tuned to counterbalance the
+     "PART X OF Y" label's clearance in the standalone deck — with that
+     label and the rest of the slide's normal padding gone in bare mode,
+     the offset just pushes the window off-center instead. */
+  body.embed-bare #slideEndUserJourney .cgpt-window{
+    width:920px; height:575px; aspect-ratio:auto; max-width:none; max-height:none;
+    transform:none;
+  }
+
   /* counter + dots + prev/next arrows, one combined group centered in the
      topbar — counterNow/counterTotal bookend the dot track at fixed
      positions, but counterNow's text still tracks the current slide (see
@@ -2813,6 +2855,30 @@
     border:5px solid transparent; border-top-color:#4A4950;
   }
   .guided-row-tooltip.show{opacity:1; transform:translateY(0);}
+  /* longer sentence than the nowrap row labels this component was built
+     for (e.g. the step-1 admin callout in the scripted "flow, end to end"
+     autoplay) — wraps instead of stretching into one very wide line. */
+  .guided-row-tooltip.guided-edit-tooltip{white-space:normal; max-width:230px; line-height:1.4;}
+
+  /* fake cursor + click ripple — used by the scripted "flow, end to end"
+     autoplay (see simulateClick()) so a viewer can actually see what's
+     being clicked and why the screen is about to change, instead of the
+     UI just jumping between states with no visible cause. */
+  .guided-fake-cursor{
+    position:fixed; z-index:10000; width:22px; height:22px;
+    pointer-events:none; opacity:0;
+    transition:opacity .18s ease, left .4s cubic-bezier(.4,0,.2,1), top .4s cubic-bezier(.4,0,.2,1);
+  }
+  .guided-fake-cursor svg{width:100%; height:100%; filter:drop-shadow(0 1px 3px rgba(23,22,27,.35));}
+  .guided-fake-cursor.show{opacity:1;}
+  .guided-fake-cursor.press{animation:guidedCursorPress .28s ease-out;}
+  @keyframes guidedCursorPress{0%{transform:scale(1);} 45%{transform:scale(.78);} 100%{transform:scale(1);}}
+  .guided-click-ripple{
+    position:fixed; z-index:9999; width:10px; height:10px; margin:-5px 0 0 -5px;
+    border-radius:50%; background:#6D3FD1; pointer-events:none;
+    animation:guidedRipple .5s ease-out forwards;
+  }
+  @keyframes guidedRipple{0%{transform:scale(0); opacity:.6;} 100%{transform:scale(5.5); opacity:0;}}
   /* narrows Clients/Identities down to just this scenario's agent + user in
      step 3 — the other seed rows are real content elsewhere in the console,
      just not the point of this specific reveal (see narrowRows() in JS) */
@@ -3242,7 +3308,7 @@
     </div>
   </div>
 
-  <a class="exit-link" href="../" aria-label="Exit to landing page">Exit&nbsp;to landing page</a>
+  <a class="exit-link" href="case-study/" aria-label="Exit to case study">Exit&nbsp;to case study</a>
 
   <!-- "how we got here" pause — a deliberate detour out of the main journey,
        not another equal-weight substep. Lives at the body level (not nested
@@ -8676,6 +8742,327 @@
     window.__guidedTaskReset = () => { cleanupGuidedArtifacts(); enterStep1(); };
     window.__guidedTaskRestoreRows = cleanupGuidedArtifacts;
     enterStep1();
+  })();
+
+  // .cgpt-window-live is a fixed 1440x1024 canvas scaled by a flat `zoom`
+  // (not fluid cqw units — see the comment above that rule for why), tuned
+  // as 0.8 for the deck's own ~1440x900 slide viewport. Centered via
+  // inset:0 + margin:auto, that constant only happens to fill the space
+  // it's centered in when the container is close to that same size — in a
+  // case study embed, whose iframe is an arbitrary width/height, it just
+  // floats in the middle with leftover margin (or gets clipped) instead.
+  // In bare mode we recompute zoom to fill the container's full width
+  // (not the smaller of width/height) so there's never leftover margin on
+  // the sides — the case study page picks an iframe tall enough that this
+  // doesn't overflow on typical widths; on anything narrower, the bottom
+  // just gets cropped by the iframe edge, same tradeoff as everywhere else
+  // this deck fills an arbitrary embed rather than letterboxing it.
+  function fitLiveWindow(){
+    if (!document.body.classList.contains('embed-bare')) return;
+    const col = document.querySelector('.live-frame-col');
+    const win = document.getElementById('liveWindowHome');
+    if (!col || !win) return;
+    const w = col.clientWidth;
+    if (!w) return;
+    win.style.zoom = w / 1440;
+  }
+  window.addEventListener('resize', fitLiveWindow);
+  window.addEventListener('load', fitLiveWindow);
+
+  // same fix, for the End User Journey's .cgpt-window (see the bare-mode
+  // CSS override giving it a fixed 736x460 canvas). Measures the currently
+  // active step's box (others are display:none via their .step-context
+  // ancestor, so they'd read 0) and applies the same zoom to all 4 step
+  // instances — they all share the same container/aspect-ratio, so the
+  // fit is identical regardless of which one is showing.
+  function fitStepWindow(){
+    if (!document.body.classList.contains('embed-bare')) return;
+    const slide = document.getElementById('slideEndUserJourney');
+    if (!slide) return;
+    const box = slide.querySelector('.step-context.active .substep-visual') || slide.querySelector('.substep-visual');
+    const windows = slide.querySelectorAll('.cgpt-window');
+    if (!box || !windows.length) return;
+    const w = box.clientWidth, h = box.clientHeight;
+    if (!w || !h) return;
+    // fills the card exactly — the "zoomed out" look comes from the
+    // bare-mode CSS giving .cgpt-window a bigger native canvas (920x575,
+    // same 736:460 ratio) than the card itself, not from under-filling it.
+    const z = Math.min(w / 920, h / 575);
+    windows.forEach(win => { win.style.zoom = z; });
+  }
+  window.addEventListener('resize', fitStepWindow);
+  window.addEventListener('load', fitStepWindow);
+
+  // combines a step-nav slide's steps (e.g. the End User Journey's Request
+  // -> Log In -> Grant Access -> Act On Your Behalf) into one continuous,
+  // looping animation instead of requiring clicks — used for small
+  // decorative embeds where nothing else drives navigation. Just calls the
+  // deck's own selectStepContext() on a timer, so each step's normal
+  // crossfade/autoplay (e.g. step 1's popover) still plays exactly as it
+  // does in the standalone deck.
+  let stepsAutoplayTimer = null;
+  function startStepsAutoplay(slide){
+    const stepCount = slide.querySelectorAll('.step-nav-item').length;
+    if (!stepCount) return;
+    let s = 1;
+    clearInterval(stepsAutoplayTimer);
+    stepsAutoplayTimer = setInterval(() => {
+      s = s >= stepCount ? 1 : s + 1;
+      selectStepContext(slide, s);
+    }, 4500);
+  }
+
+  // scripted "flow, end to end" autoplay for the guided "try it yourself"
+  // slide (slideTryItYourself) — plays through its existing 3 steps
+  // (customize the consent screen -> connect + log in as the end user ->
+  // back in the console) hands-off, by calling .click() on the exact same
+  // real buttons/handlers a visitor would otherwise use (initGuidedTask's
+  // enterStep1/2a/2b/2c/2d/3 above), not a separate parallel
+  // implementation. The one addition on top of what's already there: a
+  // tooltip on step 1, which — unlike steps 2/3 — has no callout of its
+  // own in the standalone deck explaining what to do.
+  function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
+  // fills a real input character-by-character rather than setting .value
+  // once, so it reads as someone actually typing — dispatches a real
+  // 'input' event per keystroke so the field's own live-preview listeners
+  // (e.g. consentModalLogoInput's syncModalPreview) fire exactly as they
+  // would for a real visitor typing. A password input masks itself as
+  // usual (type="password"), so no extra handling needed there.
+  // {preventScroll:true} matters here: focusing an input inside an iframe
+  // otherwise scrolls the PARENT page to bring the iframe into view — with
+  // this autoplay looping and typing into a field every ~20s, that was
+  // dragging the whole case study page down to this section repeatedly.
+  function typeInto(el, text, cps){
+    return new Promise(resolve => {
+      if (!el) { resolve(); return; }
+      el.focus({preventScroll: true});
+      el.value = '';
+      let i = 0;
+      (function tick(){
+        el.value = text.slice(0, i + 1);
+        el.dispatchEvent(new Event('input', {bubbles: true}));
+        i++;
+        if (i < text.length) setTimeout(tick, 1000 / cps + Math.random() * 30);
+        else resolve();
+      })();
+    });
+  }
+
+  // same visual component as flashRow()'s row tooltips inside
+  // initGuidedTask (position:fixed, points down at its target), just
+  // callable from outside that IIFE's closure since this needs to point
+  // at the Edit button specifically, before any step-3 row exists.
+  // position:fixed inside THIS document can never actually render past
+  // this iframe's own box — the iframe is a fixed-size rendering surface
+  // in the parent page, so no left/top value positions a tooltip outside
+  // it, only clamps it into an ever-smaller corner near a button that's
+  // close to the edge, which read as "not really attached" to the button.
+  // Real fix: render it in the parent page instead (same-origin, so
+  // window.frameElement/window.parent are both directly accessible),
+  // translating the button's rect into the parent's coordinate space via
+  // this iframe's own on-page position. Fully inline-styled since the
+  // parent page doesn't load this document's <style> block.
+  function showGuidedTooltip(target, text, holdMs){
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    const inFrame = !!(window.frameElement && window.parent && window.parent.document);
+    const host = inFrame ? window.parent.document : document;
+    const frameRect = inFrame ? window.frameElement.getBoundingClientRect() : {left: 0, top: 0};
+
+    const tip = host.createElement('div');
+    tip.textContent = text;
+    Object.assign(tip.style, {
+      position: 'fixed', zIndex: 2147483647,
+      background: '#4A4950', color: '#F4F3EF',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif",
+      fontSize: '12px', fontWeight: '700', letterSpacing: '.01em', lineHeight: '1.4',
+      padding: '7px 12px', borderRadius: '7px', maxWidth: '220px',
+      boxShadow: '0 4px 14px rgba(23,22,27,.25)',
+      opacity: '0', transform: 'translateY(4px)',
+      transition: 'opacity .3s ease, transform .3s ease',
+      pointerEvents: 'none',
+    });
+    const arrow = host.createElement('div');
+    Object.assign(arrow.style, {
+      position: 'absolute', top: '100%', left: '18px',
+      width: '0', height: '0',
+      border: '5px solid transparent', borderTopColor: '#4A4950',
+    });
+    tip.appendChild(arrow);
+    host.body.appendChild(tip);
+
+    const tipRect = tip.getBoundingClientRect();
+    const rawLeft = frameRect.left + rect.left;
+    const rawTop = frameRect.top + rect.top - tipRect.height - 14;
+    const vw = host.defaultView.innerWidth;
+    // clamped against the real page viewport now, not the tiny iframe —
+    // in practice this only ever engages near the actual screen edge
+    const left = Math.min(Math.max(8, rawLeft), vw - tipRect.width - 8);
+    const top = Math.max(8, rawTop);
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+
+    requestAnimationFrame(() => {
+      tip.style.opacity = '1';
+      tip.style.transform = 'translateY(0)';
+    });
+    setTimeout(() => {
+      tip.style.opacity = '0';
+      tip.style.transform = 'translateY(4px)';
+      setTimeout(() => tip.remove(), 350);
+    }, holdMs);
+  }
+
+  // bumped by any real (isTrusted) click anywhere in the document — a
+  // visitor interacting with the live embed themselves should hand them
+  // full control, not have the script keep clicking things out from under
+  // them. Each loop pass checks this between steps and bails if it's
+  // moved past the run it started on.
+  let guidedAutoplayRunId = 0;
+  document.addEventListener('click', (e) => {
+    if (e.isTrusted) guidedAutoplayRunId++;
+  }, true);
+
+  // a small fake pointer that moves to a target, "presses" (ripple +
+  // squash), then performs the real click — so the autoplay reads as
+  // someone actually clicking through the flow, rather than the screen
+  // just jumping between states with no visible cause.
+  let fakeCursorEl = null;
+  let fakeCursorPlaced = false;
+  function getFakeCursor(){
+    if (fakeCursorEl) return fakeCursorEl;
+    fakeCursorEl = document.createElement('div');
+    fakeCursorEl.className = 'guided-fake-cursor';
+    fakeCursorEl.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 2.5l15.5 6.7-6.2 2-2 6.3z" fill="#22211E" stroke="#F4F3EF" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+    document.body.appendChild(fakeCursorEl);
+    return fakeCursorEl;
+  }
+  async function simulateClick(el){
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const cursor = getFakeCursor();
+    if (!fakeCursorPlaced) {
+      // first appearance jumps straight there instead of sweeping in from
+      // the cursor's unset 0,0 default position
+      cursor.style.transition = 'none';
+      cursor.style.left = x + 'px';
+      cursor.style.top = y + 'px';
+      cursor.getBoundingClientRect(); // flush the transition:none before re-enabling it below
+      cursor.style.transition = '';
+      fakeCursorPlaced = true;
+    } else {
+      cursor.style.left = x + 'px';
+      cursor.style.top = y + 'px';
+    }
+    cursor.classList.add('show');
+    await sleep(450); // let it visibly travel there first
+    cursor.classList.add('press');
+    const ripple = document.createElement('div');
+    ripple.className = 'guided-click-ripple';
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 550);
+    await sleep(180);
+    el.click();
+    cursor.classList.remove('press');
+    await sleep(250);
+    cursor.classList.remove('show');
+  }
+
+  async function startGuidedAutoplay(){
+    const runId = ++guidedAutoplayRunId;
+    const current = () => runId === guidedAutoplayRunId;
+
+    while (current()) {
+      // steps after the first loop pass start from whatever step 3 left
+      // on screen — Start over resets it back to step 1's "Not set" state,
+      // same as a visitor clicking it themselves
+      const restartBtn = document.getElementById('guidedRestart');
+      if (restartBtn && restartBtn.classList.contains('show')) await simulateClick(restartBtn);
+      await sleep(700);
+      if (!current()) return;
+
+      // step 1 — customize the consent screen
+      const editBtn = document.getElementById('consentEditBtn');
+      showGuidedTooltip(editBtn, 'As the admin, start by customizing your consent screen.', 3000);
+      await sleep(2800);
+      if (!current()) return;
+
+      await simulateClick(editBtn);
+      await sleep(600);
+      if (!current()) return;
+      await typeInto(document.getElementById('consentModalFriendlyNameInput'), 'Owl Trade', 16);
+      await sleep(350);
+      await typeInto(document.getElementById('consentModalLogoInput'), 'assets/owltrade-logo.png', 22);
+      await sleep(800);
+      if (!current()) return;
+      // initGuidedTask's own listener advances to enterStep2a() ~350ms after this
+      await simulateClick(document.getElementById('consentModalSave'));
+      await sleep(1300);
+      if (!current()) return;
+
+      // step 2 — connect ChatGPT to the app, log in, grant access
+      await simulateClick(document.getElementById('guidedPlusBtn'));
+      await sleep(1000);
+      if (!current()) return;
+      await simulateClick(document.getElementById('guidedConnectBtn')); // -> enterStep2b (login)
+      await sleep(600);
+      if (!current()) return;
+      await typeInto(document.getElementById('guidedLoginEmail'), 'alex@owltrade.io', 20);
+      await sleep(350);
+      await typeInto(document.getElementById('guidedLoginPassword'), 'hunter22', 22);
+      await sleep(800);
+      if (!current()) return;
+      await simulateClick(document.getElementById('guidedLoginBtn')); // -> enterStep2c (branded consent)
+      await sleep(1300);
+      if (!current()) return;
+      await simulateClick(document.getElementById('guidedAllowBtn')); // -> enterStep2d (connected, fades in follow-up messages)
+      // extra time on the connected chat state before advancing — per Kelly,
+      // needs room to actually read the follow-up messages, not just flash by
+      await sleep(5800);
+      if (!current()) return;
+
+      // step 3 — fade back to the console, exactly as already built
+      await simulateClick(document.getElementById('guidedNextBtn')); // -> enterStep3
+      // step 3's own built-in 900+4200+900ms timing, plus a longer read pause
+      // on the finished Identities view before the loop restarts — per Kelly
+      await sleep(9500);
+      if (!current()) return;
+
+      await sleep(3500); // hold on the finished state, then loop
+    }
+  }
+
+  // optional deep link — ?start=<slide-id> jumps straight to a specific
+  // slide on load. Used to embed a single moment of the walkthrough (e.g.
+  // the live "try it yourself" browser chrome) inside a case study page
+  // instead of always opening on slide 1. &bare=1 additionally hides the
+  // deck's own chrome (topbar/dots/exit-link) and, on the live/step-nav
+  // slides, their side text, so only the actual prototype shows — for a
+  // case study embed we want just the browser-chrome mock itself, not the
+  // surrounding slide-deck presentation. &autoplay=1 starts either the
+  // steps autoplay above (for step-nav slides) or the guided-task autoplay
+  // (for slideTryItYourself). All three are no-ops if absent, so the
+  // deck's normal standalone behavior is unaffected.
+  (function initDeepLink(){
+    const params = new URLSearchParams(location.search);
+    if (params.get('bare') === '1') document.body.classList.add('embed-bare');
+    const startId = params.get('start');
+    if (!startId) return;
+    const target = Array.from(slides).findIndex(s => s.id === startId);
+    if (target === -1) return;
+    idx = target;
+    render();
+    fitLiveWindow();
+    fitStepWindow();
+    if (params.get('autoplay') === '1') {
+      if (startId === 'slideTryItYourself') startGuidedAutoplay();
+      else startStepsAutoplay(slides[target]);
+    }
   })();
 </script>
 </body>
