@@ -72,13 +72,12 @@
   function applyIllustration(category) {
     var img = document.getElementById('heroIllustration');
     if (!img) return;
-    // ?v=3 — cache-bust: same filenames, new bytes, whenever these get
+    // ?v=4 — cache-bust: same filenames, new bytes, whenever these get
     // reprocessed (v2 was the plant-free background swap; v3 re-cropped
     // every weather variant to one shared bounding box per group instead
-    // of each file's own, since independent per-file alpha crops meant
-    // each weather category came out a different size and drifted out of
-    // alignment with the others — see the plant asset pipeline notes).
-    var candidate = 'assets/illustration/windowsill-' + category + '.webp?v=3';
+    // of each file's own; v4 swapped in the "simple" window art Kelly
+    // provided to try simplifying the scene).
+    var candidate = 'assets/illustration/windowsill-' + category + '.webp?v=4';
     var test = new Image();
     test.onload = function () {
       img.src = candidate;
