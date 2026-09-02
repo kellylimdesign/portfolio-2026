@@ -354,25 +354,31 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ---- Case study ---- */
+/* Structure per design_handoff_landing_page/Case Study.html: no top nav,
+   just an exit link; every major section is topped with a hairline except
+   the exit header, the title block, and the footer. */
 
-.cs-nav-links {
-  display: flex;
-  gap: 28px;
+.cs-exit {
+  padding: 22px var(--page-padding);
+}
+
+.cs-exit-link {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
+  border-bottom: 1px solid var(--muted);
+  padding-bottom: 2px;
 }
 
-.cs-nav-links a { color: var(--brand); border-bottom: 1px solid transparent; }
-.cs-nav-links a:hover { color: var(--ink); }
+.cs-exit-link:hover { color: var(--ink); border-bottom-color: var(--ink); }
 
-.cs-hero {
+.cs-title {
   padding: 64px var(--page-padding) 56px;
 }
 
-.cs-hero-eyebrow {
+.cs-title-eyebrow {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
@@ -382,10 +388,10 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 32px;
 }
 
-.cs-hero-eyebrow .company { color: var(--brand); }
-.cs-hero-eyebrow .readtime { color: var(--muted); }
+.cs-title-eyebrow .company { color: var(--brand); }
+.cs-title-eyebrow .index { color: var(--muted); }
 
-.cs-hero-title {
+.cs-title-heading {
   font-weight: 600;
   font-size: 60px;
   line-height: 1.0;
@@ -394,7 +400,7 @@ a { color: inherit; text-decoration: none; }
   margin: 0;
 }
 
-.cs-hero-subhead {
+.cs-title-subhead {
   font-size: 20px;
   line-height: 1.5;
   color: var(--secondary);
@@ -402,52 +408,23 @@ a { color: inherit; text-decoration: none; }
   margin: 24px 0 0;
 }
 
-.cs-hero-cta {
-  margin-top: 40px;
-}
-
 @media (max-width: 640px) {
-  .cs-hero-title { font-size: 38px; letter-spacing: -0.03em; }
-  .cs-hero-subhead { font-size: 18px; }
+  .cs-title-heading { font-size: 38px; letter-spacing: -0.03em; }
+  .cs-title-subhead { font-size: 18px; }
 }
 
-.cs-meta-problem {
+/* shared section shell — hairline-topped block used by Problem,
+   Who This Is For, and Illustrative example + interactive mock */
+.cs-section {
   padding: 0 var(--page-padding) 56px;
-  display: flex;
-  gap: 56px;
 }
 
-.cs-meta {
-  width: 240px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.cs-section-inner {
   padding-top: 28px;
   border-top: 1px solid var(--hairline);
 }
 
-.cs-meta-row {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
-.cs-meta-row .label { color: var(--muted); }
-.cs-meta-row .value.accent { color: var(--brand); }
-
-.cs-problem {
-  flex: 1;
-  min-width: 0;
-  padding-top: 28px;
-  border-top: 1px solid var(--hairline);
-}
-
-.cs-problem-label {
+.cs-label {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.14em;
@@ -456,7 +433,16 @@ a { color: inherit; text-decoration: none; }
   margin: 0 0 18px;
 }
 
-.cs-problem-body {
+.cs-subhead {
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  margin: 0 0 18px;
+  max-width: 22ch;
+}
+
+.cs-body {
   font-size: 17px;
   line-height: 1.7;
   color: var(--body-dark);
@@ -464,101 +450,250 @@ a { color: inherit; text-decoration: none; }
   margin: 0;
 }
 
-@media (max-width: 640px) {
-  .cs-meta-problem { flex-direction: column; gap: 32px; }
-  .cs-meta { width: auto; }
-}
+.cs-body em { font-style: italic; color: var(--secondary); }
 
-.cs-figure {
-  padding: 0 var(--page-padding) 56px;
-}
-
-.cs-figure-image {
-  width: 100%;
-  height: 380px;
-  object-fit: cover;
-  object-position: top;
+.cs-example {
+  margin-top: 28px;
+  padding: 20px 24px;
+  background: var(--surface);
   border: 1px solid var(--hairline);
-  display: block;
+  max-width: 62ch;
 }
 
-.cs-figure-caption {
+.cs-example-label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--muted);
-  margin-top: 12px;
+  margin: 0 0 8px;
 }
 
-.cs-outcomes {
-  padding: 0 var(--page-padding) 72px;
+.cs-example-text {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--body-dark);
+  margin: 0;
 }
 
-.cs-outcomes-cols {
+@media (max-width: 640px) {
+  .cs-subhead { font-size: 26px; }
+}
+
+.cs-subhead--narrow { max-width: 16ch; }
+
+/* ---- Team and status (two columns) ---- */
+
+.cs-team-status {
+  padding: 0 var(--page-padding) 56px;
   display: flex;
   gap: 56px;
-  align-items: flex-start;
 }
 
-.cs-outcome-col {
+.cs-ts-col {
   flex: 1;
+  min-width: 0;
   padding-top: 28px;
   border-top: 1px solid var(--hairline);
 }
 
-.cs-outcome-title {
-  font-weight: 600;
-  font-size: 19px;
-  letter-spacing: -0.01em;
+.cs-ts-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+
+.cs-ts-value {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--body-dark);
   margin: 0;
 }
 
-.cs-outcome-desc {
+.cs-ts-value .accent { color: var(--brand); }
+
+@media (max-width: 640px) {
+  .cs-team-status { flex-direction: column; gap: 32px; }
+}
+
+/* single-row variant — one shared hairline top instead of two separate
+   per-column ones, team left-aligned/status right-aligned */
+.cs-ts-row {
+  padding: 28px var(--page-padding) 56px;
+  border-top: 1px solid var(--hairline);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+.cs-ts-row .cs-ts-col { flex: none; padding-top: 0; border-top: none; }
+.cs-ts-row .cs-ts-col--end { text-align: right; }
+
+@media (max-width: 640px) {
+  .cs-ts-row { flex-direction: column; gap: 12px; }
+  .cs-ts-row .cs-ts-col--end { text-align: left; }
+}
+
+/* ---- Who this is for (two audience cards) ---- */
+
+.cs-audience-cols {
+  display: flex;
+  gap: 56px;
+}
+
+.cs-audience-card { flex: 1; min-width: 0; }
+
+.cs-audience-title {
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: -0.015em;
+  margin: 0 0 10px;
+}
+
+.cs-audience-desc {
   font-size: 15px;
   line-height: 1.6;
   color: var(--secondary);
-  margin: 10px 0 0;
-  max-width: 30ch;
+  margin: 0;
+  max-width: 38ch;
 }
 
-.cs-outcomes-list {
+.cs-audience-example {
+  margin-top: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cs-audience-example .accent { color: var(--brand); }
+
+@media (max-width: 640px) {
+  .cs-audience-cols { flex-direction: column; gap: 32px; }
+}
+
+/* card-pair variant — two equal-width columns separated by a 2px hairline
+   "seam" (background peeking through the gap), each with its own visual
+   mock, not just text. Both mocks share one box shape (.cs-audience-mock,
+   the browser-chrome's own 736:460 ratio) so the two read as the same
+   size — no extra frame/titlebar around either, just the mock itself. */
+.cs-audience-pair {
+  display: flex;
+  gap: 2px;
+  background: var(--hairline);
+}
+
+.cs-audience-pair-card {
+  flex: 1;
+  min-width: 0;
+  padding: 32px;
   display: flex;
   flex-direction: column;
+  gap: 20px;
+  background: var(--bg);
 }
 
-.cs-outcomes-note {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--secondary);
-  max-width: 62ch;
-  margin: 0 0 28px;
+.cs-audience-pair-card--wide { background: var(--surface); }
+
+.cs-audience-pair-card--center {
+  align-items: center;
+  text-align: center;
 }
 
-.cs-outcome-row {
-  display: flex;
-  gap: 24px;
-  padding: 20px 0;
-  border-top: 1px solid var(--hairline);
+.cs-audience-pair-card--center .cs-audience-pair-head {
+  align-self: flex-start;
+  text-align: left;
 }
 
-.cs-outcomes-list .cs-outcome-row:last-child { border-bottom: 1px solid var(--hairline); }
+.cs-audience-pair-head .cs-audience-title { margin-bottom: 6px; }
+.cs-audience-pair-head .cs-audience-desc { max-width: 36ch; }
 
-.cs-outcome-index {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--brand);
-  width: 24px;
-  flex-shrink: 0;
+/* shared mock box — same aspect ratio as the deck's own .cgpt-window
+   (736:460), so an iframed prototype and a real screenshot end up the
+   same size regardless of content. overflow:hidden crops whatever doesn't
+   fit rather than letterboxing or squashing it. */
+.cs-audience-mock {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 736 / 460;
+  overflow: hidden;
+  background: var(--bg);
 }
 
-.cs-outcome-text {
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--body-dark);
+.cs-audience-mock-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--bg);
+  pointer-events: none;
 }
 
 @media (max-width: 640px) {
-  .cs-outcomes-cols { flex-direction: column; gap: 32px; }
+  .cs-audience-pair { flex-direction: column; }
+}
+
+/* ---- Illustrative example + interactive mock ---- */
+
+.cs-narrative {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--body-dark);
+  max-width: 62ch;
+  margin: 0 0 32px;
+}
+
+/* two-tier lede/note variant — a bigger statement line plus a smaller
+   muted line beneath it, used in place of .cs-narrative where the section
+   doesn't have its own .cs-subhead */
+.cs-flow-lede {
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--body-dark);
+  max-width: 56ch;
+  margin: 0 0 10px;
+}
+
+.cs-flow-note {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 56ch;
+  margin: 0 0 28px;
+}
+
+/* wrapper enforces one clean, symmetric rounded-rect clip around the
+   embed regardless of how the deck's own internal box (which has its own
+   border-radius, and may get width/height-cropped by the iframe edge)
+   happens to render inside it — corners stay consistent on all 4 sides
+   even if the content behind them doesn't line up exactly. Not full width
+   — a smaller, more deliberate size than "fill the page". */
+.cs-mock-wrap {
+  width: 60%;
+  min-width: 320px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cs-mock-frame {
+  height: 576px;
+  border: none;
+  display: block;
+  width: 100%;
+  background: var(--bg);
+}
+
+@media (max-width: 900px) {
+  .cs-mock-wrap { width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .cs-mock-frame { height: 420px; }
 }
 
 .cs-next {
@@ -596,4 +731,12 @@ a { color: inherit; text-decoration: none; }
   font-size: 21px;
   letter-spacing: -0.03em;
   color: var(--ink);
+}
+
+.cs-next-readtime {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
 }

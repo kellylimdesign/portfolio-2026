@@ -12,76 +12,90 @@
 </head>
 <body>
 
-  <header class="nav">
-    <a class="nav-wordmark" href="../../">Kelly Lim</a>
-    <div class="cs-nav-links">
-      <a href="../../work/">Work</a>
-      <span>About</span>
-      <span>Notes</span>
-    </div>
+  <header class="cs-exit">
+    <a class="cs-exit-link" href="../../">← Exit to landing page</a>
   </header>
 
-  <section class="cs-hero">
-    <div class="cs-hero-eyebrow">
+  <section class="cs-title">
+    <div class="cs-title-eyebrow">
       <span class="company">01 / Twilio</span>
-      <span class="readtime">2 min read</span>
+      <span class="index">01 / 02</span>
     </div>
-    <h1 class="cs-hero-title">Building trust in the age of AI</h1>
-    <p class="cs-hero-subhead">Setting up identity for a new kind of actor — the AI agent.</p>
-    <div class="cs-hero-cta">
-      <a class="btn-pill" href="../">Open the interactive walkthrough</a>
+    <h1 class="cs-title-heading">Building Trust in the Age of AI</h1>
+    <p class="cs-title-subhead">Setting up identity for a new kind of actor — the AI agent.</p>
+  </section>
+
+  <section class="cs-section">
+    <div class="cs-section-inner">
+      <p class="cs-label">The problem</p>
+      <h2 class="cs-subhead cs-subhead--narrow">A New Kind of Actor</h2>
+      <p class="cs-body">Twilio has identity tools for humans — but no way to safely authenticate or authorize the AI agents now acting alongside them. <em>Imagine a financial tool, Owl Trade, whose users want to connect ChatGPT to trade on their behalf — how do you do that securely?</em></p>
     </div>
   </section>
 
-  <section class="cs-meta-problem">
-    <div class="cs-meta">
-      <div class="cs-meta-row"><span class="label">Role</span><span class="value">Designer</span></div>
-      <div class="cs-meta-row"><span class="label">Team</span><span class="value">1 designer · 1 PM · 5 eng</span></div>
-      <div class="cs-meta-row"><span class="label">Year</span><span class="value">2025–present</span></div>
-      <div class="cs-meta-row"><span class="label">Status</span><span class="value accent">Design partner testing</span></div>
+  <section class="cs-ts-row">
+    <div class="cs-ts-col">
+      <p class="cs-ts-label">The team</p>
+      <p class="cs-ts-value">1 Designer · 1 PM · 5 Engineers</p>
     </div>
-    <div class="cs-problem">
-      <p class="cs-problem-label">The problem</p>
-      <p class="cs-problem-body">
-        Twilio already had identity tools built for humans — ways to verify a person is who they say they are.
-        But there was no way to safely authenticate or authorize the AI agents now acting alongside them:
-        software making requests, and sometimes decisions, <em>on a user's behalf, without a person watching every step</em>.
-        Imagine a financial tool, Owl Trade, whose end users want to connect ChatGPT to make trades for them —
-        there was no secure way to do that yet.
-      </p>
+    <div class="cs-ts-col cs-ts-col--end">
+      <p class="cs-ts-label">Status</p>
+      <p class="cs-ts-value"><span class="accent">Private beta — Fall 2026</span></p>
     </div>
   </section>
 
-  <section class="cs-figure">
-    <img class="cs-figure-image" src="figure.png" alt="The Agent Identity consent screen inside the Twilio Console, showing what an agent is asking permission to do.">
-    <p class="cs-figure-caption">Fig. 01 — the consent screen an end user sees before an agent can act on their behalf.</p>
+  <section class="cs-section">
+    <div class="cs-section-inner">
+      <p class="cs-label">Who this is for</p>
+      <h2 class="cs-subhead">Two Users, Two Moments</h2>
+      <div class="cs-audience-pair">
+        <div class="cs-audience-pair-card cs-audience-pair-card--center">
+          <div class="cs-audience-pair-head">
+            <p class="cs-audience-title">The End User</p>
+            <p class="cs-audience-desc">Asked, in the moment, whether an agent can act on their behalf.</p>
+          </div>
+          <div class="cs-audience-mock">
+            <iframe
+              class="cs-audience-mock-frame"
+              src="../index.html?start=slideEndUserJourney&bare=1&autoplay=1"
+              title="The end user journey, animated — from the Identity for AI Agents deck"
+              loading="lazy"
+            ></iframe>
+          </div>
+          <p class="cs-audience-example">For example — <span class="accent">Alex, an OwlTrade user</span></p>
+        </div>
+        <div class="cs-audience-pair-card cs-audience-pair-card--wide">
+          <div class="cs-audience-pair-head">
+            <p class="cs-audience-title">The Builder</p>
+            <p class="cs-audience-desc">Configures identity and approvals ahead of time, for their whole platform.</p>
+          </div>
+          <div class="cs-audience-mock">
+            <iframe
+              class="cs-audience-mock-frame"
+              src="../index.html?start=slideTryItYourself&bare=1"
+              title="The Twilio Console — Agent Identity, from the Identity for AI Agents deck"
+              loading="lazy"
+            ></iframe>
+          </div>
+          <p class="cs-audience-example">For example — <span class="accent">OwlTrade</span></p>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section class="cs-outcomes">
-    <p class="cs-outcomes-note">
-      Agent Identity is pre-launch — currently in testing with 5 design partners ahead of a private beta in Fall 2026.
-      Rather than invent outcomes that don't exist yet, here's what that testing is actually working to answer:
-    </p>
-    <div class="cs-outcomes-list">
-      <div class="cs-outcome-row">
-        <span class="cs-outcome-index">01</span>
-        <span class="cs-outcome-text">How much consent-screen customization partners need beyond a logo</span>
-      </div>
-      <div class="cs-outcome-row">
-        <span class="cs-outcome-index">02</span>
-        <span class="cs-outcome-text">What would make configuration more intuitive</span>
-      </div>
-      <div class="cs-outcome-row">
-        <span class="cs-outcome-index">03</span>
-        <span class="cs-outcome-text">What actions on their platform would need human-in-the-loop approval</span>
-      </div>
-      <div class="cs-outcome-row">
-        <span class="cs-outcome-index">04</span>
-        <span class="cs-outcome-text">What custom scopes they'd need to define</span>
-      </div>
-      <div class="cs-outcome-row">
-        <span class="cs-outcome-index">05</span>
-        <span class="cs-outcome-text">What problem they'd want solved next</span>
+  <section class="cs-section">
+    <div class="cs-section-inner">
+      <p class="cs-label">The flow, end to end</p>
+      <p class="cs-flow-lede">A trader connects ChatGPT to Owl Trade to watch the market and act on his behalf — securely, end to end.</p>
+      <p class="cs-flow-note">See how an admin configures Agent Identity and what the end user sees, all in one continuous flow.</p>
+
+      <div class="cs-mock-wrap">
+        <iframe
+          class="cs-mock-frame"
+          src="../index.html?start=slideTryItYourself&bare=1&autoplay=1"
+          title="Interactive walkthrough — the full Owl Trade × ChatGPT flow, from the Identity for AI Agents deck"
+          loading="lazy"
+        ></iframe>
       </div>
     </div>
   </section>
@@ -91,6 +105,7 @@
     <a class="cs-next-link" href="../../stytch-sdk-integration-builder/case-study/">
       <span class="cs-next-index">02</span>
       <span class="cs-next-title">AuthKit: Integration Builder</span>
+      <span class="cs-next-readtime">5 min</span>
     </a>
   </footer>
 

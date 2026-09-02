@@ -39,6 +39,11 @@
     width:var(--sk-card-width,391px); background:var(--sk-card-bg,#FFFFFF); border:1px solid var(--sk-card-border,#CFCFCF);
     border-radius:var(--sk-card-radius,10px); padding:32px 28px; font-family:var(--sk-card-font,Arial,sans-serif); text-align:center;
     box-shadow:0 4px 24px rgba(23,22,27,.05);
+    /* scaled down 20% (transform doesn't change its flex-centered layout
+       box, just what's painted inside it) so there's more headroom in the
+       preview pane before a taller card — more sign-in methods enabled,
+       more form fields — starts crowding its edges */
+    transform:scale(.8);
     transition:width .15s ease,background-color .15s ease,border-color .15s ease,border-radius .15s ease;
   }
   .sk-card-brand{font-size:22px; font-weight:700; margin-bottom:10px; color:var(--sk-ink);}

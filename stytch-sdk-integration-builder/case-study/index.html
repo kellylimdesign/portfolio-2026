@@ -12,63 +12,73 @@
 </head>
 <body>
 
-  <header class="nav">
-    <a class="nav-wordmark" href="../../">Kelly Lim</a>
-    <div class="cs-nav-links">
-      <a href="../../work/">Work</a>
-      <span>About</span>
-      <span>Notes</span>
-    </div>
+  <header class="cs-exit">
+    <a class="cs-exit-link" href="../../">← Exit to landing page</a>
   </header>
 
-  <section class="cs-hero">
-    <div class="cs-hero-eyebrow">
+  <section class="cs-title">
+    <div class="cs-title-eyebrow">
       <span class="company">02 / Stytch</span>
-      <span class="readtime">2 min read</span>
+      <span class="index">02 / 02</span>
     </div>
-    <h1 class="cs-hero-title">AuthKit: Integration Builder</h1>
-    <p class="cs-hero-subhead">Prebuilt UI was supposed to be the fastest path to auth — no components to build. Adoption said otherwise.</p>
-    <div class="cs-hero-cta">
-      <a class="btn-pill" href="../">Open the interactive walkthrough</a>
+    <h1 class="cs-title-heading">AuthKit: Integration Builder</h1>
+    <p class="cs-title-subhead">Prebuilt UI was supposed to be the fastest path to auth — no components to build. Adoption said otherwise.</p>
+  </section>
+
+  <section class="cs-section">
+    <div class="cs-section-inner">
+      <p class="cs-label">The problem</p>
+      <h2 class="cs-subhead">Fast Auth, Slow Evaluation</h2>
+      <p class="cs-body">The Stytch SDK's whole pitch was fast auth — nothing to build. But evaluating Stytch wasn't fast at all: customers had no way to know if the SDK actually fit their product without integrating it first.</p>
+      <div class="cs-example">
+        <p class="cs-example-label">Context</p>
+        <p class="cs-example-text">Our team's first read was a capability gap, so we focused on closing API gaps first. But even after closing them, customers still weren't adopting the SDK like we expected.</p>
+      </div>
     </div>
   </section>
 
-  <section class="cs-meta-problem">
-    <div class="cs-meta">
-      <div class="cs-meta-row"><span class="label">Role</span><span class="value">Designer</span></div>
-      <div class="cs-meta-row"><span class="label">Year</span><span class="value">2024</span></div>
-      <div class="cs-meta-row"><span class="label">Status</span><span class="value accent">Shipped</span></div>
+  <section class="cs-team-status">
+    <div class="cs-ts-col">
+      <p class="cs-ts-label">Role</p>
+      <p class="cs-ts-value">Designer</p>
     </div>
-    <div class="cs-problem">
-      <p class="cs-problem-label">The problem</p>
-      <p class="cs-problem-body">
-        The Stytch SDK's whole pitch was fast auth — nothing to build. But evaluating it wasn't fast at all:
-        customers had no way to know if the SDK actually fit their product <em>without integrating it first</em>.
-        Our team's first read was a capability gap, so we closed every remaining API difference —
-        and customers still said the SDK didn't meet their needs anyway.
-      </p>
+    <div class="cs-ts-col">
+      <p class="cs-ts-label">Status</p>
+      <p class="cs-ts-value"><span class="accent">Shipped</span> — 2024</p>
     </div>
   </section>
 
-  <section class="cs-figure">
-    <img class="cs-figure-image" src="figure.png" alt="The SDK Integration Builder: a product catalog, a live styling panel, and a working preview of the auth flow.">
-    <p class="cs-figure-caption">Fig. 01 — the Integration Builder: browse products, restyle live, test the real flow, then ship the code.</p>
+  <section class="cs-section">
+    <div class="cs-section-inner">
+      <p class="cs-label">Who this is for</p>
+      <h2 class="cs-subhead">Two Audiences, One Tool</h2>
+      <div class="cs-audience-cols">
+        <div class="cs-audience-card">
+          <p class="cs-audience-title">The Evaluator</p>
+          <p class="cs-audience-desc">A developer or team deciding whether Stytch fits their product, before writing any integration code.</p>
+          <p class="cs-audience-example">For example — <span class="accent">a customer sizing up Stytch for their own app's auth</span></p>
+        </div>
+        <div class="cs-audience-card">
+          <p class="cs-audience-title">The Solutions Engineer</p>
+          <p class="cs-audience-desc">Stytch's own team, who used to build one-off demos by hand to answer exactly the question the Evaluator is asking.</p>
+          <p class="cs-audience-example">For example — <span class="accent">an SE on a prospect call</span></p>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section class="cs-outcomes">
-    <div class="cs-outcomes-cols">
-      <div class="cs-outcome-col">
-        <p class="cs-outcome-title">Fast, easy preview</p>
-        <p class="cs-outcome-desc">Replaced the SE-built custom demo as the default way a customer evaluates Stytch.</p>
-      </div>
-      <div class="cs-outcome-col">
-        <p class="cs-outcome-title">Reduced time to value</p>
-        <p class="cs-outcome-desc">View Code turns the end of evaluation directly into a working integration.</p>
-      </div>
-      <div class="cs-outcome-col">
-        <p class="cs-outcome-title">Better decision-making</p>
-        <p class="cs-outcome-desc">Customers validate product fit, brand fit, and real UX flows themselves.</p>
-      </div>
+  <section class="cs-section">
+    <div class="cs-section-inner">
+      <p class="cs-label">The SDK Integration Builder · Live tool</p>
+      <h2 class="cs-subhead">Try It Yourself — Before Writing Any Code</h2>
+      <p class="cs-narrative">Reference apps were still just examples — not something built around a customer's own product. The Integration Builder is an interactive playground: browse Stytch's products, restyle live, and click through the real sign-up/login flow, all before a single line of code is written.</p>
+
+      <iframe
+        class="cs-mock-frame"
+        src="../index.html?start=liveSlide&bare=1&autoplay=1"
+        title="Interactive walkthrough — the live Stytch SDK Integration Builder"
+        loading="lazy"
+      ></iframe>
     </div>
   </section>
 
@@ -76,7 +86,8 @@
     <span class="cs-next-label">Next</span>
     <a class="cs-next-link" href="../../agent-identity/case-study/">
       <span class="cs-next-index">01</span>
-      <span class="cs-next-title">Building trust in the age of AI</span>
+      <span class="cs-next-title">Building Trust in the Age of AI</span>
+      <span class="cs-next-readtime">2 min</span>
     </a>
   </footer>
 
