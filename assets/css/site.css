@@ -230,6 +230,12 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   pointer-events: none;
   transform-origin: 50% 100%;
+  /* no visible effect on the sill/detail view — width/height there are
+     always computed to already match the cutout's own aspect ratio (see
+     positionEntry() in plants.js), so there's never anything to letterbox.
+     Only matters in the gallery carousel, where every plant shares one
+     fixed square frame regardless of its own proportions. */
+  object-fit: contain;
   /* filter is composed from two independently-toggled pieces — the hover
      lift's drop-shadow and the day/night dimming — so setting one doesn't
      clobber the other regardless of which combination is active */
@@ -397,6 +403,97 @@ body[data-daypart="sunset"] .plant-lift-layer {
 
 .plant-info-back:hover {
   color: var(--brand);
+}
+
+/* ---- Gallery: click-a-plant reveals all 5 in an evenly-spaced row
+   instead of just that one's own card (see plants.js
+   showGallery()/hideGallery()). .plant-info's single-card system above
+   stays in place, unused while this is wired to the hotspots instead. ---- */
+
+/* full-screen takeover — position: fixed lifts it out of the page's
+   normal flow entirely (independent of scroll position). 100dvh (falls
+   back to 100vh) for the same reason .hero-full uses svh/dvh — avoids
+   the mobile browser UI-chrome resize jump. */
+.hero-image-wrap.gallery-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+body.gallery-open { overflow: hidden; }
+
+body.gallery-open .home-work,
+body.gallery-open .scroll-indicator {
+  display: none;
+}
+
+/* the smiski figurine is décor, not a plant — no slot in the gallery,
+   so it shouldn't be left sitting at its old sill-relative
+   position/size once the wrap becomes a full-screen box */
+.hero-image-wrap.gallery-mode .plant-decor {
+  display: none;
+}
+
+.gallery-label-name,
+.gallery-label-watered {
+  position: absolute;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.gallery-label-name.show,
+.gallery-label-watered.show {
+  opacity: 1;
+}
+
+.gallery-label-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+
+.gallery-label-watered {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* pill button, positioned near the bottom of the full-screen overlay —
+   a bigger, more deliberate target than .plant-info-back's plain text
+   link, matching the approved layout preview */
+.gallery-back {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  padding: 9px 24px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--secondary);
+  cursor: pointer;
+}
+
+.gallery-back:not([hidden]) { display: block; }
+
+.gallery-back:hover {
+  color: var(--ink);
+  border-color: var(--ink);
 }
 
 .hero-copy {
