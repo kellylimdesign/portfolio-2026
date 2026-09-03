@@ -2,7 +2,7 @@
 
 Interactive case study decks, each a single-file HTML/CSS/JS build (no dependencies, no build step) with clickable prototypes embedded directly in the slides, so flows can be explored firsthand rather than just described.
 
-**Live site:** https://kellylimdesign.github.io/portfolio-2026-working/
+**Live site:** https://kellylimdesign.github.io/portfolio-2026/
 
 ## Case studies
 
