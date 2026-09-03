@@ -174,7 +174,8 @@
   var infoNeeds = document.getElementById('plantInfoNeeds');
   var infoBack = document.getElementById('plantInfoBack');
   var galleryBack = document.getElementById('galleryBack');
-  if (!img || !wrap || !info || !infoName || !infoWatered || !infoNeeds || !infoBack || !galleryBack) return;
+  var galleryScrollSpacer = document.getElementById('galleryScrollSpacer');
+  if (!img || !wrap || !info || !infoName || !infoWatered || !infoNeeds || !infoBack || !galleryBack || !galleryScrollSpacer) return;
 
   var activeEntry = null; // the PLANTS entry currently in detail view, if any
   var infoTimer = null;
@@ -239,6 +240,7 @@
       return;
     }
     var wrapW = wrap.offsetWidth, wrapH = wrap.offsetHeight;
+    setGalleryScrollBounds(wrapW); // before ensureGalleryVisible() reads/writes scrollLeft below
     GALLERY_ORDER.forEach(function (key, i) {
       var entry = entryFor(key);
       if (!entry) return;
@@ -247,6 +249,13 @@
       if (entry.liftEl && entry !== flyingEntry) applyGalleryPosition(entry.liftEl, anchor);
     });
     positionDecor();
+    // keeps the selected plant reachable as the window shrinks (e.g.
+    // resizing down to a narrow/mobile width while the gallery is
+    // already open) — nudges scrollLeft only if its slot has actually
+    // fallen out of view at the new wrapW, so this never fights a
+    // visitor who's deliberately scrolled elsewhere in the row (see
+    // ensureGalleryVisible()'s own comment)
+    if (activeGalleryKey) ensureGalleryVisible(activeGalleryKey, wrapW);
   }
 
   // keeps each lift-layer's src matched to whatever weather is currently
@@ -381,6 +390,12 @@
   var SLOT_WIDTH = 260; // px — horizontal space reserved per plant (frame + room for its label)
   var SLOT_GAP = 32; // px — gap between slots
   var LABEL_GAP = 14; // px — space between a plant's frame and its name/watered text
+  // minimum breathing room left/right of the row once it no longer fits
+  // the viewport and .hero-image-wrap.gallery-mode switches from
+  // centered to horizontally scrollable (see galleryRowMetrics()) — also
+  // used as the nudge added past a plant's own edge when scrolling it
+  // into view (ensureGalleryVisible())
+  var GALLERY_EDGE_PADDING = 24;
 
   function entryFor(key) {
     return entries.filter(function (e) { return e.plant === PLANTS[key]; })[0];
@@ -430,9 +445,31 @@
   // small box's position instead of spread across the real row).
   // Measuring once per pass and passing the same numbers to every
   // anchor computation guarantees they all agree.
+  // row's own left edge + total width, in the coordinate system the row's
+  // slots are laid out in — that's *content* space, same whether or not
+  // the row actually fits inside wrapW. When it fits, centers the row
+  // exactly as before. Once it doesn't (narrow window/mobile), the old
+  // (wrapW - contentWidth) / 2 math goes negative — centering the row
+  // around a point off the left edge of the screen, with no way to reach
+  // the plants that fall there since .hero-image-wrap.gallery-mode
+  // clipped everything outside its own box (overflow: hidden). Clamping
+  // rowLeft to GALLERY_EDGE_PADDING instead keeps the whole row, plus a
+  // little breathing room, inside positive content-space coordinates —
+  // which is what makes it reachable at all once gallery-mode switches
+  // that same box to overflow-x: auto (site.css) so it can be scrolled
+  // into view instead of clipped.
+  function galleryRowMetrics(wrapW) {
+    var contentWidth = GALLERY_ORDER.length * SLOT_WIDTH + (GALLERY_ORDER.length - 1) * SLOT_GAP;
+    var rowLeft = Math.max(GALLERY_EDGE_PADDING, (wrapW - contentWidth) / 2);
+    // symmetric padding on both sides once the row is left-aligned rather
+    // than centered, so there's equal scroll-past-the-edge room whichever
+    // direction you're scrolling toward
+    var totalWidth = rowLeft * 2 + contentWidth;
+    return {rowLeft: rowLeft, totalWidth: totalWidth};
+  }
+
   function galleryAnchorPx(index, wrapW, wrapH) {
-    var totalWidth = GALLERY_ORDER.length * SLOT_WIDTH + (GALLERY_ORDER.length - 1) * SLOT_GAP;
-    var rowLeft = (wrapW - totalWidth) / 2;
+    var rowLeft = galleryRowMetrics(wrapW).rowLeft;
     var slotLeft = rowLeft + index * (SLOT_WIDTH + SLOT_GAP);
     var centerX = slotLeft + SLOT_WIDTH / 2;
     var centerY = wrapH / 2;
@@ -445,6 +482,68 @@
       frameTop: centerY - MEDIA_SIZE / 2,
       frameBottom: centerY + MEDIA_SIZE / 2,
     };
+  }
+
+  // how far wrap *can* scroll horizontally at this width — 0 once the row
+  // fits without scrolling (galleryRowMetrics already centers it in that
+  // case, same as before scrolling existed)
+  function galleryMaxScroll(wrapW) {
+    return Math.max(0, galleryRowMetrics(wrapW).totalWidth - wrapW);
+  }
+
+  // sizes galleryScrollSpacer to the row's full width, so wrap (now
+  // overflow-x: auto — see site.css) always has *something* reliably
+  // establishing how far it can scroll, independent of where any
+  // individual plant currently renders. Without this, wrap's scrollWidth
+  // comes only from wherever the 5 plant-lift-layer elements themselves
+  // currently sit — fine once they're all settled at their gallery
+  // anchors, but showGallery() deliberately leaves the just-clicked one
+  // at its old (smaller, closer-to-center) position for a moment so it
+  // can fly in via CSS transition rather than snapping straight there
+  // (see translateIntoNewFrame()). If that plant happens to be the one
+  // at either end of the row (index 0 or the last), wrap's *actual* live
+  // scrollWidth would be too small for that moment — clamping
+  // centerGalleryScrollOn()'s target back down before the flight ever
+  // gets a chance to reach it. Call before reading/setting wrap.scrollLeft
+  // anywhere the row's layout may have just changed (gallery
+  // open + every resize while it's open), never after.
+  function setGalleryScrollBounds(wrapW) {
+    galleryScrollSpacer.style.width = galleryRowMetrics(wrapW).totalWidth + 'px';
+  }
+
+  function clampGalleryScroll(value, wrapW) {
+    return Math.max(0, Math.min(value, galleryMaxScroll(wrapW)));
+  }
+
+  // centers key's slot in the viewport — used when the gallery first
+  // opens, so whichever plant was clicked starts in view regardless of
+  // where its fixed sill position happened to put it left-to-right
+  function centerGalleryScrollOn(key, wrapW) {
+    var i = GALLERY_ORDER.indexOf(key);
+    if (i === -1) return 0;
+    var anchor = galleryAnchorPx(i, wrapW, 0); // wrapH unused for centerX
+    return clampGalleryScroll(anchor.centerX - wrapW / 2, wrapW);
+  }
+
+  // nudges wrap's current scroll position just enough to bring key's slot
+  // fully into view — unlike centerGalleryScrollOn(), leaves scrollLeft
+  // alone if the slot is already visible, so a resize doesn't yank the
+  // view away from where the visitor scrolled to on their own. Used to
+  // keep the selected plant reachable as the window shrinks (see
+  // positionAllForCurrentState()) without fighting manual scrolling.
+  function ensureGalleryVisible(key, wrapW) {
+    var i = GALLERY_ORDER.indexOf(key);
+    if (i === -1) return;
+    var anchor = galleryAnchorPx(i, wrapW, 0);
+    var slotLeft = anchor.centerX - SLOT_WIDTH / 2;
+    var slotRight = anchor.centerX + SLOT_WIDTH / 2;
+    var viewLeft = wrap.scrollLeft;
+    var viewRight = viewLeft + wrapW;
+    if (slotLeft < viewLeft) {
+      wrap.scrollLeft = clampGalleryScroll(slotLeft - GALLERY_EDGE_PADDING, wrapW);
+    } else if (slotRight > viewRight) {
+      wrap.scrollLeft = clampGalleryScroll(slotRight + GALLERY_EDGE_PADDING - wrapW, wrapW);
+    }
   }
 
   function applyGalleryPosition(liftEl, anchor) {
@@ -515,9 +614,20 @@
   // been painted and the transition is back on).
   function translateIntoNewFrame(el, beforeRect, onSettled) {
     var wrapRect = wrap.getBoundingClientRect();
+    // + wrap.scrollLeft/scrollTop — wrapRect (like beforeRect) is a
+    // getBoundingClientRect(), always viewport-relative regardless of
+    // wrap's own scroll position, but el.style.left/top are positions
+    // within wrap's *content*, which shift under the viewport by exactly
+    // wrap.scrollLeft/scrollTop whenever that's nonzero. Left out, this
+    // undercounts by the current scroll offset — invisible before the
+    // gallery could scroll at all (always 0), but now showGallery() can
+    // set a nonzero scrollLeft (centerGalleryScrollOn()) before this
+    // runs, and hideGallery() resets it to 0 before this runs specifically
+    // so this addition is a no-op there — both paths go through this same
+    // formula rather than each needing their own.
     withTransitionDisabled(el, function () {
-      el.style.left = (beforeRect.left - wrapRect.left) + 'px';
-      el.style.top = (beforeRect.top - wrapRect.top) + 'px';
+      el.style.left = (beforeRect.left - wrapRect.left + wrap.scrollLeft) + 'px';
+      el.style.top = (beforeRect.top - wrapRect.top + wrap.scrollTop) + 'px';
       el.style.width = beforeRect.width + 'px';
       el.style.height = beforeRect.height + 'px';
     }, onSettled);
@@ -570,6 +680,20 @@
 
     // measured once — see the note on galleryAnchorPx() above
     var wrapW = wrap.offsetWidth, wrapH = wrap.offsetHeight;
+    setGalleryScrollBounds(wrapW); // before any scrollLeft read/write below — see its own comment
+
+    // scroll the clicked plant's slot into view *before* anything below
+    // reads wrap.scrollLeft (translateIntoNewFrame(), further down) —
+    // matters once the row no longer fits wrapW (narrow window/mobile):
+    // without this the row still opens scrolled all the way left (its
+    // resting scrollLeft of 0), which for a plant on the right-hand side
+    // of the sill would open the gallery on an empty stretch of row with
+    // the actual clicked plant off past the right edge, unreached until
+    // the visitor scrolls there themselves. Centering it here means
+    // whichever plant you click is always what you see first, exactly
+    // like the old (pre-scroll) single-row layout looked when it could
+    // still just center everyone at once.
+    wrap.scrollLeft = centerGalleryScrollOn(clickedKey, wrapW);
 
     GALLERY_ORDER.forEach(function (key, i) {
       var entry = entryFor(key);
@@ -629,6 +753,14 @@
     galleryBack.hidden = true;
 
     wrap.classList.remove('gallery-mode'); // instantly back to the normal in-page box
+    // reset the row's scroll position now, not on next open — wrap is
+    // about to go back to being the small, non-scrolling sill box, but
+    // the scrollLeft the visitor left the carousel at (if they'd panned
+    // to browse other plants) would otherwise still be sitting there for
+    // translateIntoNewFrame() to read below, and for the next showGallery()
+    // to start from, before its own centerGalleryScrollOn() call runs
+    wrap.scrollLeft = 0;
+    galleryScrollSpacer.style.width = '0'; // matching reset — see setGalleryScrollBounds()
 
     // everyone but the returning plant reappears at their sill spot —
     // invisible at this point either way, but transition still disabled
@@ -667,6 +799,24 @@
   }
 
   galleryBack.addEventListener('click', hideGallery);
+
+  // touch swipes and trackpad two-finger horizontal swipes already pan
+  // wrap natively once it's overflow-x: auto (see .hero-image-wrap.
+  // gallery-mode in site.css) — this only covers the gap that leaves:
+  // a plain mouse wheel (or a trackpad scrolled straight up/down) has no
+  // native way to reach a horizontal scroll container. Redirects vertical
+  // wheel input into wrap's own scrollLeft while the gallery's open, so
+  // "scroll to see the rest of the row" works the same regardless of
+  // input device. Left alone (native behavior) whenever the gesture is
+  // already more horizontal than vertical, or there's nothing to scroll.
+  wrap.addEventListener('wheel', function (e) {
+    if (!galleryOpen) return;
+    var wrapW = wrap.offsetWidth;
+    if (galleryMaxScroll(wrapW) <= 0) return;
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    e.preventDefault();
+    wrap.scrollLeft = clampGalleryScroll(wrap.scrollLeft + e.deltaY, wrapW);
+  }, {passive: false});
 
   // non-interactive decorative addition — sits on the sill but isn't
   // part of the click-a-plant system (no hotspot, no care info, no
