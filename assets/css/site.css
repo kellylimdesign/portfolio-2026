@@ -380,6 +380,8 @@ body[data-daypart="sunset"] .plant-lift-layer {
    margin absorbing whatever space "needs" doesn't use, rather than
    sitting a fixed distance below it — keeps it anchored to the frame
    itself instead of trailing the text */
+/* same treatment as .hero-blurb a / .home-work-link — no underline, just
+   a shift to the brand accent color on hover */
 .plant-info-back {
   margin-top: auto;
   font-family: var(--font-mono);
@@ -389,14 +391,12 @@ body[data-daypart="sunset"] .plant-lift-layer {
   color: var(--muted);
   background: none;
   border: none;
-  border-bottom: 1px solid var(--faint);
   padding: 0;
   cursor: pointer;
 }
 
 .plant-info-back:hover {
-  color: var(--ink);
-  border-bottom-color: var(--ink);
+  color: var(--brand);
 }
 
 .hero-copy {
