@@ -56,6 +56,11 @@
           <button class="plant-info-back" id="plantInfoBack" type="button">← Back to Kelly's window</button>
         </div>
         <button class="gallery-back" id="galleryBack" type="button" hidden>Back</button>
+        <!-- inert — sized in JS (plants.js) to the gallery row's full
+             width whenever the gallery's open, purely so this wrap has
+             something reliably establishing its horizontal scroll range;
+             see setGalleryScrollBounds() in plants.js for why -->
+        <div class="gallery-scroll-spacer" id="galleryScrollSpacer" aria-hidden="true"></div>
       </div>
       <p class="hero-caption" id="heroCaption">Kelly's window</p>
     </div>

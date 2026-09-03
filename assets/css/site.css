@@ -422,7 +422,35 @@ body[data-daypart="sunset"] .plant-lift-layer {
   height: 100vh;
   height: 100dvh;
   background: var(--bg);
-  overflow: hidden;
+  /* the row of 5 (see plants.js's SLOT_WIDTH/SLOT_GAP) is a fixed pixel
+     width that only fits centered above a certain viewport width. Below
+     that, plants.js's galleryRowMetrics() stops centering the row and
+     left-aligns it instead, growing past the right edge — overflow-x:
+     auto (rather than the old overflow: hidden) is what makes that
+     overflow reachable, scrolled by touch swipe/trackpad natively, or by
+     the wheel listener plants.js adds for a plain mouse. overflow-y stays
+     hidden — the row never grows taller than this box, so there's
+     nothing to scroll vertically, and hiding it avoids an unwanted
+     scrollbar/bounce on a touch device's vertical fling. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  scrollbar-color: var(--faint) transparent;
+}
+
+.hero-image-wrap.gallery-mode::-webkit-scrollbar {
+  height: 6px;
+}
+
+.hero-image-wrap.gallery-mode::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hero-image-wrap.gallery-mode::-webkit-scrollbar-thumb {
+  background: var(--faint);
+  border-radius: 999px;
 }
 
 body.gallery-open { overflow: hidden; }
@@ -470,9 +498,18 @@ body.gallery-open .scroll-indicator {
 
 /* pill button, positioned near the bottom of the full-screen overlay —
    a bigger, more deliberate target than .plant-info-back's plain text
-   link, matching the approved layout preview */
+   link, matching the approved layout preview.
+   position: fixed, not absolute — .hero-image-wrap.gallery-mode (its
+   containing block either way) is itself position: fixed with inset: 0,
+   so both describe the same box while the row above is centered and the
+   row fits the screen. Now that gallery-mode can scroll horizontally
+   (overflow-x: auto, above), absolute would mean "50% across wrap's
+   scrollable *content*", scrolling the button off-screen along with the
+   plants the moment the row is panned — fixed anchors it to the actual
+   viewport instead, unaffected by that inner scroll, which is what
+   "always reachable" here actually requires. */
 .gallery-back {
-  position: absolute;
+  position: fixed;
   z-index: 1;
   left: 50%;
   bottom: 32px;
@@ -494,6 +531,19 @@ body.gallery-open .scroll-indicator {
 .gallery-back:hover {
   color: var(--ink);
   border-color: var(--ink);
+}
+
+/* see the comment on this element in index.html + setGalleryScrollBounds()
+   in plants.js — 1px tall (not 0) since some browsers exclude a
+   zero-height/zero-width box from scrollable overflow entirely,
+   defeating the point of it */
+.gallery-scroll-spacer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  pointer-events: none;
 }
 
 .hero-copy {
