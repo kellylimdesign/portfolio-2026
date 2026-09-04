@@ -791,11 +791,10 @@ body.gallery-open .scroll-indicator {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
-  border-bottom: 1px solid var(--muted);
-  padding-bottom: 2px;
+  transition: color .2s ease;
 }
 
-.cs-exit-link:hover { color: var(--ink); border-bottom-color: var(--ink); }
+.cs-exit-link:hover { color: var(--brand); }
 
 .cs-title {
   padding: 64px var(--page-padding) 56px;
@@ -822,6 +821,8 @@ body.gallery-open .scroll-indicator {
   max-width: 20ch;
   margin: 0;
 }
+
+.cs-title-heading .accent { color: var(--brand); }
 
 .cs-title-subhead {
   font-size: 20px;
@@ -905,6 +906,13 @@ body.gallery-open .scroll-indicator {
 
 .cs-subhead--narrow { max-width: 16ch; }
 
+/* wider cap than the default 22ch — lets a longer heading (e.g. "Try It
+   Yourself — Before Writing Any Code") settle onto one line at typical
+   desktop container widths instead of always wrapping to two; still
+   wraps naturally once the viewport gets narrow enough that even this
+   cap exceeds the available inline width. */
+.cs-subhead--wide { max-width: 46ch; }
+
 /* ---- Who this is for (two audience cards) ---- */
 
 .cs-audience-cols {
@@ -938,11 +946,20 @@ body.gallery-open .scroll-indicator {
   color: var(--muted);
 }
 
-.cs-audience-example .accent { color: var(--brand); }
+.cs-audience-example .accent { color: var(--brand); font-weight: 600; }
 
 @media (max-width: 640px) {
   .cs-audience-cols { flex-direction: column; gap: 32px; }
 }
+
+/* the Solutions Engineer card's description runs longer than the
+   Evaluator card's, and the shared 38ch cap wrapped it to 3 lines
+   against the Evaluator's 2 — pushing this card's "For example" row out
+   of alignment with the one beside it. Lifting the cap here (the column
+   itself has plenty of width to spare) brings both descriptions back to
+   2 lines, and with matching title/desc heights the two "For example"
+   rows land at the same height again. */
+.cs-audience-card--wide-desc .cs-audience-desc { max-width: none; }
 
 /* card-pair variant — two equal-width columns separated by a 2px hairline
    "seam" (background peeking through the gap), each with its own visual
@@ -1135,20 +1152,42 @@ body.gallery-open .scroll-indicator {
   overflow: hidden;
 }
 
+/* shared base — .cs-mock-frame embeds two very differently-behaved
+   things (the agent-identity deck's live console vs. the Stytch tool's
+   own fixed-height layout), so sizing itself is a per-embed modifier
+   below rather than one rule here. 576px is the Stytch tool's own tuned
+   height (its content doesn't rescale with width the way the live
+   console below does, so a flat height is correct for it). */
 .cs-mock-frame {
   height: 576px;
-  border: none;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
   display: block;
   width: 100%;
   background: var(--bg);
 }
 
-@media (max-width: 900px) {
-  .cs-mock-wrap { width: 100%; }
+/* agent-identity's "flow, end to end" embed only — aspect-ratio (not a
+   fixed height) so this box's height always matches the embedded live
+   window's actual rendered height exactly. That window is a fixed
+   1440x1024 canvas (see .cgpt-window-live in console-redesign.html) that
+   fitLiveWindow() zooms to fill this frame's width, so at any width its
+   rendered height is just width * (1024/1440). A fixed height instead
+   (576px, the base rule above) only matches at one specific width — any
+   other width drifts out of sync, leaving flat empty background below
+   the chrome frame. Scoped to this modifier rather than the base rule
+   because the Stytch embed above needs the opposite (a flat height,
+   its content doesn't scale with width) — applying this globally to
+   .cs-mock-frame broke that embed by stretching it to a height its
+   fixed-size content doesn't fill, opening the same kind of gap this
+   was meant to close. */
+.cs-mock-frame--live-console {
+  aspect-ratio: 1440 / 1024;
+  height: auto;
 }
 
-@media (max-width: 640px) {
-  .cs-mock-frame { height: 420px; }
+@media (max-width: 900px) {
+  .cs-mock-wrap { width: 100%; }
 }
 
 .cs-next {
@@ -1186,7 +1225,13 @@ body.gallery-open .scroll-indicator {
   font-size: 21px;
   letter-spacing: -0.03em;
   color: var(--ink);
+  transition: color .2s ease;
 }
+
+/* same accent-red pull-in as .cs-exit-link:hover — one hover treatment
+   for both of a case study's exit points (back home, on to the next
+   case study), not just the one going backward. */
+.cs-next-link:hover .cs-next-title { color: var(--brand); }
 
 .cs-next-readtime {
   font-family: var(--font-mono);

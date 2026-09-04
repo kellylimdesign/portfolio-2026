@@ -72,6 +72,17 @@
   body.embed-bare .topbar,
   body.embed-bare .exit-link{display:none !important;}
   body.embed-bare .slide{top:0; height:100vh;}
+  /* the deck's own --cream is pure white (#FFFFFF), tuned for the
+     standalone deck's white slide background — but the two sk-tool panes
+     don't fill the whole slide, so that white shows around them as its
+     own visible rectangle once cropped down to just this bare embed,
+     reading as an unwanted "extra frame" against the case study page's
+     off-white cream (#F7F6F3, matches assets/css/site.css's --bg). Match
+     that value here in bare mode only (the standalone deck keeps its own
+     white) so the two panes' own cards (see .sk-pane in tool.js — solid
+     fill, real border, soft shadow) sit directly on the same background
+     as the page around the iframe, with nothing in between. */
+  body.embed-bare{background:#F7F6F3;}
 
   /* counter + dots + prev/next arrows, one combined group centered in the
      topbar — counterNow/counterTotal bookend the dot track at fixed
