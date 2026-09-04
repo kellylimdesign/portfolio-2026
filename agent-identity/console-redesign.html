@@ -8649,8 +8649,21 @@
         if (svgEl) svgEl.style.display = 'none';
       };
       const setIcon = window.__setConsentIcon;
+      // debounced separately from the heading text below — every keystroke
+      // on the logo field (including the autoplay's own character-by-
+      // character typeInto) was setting <img src> to whatever partial URL
+      // existed at that instant ("a", "as", "ass", …), each one 404ing and
+      // flashing the fallback icon in and out before the next keystroke
+      // landed. Waiting for a short pause in typing means only a real,
+      // complete URL (or a genuinely-abandoned partial one, once the
+      // visitor stops) ever actually gets loaded.
+      let iconSyncTimer = null;
+      const syncModalIcon = () => {
+        clearTimeout(iconSyncTimer);
+        iconSyncTimer = setTimeout(() => setIcon(modalIconSvg, modalLogoImg, logoInput.value), 400);
+      };
       const syncModalPreview = () => {
-        setIcon(modalIconSvg, modalLogoImg, logoInput.value);
+        syncModalIcon();
         modalHeading.textContent = 'ChatGPT wants access to ' + (nameInput.value.trim() || '[App name]');
       };
       logoInput.addEventListener('input', syncModalPreview);
@@ -8669,7 +8682,14 @@
           nameInput.value = savedOrBlank('consentFriendlyNameVal');
           privacyInput.value = savedOrBlank('consentPrivacyUrlVal');
           termsInput.value = savedOrBlank('consentTermsUrlVal');
-          syncModalPreview();
+          // instant, not the debounced syncModalPreview() the input
+          // listeners use — this is restoring an already-complete saved
+          // URL on open, not a live keystroke, so there's no partial value
+          // to guard against and no reason to make a visitor wait 400ms to
+          // see their own saved logo reappear.
+          clearTimeout(iconSyncTimer);
+          setIcon(modalIconSvg, modalLogoImg, logoInput.value);
+          modalHeading.textContent = 'ChatGPT wants access to ' + (nameInput.value.trim() || '[App name]');
         },
         onSave: () => {
           const urlVal = document.getElementById('consentLogoUrlVal');
