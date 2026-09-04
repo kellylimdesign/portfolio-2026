@@ -781,6 +781,25 @@ body.gallery-open .scroll-indicator {
    just an exit link; every major section is topped with a hairline except
    the exit header, the title block, and the footer. */
 
+/* caps + centers every top-level block at the same width (matches
+   .contact-inner's 1040px elsewhere on the site) — without this, each
+   block was full viewport width with only var(--page-padding) as a
+   gutter, so on anything wider than a laptop the hairline dividers ran
+   edge-to-edge while the actual text stayed pinned to the left edge,
+   miles from where the rule (and the page) ended. Centering (not just
+   capping and leaving it flush left) keeps the margin symmetric instead
+   of dumping all the extra width on the right side alone. box-sizing:
+   border-box (set globally above) means each block's own
+   var(--page-padding) stays as inner gutter, not added on top of this. */
+.cs-exit,
+.cs-title,
+.cs-section,
+.cs-next {
+  max-width: 1040px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .cs-exit {
   padding: 22px var(--page-padding);
 }
@@ -795,6 +814,30 @@ body.gallery-open .scroll-indicator {
 }
 
 .cs-exit-link:hover { color: var(--brand); }
+
+/* footer variant — same pill-button treatment as .gallery-back (the
+   plant carousel's full-screen "Back" button): a bigger, more
+   deliberate target for the footer's own exit point, rather than
+   reusing the header's plain-text link verbatim. Only the visual
+   properties carry over (padding/radius/border/background/type) —
+   .gallery-back's position:fixed/left/bottom/transform are specific to
+   anchoring it over that full-screen overlay and don't apply to a link
+   sitting in the normal footer flow here. Hover pulls to the accent red
+   like every other exit link on these pages, rather than .gallery-back's
+   own ink hover — kept consistent with .cs-exit-link's hover above,
+   since these are otherwise the same link. */
+.cs-exit-link--pill {
+  padding: 9px 24px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--secondary);
+}
+
+.cs-exit-link--pill:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+}
 
 .cs-title {
   padding: 64px var(--page-padding) 56px;
@@ -815,26 +858,26 @@ body.gallery-open .scroll-indicator {
 
 .cs-title-heading {
   font-weight: 600;
-  font-size: 60px;
-  line-height: 1.0;
-  letter-spacing: -0.045em;
-  max-width: 20ch;
+  font-size: 44px;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  max-width: 24ch;
   margin: 0;
 }
 
 .cs-title-heading .accent { color: var(--brand); }
 
 .cs-title-subhead {
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1.5;
   color: var(--secondary);
   max-width: 46ch;
-  margin: 24px 0 0;
+  margin: 18px 0 0;
 }
 
 @media (max-width: 640px) {
-  .cs-title-heading { font-size: 38px; letter-spacing: -0.03em; }
-  .cs-title-subhead { font-size: 18px; }
+  .cs-title-heading { font-size: 32px; letter-spacing: -0.025em; }
+  .cs-title-subhead { font-size: 16px; }
 }
 
 /* shared section shell — hairline-topped block used by Problem,
@@ -859,10 +902,10 @@ body.gallery-open .scroll-indicator {
 
 .cs-subhead {
   font-weight: 600;
-  font-size: 32px;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
-  margin: 0 0 18px;
+  font-size: 25px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px;
   max-width: 22ch;
 }
 
@@ -900,9 +943,6 @@ body.gallery-open .scroll-indicator {
   margin: 0;
 }
 
-@media (max-width: 640px) {
-  .cs-subhead { font-size: 26px; }
-}
 
 .cs-subhead--narrow { max-width: 16ch; }
 
@@ -937,6 +977,12 @@ body.gallery-open .scroll-indicator {
   max-width: 38ch;
 }
 
+/* flex row (not plain wrapping text) so a long accent phrase gets a
+   hanging indent when it wraps — the "For example —" label is a fixed-
+   width, non-wrapping flex item, and the accent span is a second flex
+   item that starts right after it; when ITS text wraps, the wrapped
+   line stays inside that item's own box (i.e. flush with where the
+   phrase started, not back at the row's left edge under "For"). */
 .cs-audience-example {
   margin-top: 16px;
   font-family: var(--font-mono);
@@ -944,9 +990,17 @@ body.gallery-open .scroll-indicator {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
 }
 
-.cs-audience-example .accent { color: var(--brand); font-weight: 600; }
+.cs-audience-example-label { flex-shrink: 0; white-space: nowrap; }
+
+/* min-width:0 overrides the flex item default of min-width:auto, which
+   otherwise refuses to shrink below the phrase's unbroken intrinsic
+   width and pushes it past the card edge instead of wrapping at all. */
+.cs-audience-example .accent { color: var(--brand); font-weight: 600; min-width: 0; }
 
 @media (max-width: 640px) {
   .cs-audience-cols { flex-direction: column; gap: 32px; }
@@ -1011,9 +1065,16 @@ body.gallery-open .scroll-indicator {
 /* only the --center card gets text-align:center at the whole-card level
    (see above) — this card stays left-aligned throughout (matches the
    left-aligned description above it), except "For example", which should
-   still read centered under the mock to match the other card. */
-.cs-audience-pair-card--wide .cs-audience-example {
-  text-align: center;
+   still read centered under the mock to match the other card.
+   justify-content (not text-align) now that .cs-audience-example is a
+   flex row — text-align would center each wrapped line of the accent
+   phrase individually within its own box rather than centering the
+   label+phrase pair as one unit, and would do nothing for the --center
+   card below at all since flex items ignore an inherited text-align for
+   their own positioning. */
+.cs-audience-pair-card--wide .cs-audience-example,
+.cs-audience-pair-card--center .cs-audience-example {
+  justify-content: center;
 }
 
 /* shared mock box — same aspect ratio as the deck's own .cgpt-window
@@ -1142,10 +1203,17 @@ body.gallery-open .scroll-indicator {
    embed regardless of how the deck's own internal box (which has its own
    border-radius, and may get width/height-cropped by the iframe edge)
    happens to render inside it — corners stay consistent on all 4 sides
-   even if the content behind them doesn't line up exactly. Not full width
-   — a smaller, more deliberate size than "fill the page". */
+   even if the content behind them doesn't line up exactly.
+   Full width of the page's own content column (not a smaller, more
+   deliberate size within it) — was 60% (tuned back when the page had no
+   overall max-width and this needed to shrink itself to stay readable),
+   but now that .cs-section itself is already capped at 1040px (see
+   above), 60% of that reads noticeably smaller than every other section
+   beside it instead of matching it. Full width fills the same column as
+   the audience cards/journey summary above it and is easier to actually
+   see the live console content in. */
 .cs-mock-wrap {
-  width: 60%;
+  width: 100%;
   min-width: 320px;
   margin: 0 auto;
   border-radius: 12px;
@@ -1186,10 +1254,6 @@ body.gallery-open .scroll-indicator {
   height: auto;
 }
 
-@media (max-width: 900px) {
-  .cs-mock-wrap { width: 100%; }
-}
-
 .cs-next {
   padding: 30px var(--page-padding);
   border-top: 1px solid var(--hairline);
@@ -1197,6 +1261,17 @@ body.gallery-open .scroll-indicator {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+}
+
+/* groups the "Next:" label tight against the title link it introduces —
+   .cs-next's own space-between is for the two ends of the footer (Home
+   on the left, this pair on the right), not for spreading label and
+   link apart from each other. */
+.cs-next-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
 }
 
 .cs-next-label {
