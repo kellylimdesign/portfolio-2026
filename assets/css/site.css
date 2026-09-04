@@ -1019,19 +1019,33 @@ body.gallery-open .scroll-indicator {
    "seam" (background peeking through the gap), each with its own visual
    mock, not just text. Both mocks share one box shape (.cs-audience-mock,
    the browser-chrome's own 736:460 ratio) so the two read as the same
-   size — no extra frame/titlebar around either, just the mock itself. */
+   size — no extra frame/titlebar around either, just the mock itself.
+   Grid + subgrid (not flex) — the two cards' head/mock/example blocks
+   need to land at the same height as their counterpart in the other
+   card (the whole point is the two browser-chrome mocks top-aligning
+   with each other), and the End User/Builder descriptions are different
+   lengths that don't reliably wrap to the same number of lines (see the
+   old 36ch-cap comment below, which only got them "roughly" matched).
+   .cs-audience-pair defines 3 row tracks (head/mock/example); each card
+   is display:grid;grid-template-rows:subgrid across all 3, so its own
+   head/mock/example size against the SAME tracks as the other card's —
+   each row comes out exactly as tall as its taller counterpart, so both
+   mocks start at the same y regardless of how many lines either
+   description happens to wrap to now or after a future copy edit. */
 .cs-audience-pair {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
   gap: 2px;
   background: var(--hairline);
 }
 
 .cs-audience-pair-card {
-  flex: 1;
   min-width: 0;
   padding: 32px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: 1 / 4;
   gap: 20px;
   background: var(--bg);
 }
@@ -1039,12 +1053,12 @@ body.gallery-open .scroll-indicator {
 .cs-audience-pair-card--wide { background: var(--surface); }
 
 .cs-audience-pair-card--center {
-  align-items: center;
+  justify-items: center;
   text-align: center;
 }
 
 .cs-audience-pair-card--center .cs-audience-pair-head {
-  align-self: flex-start;
+  justify-self: start;
   text-align: left;
 }
 
@@ -1104,8 +1118,14 @@ body.gallery-open .scroll-indicator {
   pointer-events: none;
 }
 
+/* mobile: stacked, not side-by-side — the subgrid row-syncing above only
+   matters when the two cards sit next to each other; opting back out to
+   plain flex here (rather than a 1-column grid) sidesteps the conflict
+   of both cards' grid-row:1/4 otherwise placing them in the same single
+   grid cell, on top of each other, instead of one after the other. */
 @media (max-width: 640px) {
-  .cs-audience-pair { flex-direction: column; }
+  .cs-audience-pair { display: flex; flex-direction: column; }
+  .cs-audience-pair-card { display: flex; flex-direction: column; }
 }
 
 /* ---- Illustrative example + interactive mock ---- */
