@@ -3,6 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- html{scroll-behavior:smooth} (site.css) also governs the browser's
+     own native scroll-to-#hash on initial page load, not just in-page
+     anchor clicks — landing directly on a URL like /#work animates the
+     scroll from the very top of the page, so visitors see the hero
+     section flash past mid-transit before it settles on #work. Forcing
+     scroll-behavior:auto (instant) here, synchronously, before that
+     native scroll fires, then handing back to the CSS smooth behavior
+     once the page has finished loading, keeps the instant jump for
+     landing on a link and the smooth animation for anyone actually
+     clicking a same-page anchor afterward. Must run before </head> (and
+     un-deferred) — the native hash-scroll can happen as soon as the
+     target element exists and is laid out, well before any deferred
+     script or the load event. -->
+<script>
+  if (location.hash) {
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.addEventListener('load', function () {
+      document.documentElement.style.scrollBehavior = '';
+    });
+  }
+</script>
 <title>Kelly Lim</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%AA%B4</text></svg>">
 <meta name="description" content="Kelly Lim is a product designer at Twilio, previously Stytch (acquired by Twilio), focused on identity, trust, and consent design.">
