@@ -9,68 +9,94 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- site.css for :root vars/reset (case-study-v2.css's own baseline)
+     plus a few specific component classes reused verbatim below
+     (.cs-audience-example/.cs-audience-example-label/.accent, and
+     .cs-mock-frame for the live tool embed) — see case-study-v2.css's
+     own header comment for why this is a separate stylesheet rather
+     than more rules added to site.css's .cs-* system. -->
 <link rel="stylesheet" href="../../assets/css/site.css">
+<link rel="stylesheet" href="../../assets/css/case-study-v2.css">
 </head>
 <body>
 
-  <header class="cs-exit">
-    <a class="cs-exit-link cs-exit-link--pill" href="../../">Home</a>
+<!-- Same layout system as the Agent Identity case study (case-study-v2.css)
+     — this page was rebuilt onto it afterward, carrying its own existing
+     content (Problem, Two Audiences, Try It Yourself + the live tool)
+     into that system rather than the Agent Identity page's own section
+     structure verbatim. No "Solution" 3-up feature grid here — that's
+     specific content the handoff invented for Agent Identity that this
+     page never had an equivalent for; forcing 3 fake feature bullets in
+     just to match the other page's shape would be inventing content
+     that isn't true. The audience cards also stay text-only (no mocks
+     the way Agent Identity's End User/Builder cards each got their own
+     embed) — Evaluator and Solutions Engineer aren't two different
+     moments in the tool the way End User/Builder are two different
+     apps; there's only the one Integration Builder embed, already
+     front and center in its own section below. -->
+
+  <div class="cs2-bg-grid" aria-hidden="true"></div>
+
+  <!-- back-home link folded into the eyebrow row, breadcrumb-style —
+       see the equivalent comment on the Agent Identity page. -->
+  <header class="cs2-hero">
+    <div class="cs2-hero-content">
+      <p class="cs2-eyebrow cs2-breadcrumb">
+        <a class="cs2-back-link" href="../../">‹ Home</a>
+        <span class="cs2-breadcrumb-sep">/</span>
+        <span class="cs2-eyebrow-dot"></span>AuthKit — Stytch
+      </p>
+      <h1 class="cs2-hero-heading">AuthKit: <span class="cs2-hero-heading-accent">Integration Builder</span></h1>
+      <p class="cs2-hero-subhead">Prebuilt UI was supposed to be the fastest path to auth — no components to build. Adoption said otherwise.</p>
+    </div>
   </header>
 
-  <section class="cs-title">
-    <h1 class="cs-title-heading">AuthKit: <span class="accent">Integration Builder</span></h1>
-    <p class="cs-title-subhead">Prebuilt UI was supposed to be the fastest path to auth — no components to build. Adoption said otherwise.</p>
-  </section>
+  <section class="cs2-section cs2-section--bordered">
+    <p class="cs2-eyebrow"><span class="cs2-eyebrow-dot"></span>The Problem</p>
+    <h2 class="cs2-h2">Fast Auth, Slow Evaluation</h2>
+    <p class="cs2-body">The Stytch SDK's whole pitch was fast auth — nothing to build. But evaluating Stytch wasn't fast at all: customers had no way to know if the SDK actually fit their product without integrating it first.</p>
 
-  <section class="cs-section">
-    <div class="cs-section-inner">
-      <p class="cs-label">The problem</p>
-      <h2 class="cs-subhead">Fast Auth, Slow Evaluation</h2>
-      <p class="cs-body">The Stytch SDK's whole pitch was fast auth — nothing to build. But evaluating Stytch wasn't fast at all: customers had no way to know if the SDK actually fit their product without integrating it first.</p>
-    </div>
-  </section>
-
-  <section class="cs-section">
-    <div class="cs-section-inner">
-      <p class="cs-label">Who this is for</p>
-      <h2 class="cs-subhead">Two Audiences, One Tool</h2>
-      <div class="cs-audience-cols">
-        <div class="cs-audience-card">
-          <p class="cs-audience-title">The Evaluator</p>
-          <p class="cs-audience-desc">A developer or team deciding whether Stytch fits their product, before writing any integration code.</p>
-          <p class="cs-audience-example"><span class="cs-audience-example-label">For example —</span> <span class="accent">a customer sizing up Stytch for their own app's auth</span></p>
-        </div>
-        <div class="cs-audience-card cs-audience-card--wide-desc">
-          <p class="cs-audience-title">The Solutions Engineer</p>
-          <p class="cs-audience-desc">Stytch's own team, who used to build one-off demos by hand to answer exactly the question the Evaluator is asking.</p>
-          <p class="cs-audience-example"><span class="cs-audience-example-label">For example —</span> <span class="accent">an SE on a prospect call</span></p>
-        </div>
+    <p class="cs2-eyebrow cs2-audience-label"><span class="cs2-eyebrow-dot"></span>Who this is for</p>
+    <div class="cs2-audience-grid">
+      <div class="cs2-audience-cell">
+        <h3 class="cs2-audience-title">The Evaluator</h3>
+        <p class="cs2-audience-body">A developer or team deciding whether Stytch fits their product, before writing any integration code.</p>
+        <p class="cs-audience-example"><span class="cs-audience-example-label">For example —</span> <span class="accent">a customer sizing up Stytch for their own app's auth</span></p>
+      </div>
+      <div class="cs2-audience-cell">
+        <h3 class="cs2-audience-title">The Solutions Engineer</h3>
+        <p class="cs2-audience-body">Stytch's own team, who used to build one-off demos by hand to answer exactly the question the Evaluator is asking.</p>
+        <p class="cs-audience-example"><span class="cs-audience-example-label">For example —</span> <span class="accent">an SE on a prospect call</span></p>
       </div>
     </div>
   </section>
 
-  <section class="cs-section">
-    <div class="cs-section-inner">
-      <p class="cs-label">The SDK Integration Builder · Live tool</p>
-      <h2 class="cs-subhead cs-subhead--wide">Try It Yourself — Before Writing Any Code</h2>
-      <p class="cs-narrative">Reference apps were still just examples — not something built around a customer's own product. The Integration Builder is an interactive playground: browse Stytch's products, restyle live, and click through the real sign-up/login flow, all before a single line of code is written.</p>
+  <section class="cs2-section cs2-section--bordered">
+    <p class="cs2-eyebrow"><span class="cs2-eyebrow-dot"></span>The SDK Integration Builder · Live tool</p>
+    <h2 class="cs2-h2 cs2-h2--tight">Try It Yourself — Before Writing Any Code</h2>
+    <p class="cs2-body cs2-body--solution">Reference apps were still just examples — not something built around a customer's own product. The Integration Builder is an interactive playground: browse Stytch's products, restyle live, and click through the real sign-up/login flow, all before a single line of code is written.</p>
 
-      <iframe
-        class="cs-mock-frame"
-        src="../index.html?start=liveSlide&bare=1&autoplay=1"
-        title="Interactive walkthrough — the live Stytch SDK Integration Builder"
-        loading="lazy"
-      ></iframe>
-    </div>
+    <!-- .cs-mock-frame (site.css, not case-study-v2.css) is the exact
+         same class the live case study uses for this embed — reused
+         verbatim, same as Agent Identity's closing visual reuses its
+         own equivalent, rather than redoing the handoff's own 16:9/
+         red-border treatment. -->
+    <iframe
+      class="cs-mock-frame"
+      src="../index.html?start=liveSlide&bare=1&autoplay=1"
+      title="Interactive walkthrough — the live Stytch SDK Integration Builder"
+      loading="lazy"
+    ></iframe>
   </section>
 
-  <footer class="cs-next">
-    <a class="cs-exit-link cs-exit-link--pill" href="../../">Home</a>
-    <p class="cs-next-line">
-      <span class="cs-next-label">Next:</span>
-      <a class="cs-next-link" href="../../agent-identity/case-study/">
-        <span class="cs-next-title">Building Trust in the Age of AI</span>
-      </a>
+  <footer class="cs2-footer">
+    <p class="cs2-footer-col">
+      <span class="cs2-footer-label">Back to</span>
+      <a class="cs2-footer-home" href="../../">Home</a>
+    </p>
+    <p class="cs2-footer-col cs2-footer-col--right">
+      <span class="cs2-footer-label">Next case study</span>
+      <a class="cs2-footer-next-title" href="../../agent-identity/case-study/">Agent Identity</a>
     </p>
   </footer>
 

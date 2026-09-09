@@ -9,121 +9,137 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- site.css just for :root vars/reset (used by case-study-v2.css's
+     color-mix()/box-sizing baseline) — none of its .cs-* component
+     classes are used on this page. See case-study-v2.css's own header
+     comment for why this redesign is a separate stylesheet rather than
+     more rules added there. -->
 <link rel="stylesheet" href="../../assets/css/site.css">
+<link rel="stylesheet" href="../../assets/css/case-study-v2.css">
 </head>
 <body>
 
-  <header class="cs-exit">
-    <a class="cs-exit-link cs-exit-link--pill" href="../../">Home</a>
+<!-- Layout redesign experiment — ported from design_handoff_case_study
+     (Agent Identity Case Study.dc.html + README.md), pixel-close per that
+     handoff's own fidelity note, with two deliberate deviations since
+     this is a real page in a real multi-page site rather than the
+     handoff's one-off standalone prototype:
+       1. The <iframe> embeds below aren't in the handoff at all — it
+          specs a static image-slot placeholder for the closing visual
+          ("Product screenshot — agent auth flow"). Swapped in the actual
+          live prototype there and in the audience cards instead of a
+          screenshot. (The hero itself no longer has any media at all —
+          tried both a full-width and a proportion-corrected embed there
+          and neither read right; see .cs2-hero's own comment.)
+       2. The handoff specs zero nav/footer chrome on this page. Tried
+          that too; brought back a minimal version below (.cs2-top-back/
+          .cs2-footer) once it was clear a real visitor needs a way back
+          to the rest of the site. -->
+
+  <div class="cs2-bg-grid" aria-hidden="true"></div>
+
+  <!-- no hero image, no dark fill either now — per Kelly, tried both the
+       image and a plain dark band and didn't like it. Just the title on
+       the page's own light background (the grid shows through, same as
+       every other section), matching the live case study's own title
+       treatment: dark ink heading with the last word ("AI") in accent
+       red, muted eyebrow/subhead. The back-home link (originally its own
+       header above this one — see git history) is folded into the
+       eyebrow row itself now, breadcrumb-style, rather than sitting as
+       a separate line above it. -->
+  <header class="cs2-hero">
+    <div class="cs2-hero-content">
+      <p class="cs2-eyebrow cs2-breadcrumb">
+        <a class="cs2-back-link" href="../../">‹ Home</a>
+        <span class="cs2-breadcrumb-sep">/</span>
+        <span class="cs2-eyebrow-dot"></span>Agent Identity — Twilio
+      </p>
+      <h1 class="cs2-hero-heading">Building <span class="cs2-hero-heading-accent">Trust</span> in the <span class="cs2-hero-heading-accent">Age of AI</span></h1>
+      <p class="cs2-hero-subhead">Setting up identity for a new kind of actor — the AI agent.</p>
+    </div>
   </header>
 
-  <section class="cs-title">
-    <h1 class="cs-title-heading">Building Trust in the Age of <span class="accent">AI</span></h1>
-    <p class="cs-title-subhead">Setting up identity for a new kind of actor — the AI agent.</p>
-  </section>
+  <section class="cs2-section cs2-section--bordered">
+    <p class="cs2-eyebrow"><span class="cs2-eyebrow-dot"></span>The Problem</p>
+    <h2 class="cs2-h2">A New Kind of Actor</h2>
+    <p class="cs2-body">Twilio has identity tools for humans — but no way to safely authenticate or authorize the AI agents now acting alongside them.</p>
 
-  <section class="cs-section">
-    <div class="cs-section-inner">
-      <p class="cs-label">The problem</p>
-      <h2 class="cs-subhead cs-subhead--narrow">A New Kind of Actor</h2>
-      <p class="cs-body">Twilio has identity tools for humans — but no way to safely authenticate or authorize the AI agents now acting alongside them. <em>Imagine a financial tool, Owl Trade, whose users want to connect ChatGPT to trade on their behalf — how do you do that securely?</em></p>
+    <div class="cs2-example-card">
+      <p class="cs2-eyebrow cs2-eyebrow--red cs2-example-label">Example</p>
+      <p class="cs2-example-text">Owl Trade, a financial tool, wants to allow its users to connect ChatGPT to their Owl Trade account so that ChatGPT can trade on a user's behalf. How do you grant that access — securely, and only as far as it should go?</p>
     </div>
-  </section>
 
-  <section class="cs-section">
-    <div class="cs-section-inner">
-      <p class="cs-label">Who this is for</p>
-      <h2 class="cs-subhead">Two Users, Two Moments</h2>
-      <div class="cs-audience-pair">
-        <div class="cs-audience-pair-card cs-audience-pair-card--center">
-          <div class="cs-audience-pair-head">
-            <p class="cs-audience-title">The End User</p>
-            <p class="cs-audience-desc">Asked, in the moment, whether an agent can act on their behalf.</p>
-          </div>
-          <div class="cs-audience-mock">
-            <iframe
-              class="cs-audience-mock-frame"
-              src="../index.html?start=slideEndUserJourney&bare=1&autoplay=1"
-              title="The end user journey, animated — from the Identity for AI Agents deck"
-              loading="lazy"
-            ></iframe>
-          </div>
-          <p class="cs-audience-example"><span class="cs-audience-example-label">For example —</span> <span class="accent">Alex, an OwlTrade user</span></p>
+    <p class="cs2-eyebrow cs2-audience-label"><span class="cs2-eyebrow-dot"></span>Who this is for</p>
+    <div class="cs2-audience-grid">
+      <div class="cs2-audience-cell">
+        <h3 class="cs2-audience-title">The End User</h3>
+        <p class="cs2-audience-body">Asked, in the moment, whether an agent can act on their behalf.</p>
+        <div class="cs-audience-mock">
+          <iframe
+            class="cs-audience-mock-frame"
+            src="../index.html?start=slideEndUserJourney&bare=1&autoplay=1"
+            title="The end user journey, animated — from the Identity for AI Agents deck"
+            loading="lazy"
+          ></iframe>
         </div>
-        <div class="cs-audience-pair-card cs-audience-pair-card--wide">
-          <div class="cs-audience-pair-head">
-            <p class="cs-audience-title">The Builder</p>
-            <p class="cs-audience-desc">The admin or customer who wants to make their product usable by agents — configuring identity and approvals ahead of time, for their whole platform.</p>
-          </div>
-          <div class="cs-audience-mock">
-            <iframe
-              class="cs-audience-mock-frame"
-              src="../console-redesign.html?start=slideTryItYourself&bare=1&zoomRef=1300&autoplay=consent"
-              title="The Twilio Console — Agent Identity, from the Identity for AI Agents deck"
-              loading="lazy"
-            ></iframe>
-          </div>
-          <p class="cs-audience-example"><span class="cs-audience-example-label">For example —</span> <span class="accent">OwlTrade</span></p>
+      </div>
+      <div class="cs2-audience-cell">
+        <h3 class="cs2-audience-title">The Builder</h3>
+        <p class="cs2-audience-body">The admin or customer who wants to make their product usable by agents — configuring identity and approvals ahead of time, for their whole platform.</p>
+        <div class="cs-audience-mock">
+          <iframe
+            class="cs-audience-mock-frame"
+            src="../console-redesign.html?start=slideTryItYourself&bare=1&zoomRef=1300&autoplay=consent"
+            title="The Twilio Console — Agent Identity, from the Identity for AI Agents deck"
+            loading="lazy"
+          ></iframe>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="cs-section">
-    <div class="cs-section-inner">
-      <p class="cs-label">For example</p>
-      <h2 class="cs-subhead cs-subhead--narrow">Can ChatGPT Trade For You — Safely?</h2>
-      <p class="cs-body">Alex is a commodities trader with a theory about this year's unusually warm winter — and what it means for orange crop yields. While researching it in ChatGPT, he finds that Owl Trade has a ChatGPT integration — and connects it right there.</p>
-    </div>
-  </section>
+  <section class="cs2-section cs2-section--bordered">
+    <p class="cs2-eyebrow"><span class="cs2-eyebrow-dot"></span>The Solution</p>
+    <h2 class="cs2-h2 cs2-h2--tight">An Identity Layer for Agents</h2>
+    <p class="cs2-body cs2-body--solution">A way to grant an AI agent scoped, verifiable, revocable authority — without ever handing over a human's full account.</p>
 
-  <section class="cs-section">
-    <div class="cs-section-inner">
-      <p class="cs-label">The flow, end to end</p>
-      <p class="cs-flow-lede">Watch how Owl Trade allows Alex to connect ChatGPT to his account.</p>
-
-      <div class="cs-journey-summary">
-        <div class="cs-journey-col">
-          <p class="cs-journey-col-title">The end user journey</p>
-          <ol class="cs-journey-steps">
-            <li>
-              <span class="cs-journey-step-num">01</span>
-              <div><span class="cs-journey-step-title">Request</span><span class="cs-journey-step-desc"> — asks ChatGPT to watch the market</span></div>
-            </li>
-            <li>
-              <span class="cs-journey-step-num">02</span>
-              <div><span class="cs-journey-step-title">Log in</span><span class="cs-journey-step-desc"> — signs in to Owl Trade, as usual</span></div>
-            </li>
-            <li>
-              <span class="cs-journey-step-num">03</span>
-              <div><span class="cs-journey-step-title">Grant access</span><span class="cs-journey-step-desc"> — sees and approves the request</span></div>
-            </li>
-          </ol>
-        </div>
-        <div class="cs-journey-divider"></div>
-        <div class="cs-journey-col">
-          <p class="cs-journey-col-title">The admin journey</p>
-          <ol class="cs-journey-steps">
-            <li>
-              <span class="cs-journey-step-num">01</span>
-              <div><span class="cs-journey-step-title">Connect, don't rebuild</span><span class="cs-journey-step-desc"> — trusts the identity Okta already manages</span></div>
-            </li>
-            <li>
-              <span class="cs-journey-step-num">02</span>
-              <div><span class="cs-journey-step-title">Customize consent</span><span class="cs-journey-step-desc"> — their branding, not a hand-off</span></div>
-            </li>
-            <li>
-              <span class="cs-journey-step-num">03</span>
-              <div><span class="cs-journey-step-title">Manage agents</span><span class="cs-journey-step-desc"> — one place for every agent's access</span></div>
-            </li>
-          </ol>
-        </div>
+    <div class="cs2-feature-grid">
+      <div class="cs2-feature-cell">
+        <span class="cs2-feature-num">[ 01 ]</span>
+        <h3 class="cs2-feature-title">Verifiable identity</h3>
+        <p class="cs2-feature-body">Every agent carries a credential that proves who it's acting for.</p>
       </div>
+      <div class="cs2-feature-cell">
+        <span class="cs2-feature-num">[ 02 ]</span>
+        <h3 class="cs2-feature-title">Scoped permission</h3>
+        <p class="cs2-feature-body">Access limited to exactly the task it's authorized for — nothing wider.</p>
+      </div>
+      <div class="cs2-feature-cell">
+        <span class="cs2-feature-num">[ 03 ]</span>
+        <h3 class="cs2-feature-title">Revocable, auditable</h3>
+        <p class="cs2-feature-body">Every action traceable. Every grant reversible, on demand.</p>
+      </div>
+    </div>
 
+    <!-- .cs-mock-wrap/.cs-mock-frame/.cs-mock-frame--live-console are the
+         exact same classes (from site.css, not case-study-v2.css) the
+         current live case study uses for this same embed — reused
+         verbatim rather than the handoff's own 16:9/red-border treatment
+         (case-study-v2.css's now-unused .cs2-closing-media rules), per
+         Kelly: the sizing and animation on the existing version was
+         already good, don't redo it. .cs2-closing-console-cap (this
+         page's own, not site.css's) then caps its width smaller than
+         the live page's own 100% — see that class's comment.
+         &chromeMatch=0 turns off fitLiveWindow()'s cross-card chrome
+         correction (console-redesign.html) — without it the titlebar/
+         urlbar render at a fixed scale tuned to match the small "End
+         User" card elsewhere, which reads as oversized next to this
+         much bigger standalone embed's own console content. -->
+    <div class="cs2-closing-console-cap">
       <div class="cs-mock-wrap">
         <iframe
           class="cs-mock-frame cs-mock-frame--live-console"
-          src="../console-redesign.html?start=slideTryItYourself&bare=1&autoplay=1"
+          src="../console-redesign.html?start=slideTryItYourself&bare=1&autoplay=1&chromeMatch=0"
           title="Interactive walkthrough — the full Owl Trade × ChatGPT flow, from the Identity for AI Agents deck"
           loading="lazy"
         ></iframe>
@@ -131,13 +147,14 @@
     </div>
   </section>
 
-  <footer class="cs-next">
-    <a class="cs-exit-link cs-exit-link--pill" href="../../">Home</a>
-    <p class="cs-next-line">
-      <span class="cs-next-label">Next:</span>
-      <a class="cs-next-link" href="../../stytch-sdk-integration-builder/case-study/">
-        <span class="cs-next-title">AuthKit: Integration Builder</span>
-      </a>
+  <footer class="cs2-footer">
+    <p class="cs2-footer-col">
+      <span class="cs2-footer-label">Back to</span>
+      <a class="cs2-footer-home" href="../../">Home</a>
+    </p>
+    <p class="cs2-footer-col cs2-footer-col--right">
+      <span class="cs2-footer-label">Next case study</span>
+      <a class="cs2-footer-next-title" href="../../stytch-sdk-integration-builder/case-study/">AuthKit</a>
     </p>
   </footer>
 

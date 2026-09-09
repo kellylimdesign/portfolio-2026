@@ -1,0 +1,406 @@
+/* Case study layout redesign — now used by both case study pages
+   (originally Agent Identity only; the Stytch page has since been
+   rebuilt on this same system). Ported from the design handoff
+   (design_handoff_case_study/Agent Identity Case Study.dc.html +
+   README.md), pixel-close per that handoff's own fidelity note,
+   translated from its inline-styled prototype markup into named classes
+   matching this codebase's convention, then extended (audience mocks,
+   nav) beyond what that handoff itself specified.
+
+   Deliberately a SEPARATE file from site.css rather than added alongside
+   the existing .cs-* rules there, even now that both pages use it — this
+   is still one shared experimental system, not a confirmed replacement
+   for site.css's own .cs-* layout (kept there, unused by these two pages
+   now, in case of a revert — see the case-study-layout-pre-redesign git
+   tag). Prefixed cs2- throughout for the same reason: guaranteed no
+   collision with .cs-* even where a few of its classes/values are
+   reused verbatim here (site.css is still loaded on both pages, just
+   for :root vars/reset plus the couple of specific reused component
+   classes called out where they're used below).
+
+   The handoff's own fidelity note: "Colors, type, spacing, and copy below
+   are final — implement pixel-close, not just directionally." Values
+   below are taken directly from that spec, not eyeballed. */
+
+/* ---- page-wide background: grain ---- */
+
+/* fine film-grain noise (was a red-tinted dot grid, before that a
+   ruled-line grid — see git history) — full-bleed behind every section,
+   z-index 0 vs. every section's z-index 1 keeps it strictly behind
+   content without needing to touch each section's own stacking order
+   further.
+
+   First pass here just rendered feTurbulence straight to an opaque
+   rect and turned the whole layer down via CSS opacity — feTurbulence's
+   own RGB output only varies in a narrow band around mid-gray, so at
+   any opacity low enough to read as "subtle" the noise was completely
+   crushed, both by real-world viewing and doubly so by screenshot JPEG
+   compression. Standard fix: feColorMatrix maps the turbulence to a
+   solid black shape with varying ALPHA instead of varying color — that
+   alpha channel already has real range on its own, so the grain stays
+   visible at a much lower, genuinely subtle opacity than fighting an
+   RGB-noise layer down ever could. */
+.cs2-bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.05;
+}
+
+/* ---- shared primitives (eyebrow, section shell, headings, body) ---- */
+
+/* the small square-dot + uppercase-mono-label pattern used above every
+   section heading, muted by default — the hero eyebrow uses this same
+   default now too (no more light-on-dark variant, see .cs2-hero above) */
+.cs2-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #807D78;
+}
+
+.cs2-eyebrow-dot {
+  width: 8px;
+  height: 8px;
+  background: #D62E1F;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* red label variant — just the "Example" callout label re-tints the
+   whole eyebrow red instead of the default muted gray; no dot on that
+   one (see .cs2-example-label below), so this only ever needs to touch
+   color, not spacing */
+.cs2-eyebrow--red { color: #D62E1F; letter-spacing: 0.06em; }
+
+/* down from the handoff's own clamp(56px,9vw,110px) — felt like a lot
+   of dead air between sections, especially now that headings/body copy
+   have both come down in size too (see .cs2-h2/.cs2-body) */
+.cs2-section {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(40px, 6vw, 72px) clamp(24px, 6vw, 64px);
+}
+
+.cs2-section--bordered { border-top: 1px solid #E0DEDA; }
+
+.cs2-h2 {
+  /* down from the handoff's clamp(30px,4.6vw,52px) — read oversized
+     next to the 17-21px body copy directly beneath it */
+  font-size: clamp(24px, 3.2vw, 36px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 14px 0 28px;
+  max-width: 820px;
+  color: #22211E;
+}
+
+/* Solution's H2 sits closer to its body paragraph than Problem's does
+   (20px margin vs. 28px) — matches the handoff's own two different
+   margin-bottom values on what's otherwise the identical H2 style,
+   rather than forcing one shared number on both. */
+.cs2-h2--tight { margin-bottom: 20px; }
+
+.cs2-body {
+  font-size: clamp(17px, 1.8vw, 21px);
+  line-height: 1.65;
+  color: #37352F;
+  max-width: 680px;
+  margin: 0 0 32px;
+}
+
+.cs2-body--solution { margin-bottom: 44px; }
+
+/* ---- hero ----
+   No hero image, and no dark fill either now (tried a full-bleed image,
+   a proportion-corrected centered embed, and a flat dark band — see
+   git history — Kelly didn't like any of them). Just the title sitting
+   directly on the page's own light background/grid, same as every
+   other section — dark ink heading (with the last word in accent red,
+   matching the live case study's own title treatment), muted eyebrow/
+   subhead instead of the light-on-dark colors those needed before. */
+.cs2-hero {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.cs2-hero-content {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(64px, 10vw, 120px) clamp(24px, 6vw, 64px) clamp(40px, 6vw, 56px);
+}
+
+.cs2-hero-content .cs2-eyebrow { margin-bottom: 20px; }
+
+.cs2-hero-heading {
+  /* down from the handoff's clamp(36px,6.4vw,88px) — same "too big
+     next to the body copy" call as .cs2-h2 above */
+  font-size: clamp(30px, 4.8vw, 58px);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  margin: 0 0 18px;
+  color: #22211E;
+}
+
+.cs2-hero-heading-accent { color: #D62E1F; }
+
+.cs2-hero-subhead {
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 400;
+  color: #58554F;
+  max-width: 640px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ---- example callout (Problem section) ---- */
+
+/* open corner-bracket marks (top-left + bottom-right only) via ::before/
+   ::after rather than the handoff's own two extra absolutely-positioned
+   divs — same visual result, two fewer elements */
+.cs2-example-card {
+  position: relative;
+  background: #EEEDE9;
+  padding: clamp(28px, 4vw, 40px);
+  max-width: 720px;
+  margin: 0 0 32px;
+}
+
+.cs2-example-card::before,
+.cs2-example-card::after {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+}
+
+.cs2-example-card::before {
+  top: 10px;
+  left: 10px;
+  border-top: 2px solid #D62E1F;
+  border-left: 2px solid #D62E1F;
+}
+
+.cs2-example-card::after {
+  bottom: 10px;
+  right: 10px;
+  border-bottom: 2px solid #D62E1F;
+  border-right: 2px solid #D62E1F;
+}
+
+.cs2-example-label {
+  margin: 0 0 12px;
+}
+
+.cs2-example-text {
+  font-size: clamp(16px, 1.6vw, 19px);
+  line-height: 1.6;
+  color: #22211E;
+  margin: 0;
+}
+
+/* ---- "who this is for" 2-up grid ---- */
+
+.cs2-audience-label { margin: 0 0 16px; }
+
+/* auto-fit + a 300px minmax floor is what collapses this to one column
+   on narrow viewports on its own — no explicit stacking breakpoint
+   needed (auto-fit collapses unused tracks, so this stays exactly 2
+   columns for these 2 cells at any width wide enough for both, not 3+).
+   No max-width now (was 920px) — extended to the section's own full
+   width per Kelly.
+
+   Grid + subgrid (not flex) for the same reason as the equivalent
+   section on the live case study page: the two cells' body text doesn't
+   reliably wrap to the same number of lines, so their mocks started at
+   different heights. 3 explicit row tracks (title/body/mock); each cell
+   is grid-template-rows:subgrid across all 3, so its own rows size
+   against the SAME tracks as the other cell's — both mocks land at the
+   same y regardless of which body text wraps longer. */
+.cs2-audience-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-rows: auto auto auto;
+  gap: 1px;
+  background: #E0DEDA;
+  border: 1px solid #E0DEDA;
+}
+
+.cs2-audience-cell {
+  background: #F7F6F3;
+  padding: 32px;
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: 1 / 4;
+  gap: 16px;
+}
+
+/* mobile: stacked, not side-by-side — see the identical comment on the
+   live case study page's .cs-audience-pair for why this opts back out
+   to plain flex here rather than a 1-column grid (both cells' grid-row:
+   1/4 would otherwise place them in the same single cell, on top of
+   each other, instead of one after the other). */
+@media (max-width: 640px) {
+  .cs2-audience-grid { display: flex; flex-direction: column; }
+  .cs2-audience-cell { display: flex; flex-direction: column; }
+}
+
+.cs2-audience-title {
+  /* up from the handoff's 17px — read small once the body text below it
+     also grew (15px -> 16px) */
+  font-size: 19px;
+  font-weight: 600;
+  margin: 0;
+  color: #22211E;
+}
+
+.cs2-audience-body {
+  font-size: 16px;
+  line-height: 1.55;
+  color: #58554F;
+  margin: 0;
+}
+
+/* the live browser-chrome mock embedded in each cell — .cs-audience-mock/
+   .cs-audience-mock-frame (site.css, not this file) are the exact same
+   classes the current live case study uses for the equivalent "Two
+   Users, Two Moments" cards, reused verbatim for the same reason as the
+   closing visual below: that sizing/animation treatment already works,
+   no need to redo it here. */
+.cs-audience-mock { margin-top: 4px; }
+
+/* ---- solution feature grid ---- */
+
+.cs2-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  background: #E0DEDA;
+  border: 1px solid #E0DEDA;
+  margin-bottom: 48px;
+}
+
+.cs2-feature-cell {
+  background: #F7F6F3;
+  padding: 28px 24px;
+}
+
+.cs2-feature-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  color: #D62E1F;
+}
+
+.cs2-feature-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 12px 0 8px;
+  color: #22211E;
+}
+
+.cs2-feature-body {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #58554F;
+  margin: 0;
+}
+
+/* ---- closing visual ----
+   No .cs2-closing-media rules here — per Kelly, the existing case
+   study's own embed treatment (.cs-mock-wrap/.cs-mock-frame/
+   .cs-mock-frame--live-console, all in site.css) was already good, so
+   the page reuses those classes directly instead of redoing the
+   handoff's own 16:9/red-border box. (The handoff itself specced no
+   nav/footer chrome at all on this page — Kelly asked for it back in
+   after trying that; see .cs2-top-back/.cs2-footer at the end of this
+   file.) */
+
+/* .cs-mock-wrap's own default is full column width (1240px on this
+   page's .cs2-section) — at the embed's fixed 1440:1024 ratio that's
+   ~881px tall, which on top of the feature grid above it pushed this
+   whole section past one typical browser window's worth of scrolling.
+   Capping the width here (this file's own wrapper, not a change to
+   site.css's shared .cs-mock-wrap) brings the embed — and the height it
+   drives — down without touching the live case study page at all. */
+.cs2-closing-console-cap {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ---- nav: home/eyebrow breadcrumb + bottom home/next footer ----
+   The handoff itself specced zero nav chrome on this page — after
+   trying that (no way back to the rest of the site short of the
+   browser's own back button), Kelly asked for it back in. First pass
+   was a standalone back-arrow line above the eyebrow (see git history);
+   folded into one breadcrumb row instead — .cs2-back-link and
+   .cs2-breadcrumb-sep both inherit .cs2-eyebrow's own font/size/
+   letter-spacing/color by being its children in markup, so they only
+   need to touch what's actually different (the link's hover, the
+   separator's dimmer weight). Bottom is a fuller Home/Next pair. */
+
+.cs2-breadcrumb { gap: 10px; }
+
+.cs2-back-link { transition: color .2s ease; }
+
+.cs2-back-link:hover { color: #D62E1F; }
+
+.cs2-breadcrumb-sep { color: #C2BEB6; }
+
+/* down a lot from the first two passes here (was clamp(32,5vw,56)/
+   clamp(56,9vw,96), then a flat 24px/32px — kept reading as its own
+   section rather than a subtle closing strip below one) */
+.cs2-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 16px clamp(24px, 6vw, 64px) 20px;
+  border-top: 1px solid #E0DEDA;
+}
+
+/* each side is a small muted mono label ("Back to" / "Next case study")
+   stacked directly above its bold link — was a single-line "Next:
+   <title>" pattern before; this reads more like a deliberate closing
+   pair than an inline sentence. Right side's label/link stay left-
+   aligned within their own column but the column itself sits at the
+   row's right edge (.cs2-footer's own justify-content:space-between),
+   which is what right-aligns the whole group visually. */
+.cs2-footer-col { display: flex; flex-direction: column; gap: 2px; }
+
+.cs2-footer-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #807D78;
+}
+
+.cs2-footer-home,
+.cs2-footer-next-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #22211E;
+  transition: color .2s ease;
+}
+
+.cs2-footer-home:hover,
+.cs2-footer-next-title:hover { color: #D62E1F; }
