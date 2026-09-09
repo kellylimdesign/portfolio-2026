@@ -26,9 +26,21 @@
 
   function setPhase(phase) {
     if (PHASES.indexOf(phase) === -1) phase = 'day';
+    var changed = document.body.dataset.daypart !== phase;
     document.body.dataset.daypart = phase;
     var btn = document.getElementById('dayNightToggle');
     if (btn) btn.textContent = 'Time: ' + LABELS[phase] + ' (click to cycle)';
+    // re-picks the hero illustration for the new phase (day art vs.
+    // night's own dedicated art — see weather.js) whenever the phase
+    // actually changes after that first call. window.__applyHeroIllustration
+    // won't exist yet on this very first call (weather.js, which defines
+    // it, hasn't run yet — script order is daynight.js then weather.js),
+    // but that's fine: weather.js makes its own initial illustration call
+    // moments later and reads document.body.dataset.daypart (already set
+    // above) fresh at that point, so the first paint is correct either
+    // way. This call only matters for later changes — e.g. the debug
+    // toggle button — once both scripts are loaded.
+    if (changed && window.__applyHeroIllustration) window.__applyHeroIllustration();
   }
 
   // hour -> phase, roughly matching NYC's real sunrise/sunset swing across

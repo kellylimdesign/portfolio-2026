@@ -69,15 +69,32 @@
   // weather-tinted plant layer for whatever's currently showing here —
   // set/dispatched only once the illustration swap actually succeeds, so
   // the two never disagree about which weather is showing.
+  //
+  // Night gets its own dedicated art per weather category (assets/
+  // illustration/night-<category>.webp) rather than the day art run
+  // through daynight.js's darkening filter — those 6 files are real
+  // night scenes (lit windows, a genuinely dark sky), not just a dimmed
+  // version of the day illustration, so .hero-illustration is excluded
+  // from body[data-daypart="night"]'s --daynight-filter in site.css to
+  // avoid double-darkening an image that's already dark. Checking
+  // document.body.dataset.daypart here (rather than daynight.js pushing
+  // a category in) keeps this the one place that decides which actual
+  // file to load — daynight.js just calls window.__applyHeroIllustration
+  // again below whenever the phase changes, same as this file's own
+  // weather-driven calls, so whichever changes last is always correct.
   function applyIllustration(category) {
     var img = document.getElementById('heroIllustration');
     if (!img) return;
+    var isNight = document.body.dataset.daypart === 'night';
     // ?v=4 — cache-bust: same filenames, new bytes, whenever these get
     // reprocessed (v2 was the plant-free background swap; v3 re-cropped
     // every weather variant to one shared bounding box per group instead
     // of each file's own; v4 swapped in the "simple" window art Kelly
-    // provided to try simplifying the scene).
-    var candidate = 'assets/illustration/windowsill-' + category + '.webp?v=4';
+    // provided to try simplifying the scene). night-*.webp is new as of
+    // v1 — no reprocessing history yet to match.
+    var candidate = isNight
+      ? 'assets/illustration/night-' + category + '.webp?v=1'
+      : 'assets/illustration/windowsill-' + category + '.webp?v=4';
     var test = new Image();
     test.onload = function () {
       img.src = candidate;
@@ -86,6 +103,13 @@
     };
     test.src = candidate;
   }
+
+  // exposed so daynight.js can re-trigger this exact same preload-then-
+  // swap logic once the day/night phase itself changes (initial load or
+  // the debug toggle) — see the comment on applyIllustration above
+  window.__applyHeroIllustration = function () {
+    applyIllustration(window.__weatherCategory || 'clear');
+  };
 
   function applyText(tempF, entry) {
     var el = document.getElementById('weatherClause');

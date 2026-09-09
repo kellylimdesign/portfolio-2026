@@ -280,20 +280,24 @@ a { color: inherit; text-decoration: none; }
   opacity: 0;
 }
 
-/* five time-of-day looks, each just a flat filter applied to background
-   + plants alike, composed through --daynight-filter (see
+/* five time-of-day looks, composed through --daynight-filter (see
    .plant-lift-layer above) rather than a flat filter override, so none
-   of them fight the hover-lift's own drop-shadow. No new time-of-day art;
-   same illustrations, just lit differently. body[data-daypart] is set
-   once on load in daynight.js, based on the current hour in New York
+   of them fight the hover-lift's own drop-shadow. body[data-daypart] is
+   set once on load in daynight.js, based on the current hour in New York
    specifically (this is Kelly's NYC window), not the visitor's own time
    zone. "day" is the true baseline/default look, so it needs no rule
    here at all.
    (Tried a directional "lamp in the corner" treatment for night — a warm
    offset drop-shadow on the plants, and before that a full-box gradient
    overlay — neither read well, so night is back to one plain blanket
-   dim, and the other four phases follow the same flat-filter approach.) */
-body[data-daypart="night"] .hero-illustration,
+   dim, and the other four phases follow the same flat-filter approach.)
+   Night is the one phase with real dedicated art instead (weather.js
+   swaps in assets/illustration/night-<category>.webp) — the plants
+   don't have their own night variants, so they still get the same
+   filter dim as before, but .hero-illustration is deliberately left out
+   here: it's already a genuinely dark night scene, and layering this
+   same brightness/saturate dim on top of it just muddied the lit
+   windows instead of reading as "darker". */
 body[data-daypart="night"] .plant-lift-layer {
   --daynight-filter: brightness(0.55) saturate(0.85) hue-rotate(-6deg);
 }
