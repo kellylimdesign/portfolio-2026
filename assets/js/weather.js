@@ -48,13 +48,12 @@
   };
   var DEFAULT_ENTRY = {label: 'mild', category: 'clear'};
 
-  // every illustration category — also drives the #weatherToggle testing
-  // button's cycle order below
+  // every illustration category
   var CATEGORIES = ['clear', 'cloudy', 'fog', 'rain', 'snow', 'storm'];
 
-  // set once a test override (query param or the toggle button) is used,
-  // so the real API response — which may still be in flight, or could
-  // land moments after a manual click — never stomps back over it
+  // set once ?weather=<category> forces a category, so the real API
+  // response — which may still be in flight when that happens — never
+  // stomps back over it
   var manualOverride = false;
 
   // required illustration files, one per category above — drop these in
@@ -105,8 +104,8 @@
   }
 
   // exposed so daynight.js can re-trigger this exact same preload-then-
-  // swap logic once the day/night phase itself changes (initial load or
-  // the debug toggle) — see the comment on applyIllustration above
+  // swap logic once the day/night phase itself changes — see the comment
+  // on applyIllustration above
   window.__applyHeroIllustration = function () {
     applyIllustration(window.__weatherCategory || 'clear');
   };
@@ -117,8 +116,8 @@
     el.textContent = ', where it’s currently ' + Math.round(tempF) + '°F and ' + entry.label + '.';
   }
 
-  // --- #weatherToggle testing aid — temporary, remove alongside the
-  // button + .weather-toggle CSS once weather theming is signed off ---
+  // ?weather=<category> — forces a category for testing, since the real
+  // API response makes every category hard to eyeball on demand
   function applyTestText(category) {
     var el = document.getElementById('weatherClause');
     if (!el) return;
@@ -132,30 +131,12 @@
     el.textContent = ', where it’s currently ' + label + ' (test).';
   }
 
-  function setTestWeather(category) {
-    manualOverride = true;
-    applyIllustration(category);
-    applyTestText(category);
-    var btn = document.getElementById('weatherToggle');
-    if (btn) btn.textContent = 'Weather: ' + category.charAt(0).toUpperCase() + category.slice(1) + ' (click to cycle)';
-  }
-
   var forcedWeather = new URLSearchParams(location.search).get('weather');
   if (forcedWeather && CATEGORIES.indexOf(forcedWeather) !== -1) {
-    setTestWeather(forcedWeather);
+    manualOverride = true;
+    applyIllustration(forcedWeather);
+    applyTestText(forcedWeather);
   }
-
-  var weatherToggle = document.getElementById('weatherToggle');
-  if (weatherToggle) {
-    // hidden by default (see index.html) — ?debug=1 reveals it, so
-    // regular viewers never see a raw testing control on the page
-    if (new URLSearchParams(location.search).get('debug') === '1') weatherToggle.hidden = false;
-    weatherToggle.addEventListener('click', function () {
-      var current = CATEGORIES.indexOf(window.__weatherCategory || 'clear');
-      setTestWeather(CATEGORIES[(current + 1) % CATEGORIES.length]);
-    });
-  }
-  // --- end testing aid ---
 
   var url = 'https://api.open-meteo.com/v1/forecast'
     + '?latitude=' + NYC_LAT + '&longitude=' + NYC_LON
