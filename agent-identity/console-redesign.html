@@ -9168,7 +9168,21 @@
     // gap again. getBoundingClientRect() asks the browser directly rather
     // than assuming the formula holds everywhere.
     col.style.height = win.getBoundingClientRect().height + 'px';
-    const chromeCorrection = ref / 920;
+    // ?chromeMatch=0 turns off the cross-card correction below, letting
+    // the chrome zoom by the exact same w/ref as the console content
+    // beneath it (1:1, proportional) instead of always matching the End
+    // User card's fixed w/920 scale. That forced match is exactly right
+    // for the small side-by-side audience cards (the whole point is
+    // their chrome reading as visually identical), but wrong for a
+    // standalone embed at its own size — e.g. the case study's big
+    // "flow, end to end" mock, which isn't sitting next to that other
+    // card at all. There the fixed w/920 scale simply reads as chrome
+    // disproportionately larger than the content it's framing, worse
+    // the wider that embed's own container is. Defaults to the existing
+    // matched behavior (chromeMatch !== '0') so every other embed using
+    // this same window is unaffected.
+    const chromeMatch = new URLSearchParams(location.search).get('chromeMatch') !== '0';
+    const chromeCorrection = chromeMatch ? (ref / 920) : 1;
     const titlebar = win.querySelector('.cgpt-titlebar');
     const urlbar = win.querySelector('.cgpt-urlbar');
     if (titlebar) titlebar.style.zoom = chromeCorrection;
