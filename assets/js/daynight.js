@@ -2,34 +2,21 @@
 // hour in New York (not the visitor's own local time, since the scene is
 // specifically Kelly's NYC window) and sets body[data-daypart] to one of
 // five phases, which the CSS uses to dim/warm/cool the windowsill + plant
-// illustrations differently per phase. No new art assets needed — see
-// .hero-illustration / .plant-lift-layer's --daynight-filter custom
-// property in site.css.
+// illustrations differently per phase. No new art assets needed for the
+// plants — see .plant-lift-layer's --daynight-filter custom property in
+// site.css. Night is the one phase with real dedicated art instead (see
+// weather.js's window.__applyHeroIllustration).
 //
 // Evaluated once on load, not on a timer — a portfolio page doesn't need
 // to re-theme itself under someone's cursor, and this avoids a jarring
-// mid-visit shift right at a phase boundary. The #dayNightToggle button
-// (index.html) is a temporary testing aid on top of that — remove it,
-// this file's toggle wiring, and the CSS's .daynight-toggle rules
-// together once the look is signed off.
+// mid-visit shift right at a phase boundary.
 (function () {
-  // ordered so the toggle button can just step through them in sequence,
-  // matching the order they'd actually occur in across a real day
   var PHASES = ['night', 'earlyMorning', 'sunrise', 'day', 'sunset'];
-  var LABELS = {
-    night: 'Night',
-    earlyMorning: 'Early morning',
-    sunrise: 'Sunrise',
-    day: 'Day',
-    sunset: 'Sunset',
-  };
 
   function setPhase(phase) {
     if (PHASES.indexOf(phase) === -1) phase = 'day';
     var changed = document.body.dataset.daypart !== phase;
     document.body.dataset.daypart = phase;
-    var btn = document.getElementById('dayNightToggle');
-    if (btn) btn.textContent = 'Time: ' + LABELS[phase] + ' (click to cycle)';
     // re-picks the hero illustration for the new phase (day art vs.
     // night's own dedicated art — see weather.js) whenever the phase
     // actually changes after that first call. window.__applyHeroIllustration
@@ -37,9 +24,7 @@
     // it, hasn't run yet — script order is daynight.js then weather.js),
     // but that's fine: weather.js makes its own initial illustration call
     // moments later and reads document.body.dataset.daypart (already set
-    // above) fresh at that point, so the first paint is correct either
-    // way. This call only matters for later changes — e.g. the debug
-    // toggle button — once both scripts are loaded.
+    // above) fresh at that point, so the first paint is correct either way.
     if (changed && window.__applyHeroIllustration) window.__applyHeroIllustration();
   }
 
@@ -71,16 +56,5 @@
       hour = NaN; // Intl/timeZone support missing — leave the page in its default (day) look
     }
     setPhase(isNaN(hour) ? 'day' : phaseForHour(hour));
-  }
-
-  var toggle = document.getElementById('dayNightToggle');
-  if (toggle) {
-    // hidden by default (see index.html) — ?debug=1 reveals it, so
-    // regular viewers never see a raw testing control on the page
-    if (new URLSearchParams(location.search).get('debug') === '1') toggle.hidden = false;
-    toggle.addEventListener('click', function () {
-      var current = PHASES.indexOf(document.body.dataset.daypart);
-      setPhase(PHASES[(current + 1) % PHASES.length]);
-    });
   }
 })();
