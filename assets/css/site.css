@@ -230,6 +230,15 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   pointer-events: none;
   transform-origin: 50% 100%;
+  /* starts invisible — plants.js adds .loaded once each image has
+     actually finished downloading (see the .plant-lift-layer loop near
+     the top of that file). On a cold/hard-refresh load, these 6 images
+     (5 plants + the smiski decor) can each take noticeably longer than
+     the base windowsill image to arrive; without this they'd each pop
+     into an already-visible window abruptly and independently as their
+     downloads finish. opacity is already part of the transition below,
+     so .loaded just needs to flip the value — the 0.4s fade is free. */
+  opacity: 0;
   /* no visible effect on the sill/detail view — width/height there are
      always computed to already match the cutout's own aspect ratio (see
      positionEntry() in plants.js), so there's never anything to letterbox.
@@ -254,6 +263,8 @@ a { color: inherit; text-decoration: none; }
   transform: translateY(-6px) scale(1.02);
   --lift-filter: drop-shadow(0 12px 16px rgba(23, 22, 27, 0.16));
 }
+
+.plant-lift-layer.loaded { opacity: 1; }
 
 /* the background fades out (not swapped/hidden outright) while a plant's
    detail view is open, entirely within .hero-image-wrap's own fixed-size
