@@ -181,6 +181,21 @@
   var infoTimer = null;
   var entries = []; // [{plant, hotspotEl, liftEl}]
 
+  // every .plant-lift-layer (the 5 plants + the smiski decor) starts at
+  // opacity:0 in site.css and fades in here once it's actually finished
+  // loading — on a cold/hard-refresh load (no HTTP cache), the base
+  // windowsill image paints first and these 6 heavier images each land
+  // independently as their own downloads finish, which without this read
+  // as the plants abruptly popping into an already-visible window one at
+  // a time rather than the window and its plants arriving together.
+  // Deliberately independent of positionEntry()/positionDecorEl() below
+  // (which this doesn't call or depend on) — this only ever toggles the
+  // 'loaded' class, so it can't affect layout, just visibility.
+  document.querySelectorAll('.plant-lift-layer').forEach(function (el) {
+    if (el.complete) el.classList.add('loaded');
+    else el.addEventListener('load', function () { el.classList.add('loaded'); });
+  });
+
   function positionEntry(entry) {
     var hr = entry.plant.hotspotRegion;
     entry.hotspotEl.style.left = (img.offsetLeft + img.offsetWidth * hr.left) + 'px';
