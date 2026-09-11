@@ -66,7 +66,7 @@
       images: weatherImages('yellow-kalanchoe'),
       alt: 'Yellow kalanchoe in a terracotta pot',
       name: 'Yellow kalanchoe',
-      lastWatered: '2 days ago',
+      wateredOn: '2026-09-04',
       needs: 'bright light; water when the topsoil is dry, deadhead spent blooms',
       // non-overlapping horizontal "lane" — see the note above PLANTS
       hotspotRegion: {left: 0.14, top: 0.42, width: 0.145, height: 0.50},
@@ -78,7 +78,7 @@
       images: weatherImages('violet'),
       alt: 'African violet in a terracotta pot',
       name: 'African violet',
-      lastWatered: '2 days ago',
+      wateredOn: '2026-09-04',
       needs: 'bright, indirect light; keep soil lightly moist, avoid wetting the leaves',
       hotspotRegion: {left: 0.29, top: 0.68, width: 0.095, height: 0.24},
       liftAnchor: {centerX: 0.32, bottom: SILL_LINE, height: 0.13},
@@ -89,7 +89,7 @@
       images: weatherImages('orchid'),
       alt: 'Orchid in a green ridged pot',
       name: 'Orchid',
-      lastWatered: '2 days ago',
+      wateredOn: '2026-09-04',
       needs: 'bright, indirect light; refill reservoir when empty, leaving a little behind',
       hotspotRegion: {left: 0.39, top: 0.50, width: 0.135, height: 0.42},
       liftAnchor: {centerX: 0.45, bottom: SILL_LINE, height: 0.32},
@@ -100,7 +100,7 @@
       images: weatherImages('kalanchoe'),
       alt: 'Kalanchoe in a white pot',
       name: 'Kalanchoe',
-      lastWatered: '2 days ago',
+      wateredOn: '2026-09-04',
       needs: 'bright light; water when the topsoil is dry, deadhead spent blooms',
       hotspotRegion: {left: 0.53, top: 0.54, width: 0.155, height: 0.38},
       liftAnchor: {centerX: 0.60, bottom: SILL_LINE, height: 0.28},
@@ -111,7 +111,7 @@
       images: weatherImages('fiddle-fig'),
       alt: 'Fiddle-leaf fig in a tan pot',
       name: 'Fiddle-leaf fig',
-      lastWatered: '2 days ago',
+      wateredOn: '2026-09-04',
       needs: 'bright, indirect light; water once a week',
       hotspotRegion: {left: 0.69, top: 0.10, width: 0.30, height: 0.82},
       // sized by height, not width — per Kelly, should read as "almost as
@@ -164,6 +164,26 @@
   function currentImage(plant) {
     var category = window.__weatherCategory || 'clear';
     return plant.images[category] || plant.images.clear;
+  }
+
+  // turns each plant's wateredOn (a plain 'YYYY-MM-DD', local calendar
+  // date — not a timestamp, so this never has to account for time zones
+  // or same-day watering happening before/after some cutoff hour) into
+  // the "N days ago" text actually shown. Previously that text itself
+  // (e.g. '2 days ago') was hand-typed into PLANTS and only ever correct
+  // on the day someone last edited it, going quietly stale every day
+  // after — computing it fresh from a fixed date on every page load
+  // means it's always accurate as of "now", and the only thing that ever
+  // needs updating is the date itself (see water.py at the repo root).
+  function formatLastWatered(wateredOn) {
+    var parts = wateredOn.split('-');
+    var watered = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var diffDays = Math.round((today - watered) / 86400000);
+    if (diffDays <= 0) return 'today';
+    if (diffDays === 1) return 'yesterday';
+    return diffDays + ' days ago';
   }
 
   var img = document.getElementById('heroIllustration');
@@ -311,7 +331,7 @@
     activeEntry = entry;
 
     infoName.textContent = entry.plant.name;
-    infoWatered.textContent = entry.plant.lastWatered;
+    infoWatered.textContent = formatLastWatered(entry.plant.wateredOn);
     infoNeeds.textContent = entry.plant.needs;
 
     wrap.classList.add('detail-open');
@@ -446,7 +466,7 @@
     nameEl.textContent = plant.name;
     var wateredEl = document.createElement('p');
     wateredEl.className = 'gallery-label-watered';
-    wateredEl.textContent = 'Last watered: ' + plant.lastWatered;
+    wateredEl.textContent = 'Last watered: ' + formatLastWatered(plant.wateredOn);
     wrap.appendChild(nameEl);
     wrap.appendChild(wateredEl);
     galleryLabels[key] = {nameEl: nameEl, wateredEl: wateredEl};
