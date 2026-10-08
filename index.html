@@ -58,6 +58,15 @@
           alt=""
           aria-hidden="true"
         >
+        <!-- gallery-only plants: no hotspot on the sill, no src here either
+             — plants.js deliberately leaves src unset until the gallery is
+             opened for the first time, so these never cost the homepage a
+             download (see GALLERY_EXTRA's comment in plants.js) -->
+        <img class="plant-lift-layer" id="plantLiftBirdOfParadise" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftSmallFiddleFig" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftEucalyptus" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftBasil" alt="" aria-hidden="true">
+        <img class="plant-lift-layer" id="plantLiftCilantro" alt="" aria-hidden="true">
         <button class="plant-hotspot" id="plantHotspotYellowKalanchoe" type="button" aria-label="See the yellow kalanchoe"></button>
         <button class="plant-hotspot" id="plantHotspotViolet" type="button" aria-label="See the African violet"></button>
         <button class="plant-hotspot" id="plantHotspotOrchid" type="button" aria-label="See the orchid"></button>

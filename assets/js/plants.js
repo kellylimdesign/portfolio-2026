@@ -121,6 +121,67 @@
     },
   };
 
+  // GALLERY_EXTRA — plants that exist only in the gallery carousel, never
+  // on the windowsill itself: no hotspotId/hotspotRegion (nothing to click
+  // on the sill), no liftAnchor/detailAnchor (no resting or single-detail
+  // position to grow into — the gallery's own fixed 220x220 slot, see
+  // galleryAnchorPx(), is the only place these ever appear). Otherwise
+  // same shape as PLANTS. galleryOnly:true is read in two places below:
+  // positionEntry() (skip sill/detail positioning entirely — there's
+  // nothing for these to position against) and syncLiftLayers() (skip
+  // eagerly fetching a weather image until the gallery has actually been
+  // opened once, so adding plants here never costs the homepage a single
+  // extra byte — see galleryEverOpened).
+  var GALLERY_EXTRA = {
+    birdOfParadise: {
+      liftId: 'plantLiftBirdOfParadise',
+      images: weatherImages('bird-of-paradise'),
+      alt: 'Bird of paradise in a tall beige pot',
+      name: 'Bird of paradise',
+      wateredOn: '2026-09-27', // same day as the large fiddle-leaf fig
+      galleryOnly: true,
+    },
+    smallFiddleFig: {
+      liftId: 'plantLiftSmallFiddleFig',
+      images: weatherImages('small-fiddle-fig'),
+      alt: 'Fiddle-leaf fig propagation in a terracotta pot',
+      name: 'Fiddle leaf propagation',
+      wateredOn: '2026-10-02',
+      galleryOnly: true,
+    },
+    eucalyptus: {
+      liftId: 'plantLiftEucalyptus',
+      images: weatherImages('eucalyptus'),
+      alt: 'Eucalyptus in a beige pot',
+      name: 'Eucalyptus',
+      wateredOn: '2026-10-02',
+      galleryOnly: true,
+    },
+    basil: {
+      liftId: 'plantLiftBasil',
+      images: weatherImages('basil'),
+      alt: 'Basil in a glass pot',
+      name: 'Basil',
+      wateredOn: '2026-10-02',
+      galleryOnly: true,
+    },
+    cilantro: {
+      liftId: 'plantLiftCilantro',
+      images: weatherImages('cilantro'),
+      alt: 'Cilantro in a glass pot',
+      name: 'Cilantro',
+      wateredOn: '2026-10-02',
+      galleryOnly: true,
+    },
+  };
+
+  // combined lookup used anywhere a plant needs to be found by key
+  // regardless of which object (PLANTS or GALLERY_EXTRA) it's defined in
+  // — see entryFor() and the gallery-label loop below
+  var ALL_PLANTS = {};
+  Object.keys(PLANTS).forEach(function (k) { ALL_PLANTS[k] = PLANTS[k]; });
+  Object.keys(GALLERY_EXTRA).forEach(function (k) { ALL_PLANTS[k] = GALLERY_EXTRA[k]; });
+
   // detailAnchor — where/how big each plant is once its card is open.
   // Matches the "fixed stage, bottom-aligned" mockup Kelly approved: every
   // plant shares the same bottom line (DETAIL_BOTTOM, not a per-plant
@@ -217,6 +278,11 @@
   });
 
   function positionEntry(entry) {
+    // gallery-only plants have no sill hotspot or resting/detail position
+    // to compute here — the gallery's own applyGalleryPosition()/
+    // galleryAnchorPx() (see showGallery()) is the only thing that ever
+    // moves them, so there's nothing for this function to do.
+    if (entry.plant.galleryOnly) return;
     var hr = entry.plant.hotspotRegion;
     entry.hotspotEl.style.left = (img.offsetLeft + img.offsetWidth * hr.left) + 'px';
     entry.hotspotEl.style.top = (img.offsetTop + img.offsetHeight * hr.top) + 'px';
@@ -301,6 +367,11 @@
   function syncLiftLayers() {
     entries.forEach(function (entry) {
       if (!entry.liftEl) return;
+      // gallery-only plants intentionally start with no src (see
+      // GALLERY_EXTRA's own comment) so they cost the homepage nothing —
+      // leave them unset until the gallery has actually been opened once
+      // (showGallery() flips galleryEverOpened and calls this directly)
+      if (entry.plant.galleryOnly && !galleryEverOpened) return;
       var wanted = currentImage(entry.plant);
       if (entry.liftEl.getAttribute('src') !== wanted) {
         entry.liftEl.src = wanted;
@@ -336,7 +407,7 @@
 
     wrap.classList.add('detail-open');
     entries.forEach(function (e) {
-      e.hotspotEl.hidden = true;
+      if (e.hotspotEl) e.hotspotEl.hidden = true;
       // marks which lift-layer .hero-image-wrap.detail-open should leave
       // alone — every other one fades out along with the background
       if (e.liftEl) e.liftEl.classList.toggle('active-detail', e === entry);
@@ -362,7 +433,7 @@
     activeEntry = null;
     wrap.classList.remove('detail-open');
     entries.forEach(function (e) {
-      e.hotspotEl.hidden = false;
+      if (e.hotspotEl) e.hotspotEl.hidden = false;
       if (e.liftEl) e.liftEl.classList.remove('active-detail');
     });
     positionAll(); // slides the plant back to its normal liftAnchor
@@ -392,6 +463,18 @@
     }
   });
 
+  // gallery-only plants — same entries[] list (so they share positionAll/
+  // positionAllForCurrentState's one loop), just no hotspotEl, no sill
+  // click/hover wiring, and (deliberately) no initial src on their <img>
+  // in index.html — see the galleryOnly note on GALLERY_EXTRA above and
+  // showGallery()'s galleryEverOpened check below for why.
+  Object.keys(GALLERY_EXTRA).forEach(function (key) {
+    var plant = GALLERY_EXTRA[key];
+    var liftEl = document.getElementById(plant.liftId);
+    if (!liftEl) return;
+    entries.push({plant: plant, hotspotEl: null, liftEl: liftEl});
+  });
+
   // ---- Gallery: click-a-plant reveals all 5 in an evenly-spaced row
   // instead of just that one's own card. Reuses the exact same
   // mechanism as the single-plant detail view above (JS-computed
@@ -416,8 +499,13 @@
   // get their new position set while still invisible — nothing to see
   // move, so no special handling needed for them; they just fade in
   // (or reappear) already sitting correctly in place.
-  var GALLERY_ORDER = Object.keys(PLANTS); // fixed sill order, left to right
+  // fixed gallery order: the 5 sill plants left to right, then the
+  // gallery-only plants appended after, in the order they're defined
+  var GALLERY_ORDER = Object.keys(PLANTS).concat(Object.keys(GALLERY_EXTRA));
   var galleryOpen = false;
+  // flips true the first time the gallery ever opens — see
+  // syncLiftLayers()'s galleryOnly check and showGallery() below
+  var galleryEverOpened = false;
   var activeGalleryKey = null; // whichever plant opened the gallery — the same one flies back on Back
   var galleryTimer = null; // the one pending setTimeout for whichever transition is in flight
   var flyingEntry = null; // whichever entry's own translateIntoNewFrame() flight is currently in progress — see positionAllForCurrentState()
@@ -433,7 +521,7 @@
   var GALLERY_EDGE_PADDING = 24;
 
   function entryFor(key) {
-    return entries.filter(function (e) { return e.plant === PLANTS[key]; })[0];
+    return entries.filter(function (e) { return e.plant === ALL_PLANTS[key]; })[0];
   }
 
   function keyForEntry(entry) {
@@ -460,7 +548,7 @@
   // each time, rather than rebuilt per open/close
   var galleryLabels = {}; // key -> {nameEl, wateredEl}
   GALLERY_ORDER.forEach(function (key) {
-    var plant = PLANTS[key];
+    var plant = ALL_PLANTS[key];
     var nameEl = document.createElement('p');
     nameEl.className = 'gallery-label-name';
     nameEl.textContent = plant.name;
@@ -674,6 +762,14 @@
     activeGalleryKey = clickedKey;
     clearTimeout(galleryTimer); // cancel any pending cleanup left over from a just-finished hideGallery()
 
+    // first-ever open: unlock + kick off loading the gallery-only plants'
+    // weather images now (not before — see GALLERY_EXTRA's own comment on
+    // why they start with no src at all)
+    if (!galleryEverOpened) {
+      galleryEverOpened = true;
+      syncLiftLayers();
+    }
+
     var clickedEntry = entryFor(clickedKey);
 
     // clear any stray hover-lift transform first — if the cursor was
@@ -709,7 +805,7 @@
     document.body.classList.add('gallery-open'); // hides .home-work/.scroll-indicator — see CSS
     wrap.classList.add('detail-open', 'gallery-mode');
     entries.forEach(function (e) {
-      e.hotspotEl.hidden = true;
+      if (e.hotspotEl) e.hotspotEl.hidden = true;
       if (e.liftEl) e.liftEl.classList.toggle('active-detail', e === clickedEntry);
     });
 
@@ -827,7 +923,7 @@
     // pending, corrupting both transitions' state at once
     galleryTimer = setTimeout(function () {
       entries.forEach(function (e) {
-        e.hotspotEl.hidden = false;
+        if (e.hotspotEl) e.hotspotEl.hidden = false;
         if (e.liftEl) e.liftEl.classList.remove('active-detail');
       });
     }, 650); // just past the flight's own transition duration

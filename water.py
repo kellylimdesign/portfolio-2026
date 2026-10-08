@@ -3,10 +3,12 @@
 
 Edits assets/js/plants.js directly (each plant's `wateredOn: 'YYYY-MM-DD'`
 field), then commits and pushes so the live site picks it up. Run with no
-arguments to water all 5 plants with today's date.
+arguments to water all 10 plants with today's date. Covers both the 5
+plants on the windowsill and the 5 gallery-only ones (see each plant's own
+"last watered" in the carousel).
 
 Usage:
-    ./water.py                    # all 5 plants, today
+    ./water.py                    # all 10 plants, today
     ./water.py fig violet         # just these two, today
     ./water.py --all
     ./water.py fig --date 2026-09-10   # backdate
@@ -14,11 +16,16 @@ Usage:
     ./water.py fig --no-commit    # just edit the file, don't touch git
 
 Plant names (case-insensitive, any of these work):
-    fig / fiddlefig / fiddle-fig
+    fig / fiddlefig / fiddle-fig          (the large fiddle-leaf fig, on the sill)
     violet / african-violet
     orchid
     kalanchoe / white-kalanchoe
     yellow / yellow-kalanchoe
+    bird / bird-of-paradise               (gallery only)
+    propagation / small-fiddle-fig        (gallery only)
+    eucalyptus                            (gallery only)
+    basil                                 (gallery only)
+    cilantro                              (gallery only)
 """
 import argparse
 import datetime
@@ -30,7 +37,10 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent
 PLANTS_JS = ROOT / "assets" / "js" / "plants.js"
 
-ALL_KEYS = ["yellowKalanchoe", "violet", "orchid", "kalanchoe", "fiddleFig"]
+ALL_KEYS = [
+    "yellowKalanchoe", "violet", "orchid", "kalanchoe", "fiddleFig",
+    "birdOfParadise", "smallFiddleFig", "eucalyptus", "basil", "cilantro",
+]
 
 LABELS = {
     "yellowKalanchoe": "Yellow kalanchoe",
@@ -38,6 +48,11 @@ LABELS = {
     "orchid": "Orchid",
     "kalanchoe": "Kalanchoe",
     "fiddleFig": "Fiddle-leaf fig",
+    "birdOfParadise": "Bird of paradise",
+    "smallFiddleFig": "Fiddle leaf propagation",
+    "eucalyptus": "Eucalyptus",
+    "basil": "Basil",
+    "cilantro": "Cilantro",
 }
 
 ALIASES = {
@@ -46,6 +61,12 @@ ALIASES = {
     "orchid": "orchid",
     "kalanchoe": "kalanchoe", "whitekalanchoe": "kalanchoe",
     "yellow": "yellowKalanchoe", "yellowkalanchoe": "yellowKalanchoe",
+    "bird": "birdOfParadise", "birdofparadise": "birdOfParadise",
+    "propagation": "smallFiddleFig", "smallfiddlefig": "smallFiddleFig",
+    "smallfig": "smallFiddleFig",
+    "eucalyptus": "eucalyptus",
+    "basil": "basil",
+    "cilantro": "cilantro",
 }
 
 
