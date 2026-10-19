@@ -66,7 +66,7 @@
       images: weatherImages('yellow-kalanchoe'),
       alt: 'Yellow kalanchoe in a terracotta pot',
       name: 'Yellow kalanchoe',
-      wateredOn: '2026-10-09',
+      wateredOn: '2026-10-19',
       needs: 'bright light; water when the topsoil is dry, deadhead spent blooms',
       // non-overlapping horizontal "lane" — see the note above PLANTS
       hotspotRegion: {left: 0.14, top: 0.42, width: 0.145, height: 0.50},
@@ -78,7 +78,7 @@
       images: weatherImages('violet'),
       alt: 'African violet in a terracotta pot',
       name: 'African violet',
-      wateredOn: '2026-10-09',
+      wateredOn: '2026-10-19',
       needs: 'bright, indirect light; keep soil lightly moist, avoid wetting the leaves',
       hotspotRegion: {left: 0.29, top: 0.68, width: 0.095, height: 0.24},
       liftAnchor: {centerX: 0.32, bottom: SILL_LINE, height: 0.13},
@@ -100,7 +100,7 @@
       images: weatherImages('kalanchoe'),
       alt: 'Kalanchoe in a white pot',
       name: 'Kalanchoe',
-      wateredOn: '2026-10-09',
+      wateredOn: '2026-10-19',
       needs: 'bright light; water when the topsoil is dry, deadhead spent blooms',
       hotspotRegion: {left: 0.53, top: 0.54, width: 0.155, height: 0.38},
       liftAnchor: {centerX: 0.60, bottom: SILL_LINE, height: 0.28},
@@ -146,7 +146,7 @@
       images: weatherImages('small-fiddle-fig'),
       alt: 'Fiddle-leaf fig propagation in a terracotta pot',
       name: 'Fiddle leaf propagation',
-      wateredOn: '2026-10-09',
+      wateredOn: '2026-10-19',
       galleryOnly: true,
     },
     eucalyptus: {
@@ -154,7 +154,7 @@
       images: weatherImages('eucalyptus'),
       alt: 'Eucalyptus in a beige pot',
       name: 'Eucalyptus',
-      wateredOn: '2026-10-09',
+      wateredOn: '2026-10-19',
       galleryOnly: true,
     },
     basil: {
@@ -162,7 +162,7 @@
       images: weatherImages('basil'),
       alt: 'Basil in a glass pot',
       name: 'Basil',
-      wateredOn: '2026-10-09',
+      wateredOn: '2026-10-19',
       galleryOnly: true,
     },
     cilantro: {
@@ -170,7 +170,7 @@
       images: weatherImages('cilantro'),
       alt: 'Cilantro in a glass pot',
       name: 'Cilantro',
-      wateredOn: '2026-10-09',
+      wateredOn: '2026-10-19',
       galleryOnly: true,
     },
   };
