@@ -66,7 +66,7 @@
       images: weatherImages('yellow-kalanchoe'),
       alt: 'Yellow kalanchoe in a terracotta pot',
       name: 'Yellow kalanchoe',
-      wateredOn: '2026-10-19',
+      wateredOn: '2026-10-24',
       needs: 'bright light; water when the topsoil is dry, deadhead spent blooms',
       // non-overlapping horizontal "lane" — see the note above PLANTS
       hotspotRegion: {left: 0.14, top: 0.42, width: 0.145, height: 0.50},
@@ -78,7 +78,7 @@
       images: weatherImages('violet'),
       alt: 'African violet in a terracotta pot',
       name: 'African violet',
-      wateredOn: '2026-10-19',
+      wateredOn: '2026-10-24',
       needs: 'bright, indirect light; keep soil lightly moist, avoid wetting the leaves',
       hotspotRegion: {left: 0.29, top: 0.68, width: 0.095, height: 0.24},
       liftAnchor: {centerX: 0.32, bottom: SILL_LINE, height: 0.13},
@@ -100,7 +100,7 @@
       images: weatherImages('kalanchoe'),
       alt: 'Kalanchoe in a white pot',
       name: 'Kalanchoe',
-      wateredOn: '2026-10-19',
+      wateredOn: '2026-10-24',
       needs: 'bright light; water when the topsoil is dry, deadhead spent blooms',
       hotspotRegion: {left: 0.53, top: 0.54, width: 0.155, height: 0.38},
       liftAnchor: {centerX: 0.60, bottom: SILL_LINE, height: 0.28},
@@ -111,7 +111,7 @@
       images: weatherImages('fiddle-fig'),
       alt: 'Fiddle-leaf fig in a tan pot',
       name: 'Fiddle-leaf fig',
-      wateredOn: '2026-10-09',
+      wateredOn: '2026-10-24',
       needs: 'bright, indirect light; water once a week',
       hotspotRegion: {left: 0.69, top: 0.10, width: 0.30, height: 0.82},
       // sized by height, not width — per Kelly, should read as "almost as
@@ -138,7 +138,7 @@
       images: weatherImages('bird-of-paradise'),
       alt: 'Bird of paradise in a tall beige pot',
       name: 'Bird of paradise',
-      wateredOn: '2026-10-09', // same day as the large fiddle-leaf fig
+      wateredOn: '2026-10-24', // same day as the large fiddle-leaf fig
       galleryOnly: true,
     },
     smallFiddleFig: {
@@ -154,7 +154,7 @@
       images: weatherImages('eucalyptus'),
       alt: 'Eucalyptus in a beige pot',
       name: 'Eucalyptus',
-      wateredOn: '2026-10-19',
+      wateredOn: '2026-10-24',
       galleryOnly: true,
     },
     basil: {
@@ -162,7 +162,7 @@
       images: weatherImages('basil'),
       alt: 'Basil in a glass pot',
       name: 'Basil',
-      wateredOn: '2026-10-19',
+      wateredOn: '2026-10-24',
       galleryOnly: true,
     },
     cilantro: {
