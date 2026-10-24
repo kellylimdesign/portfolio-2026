@@ -89,7 +89,7 @@
       images: weatherImages('orchid'),
       alt: 'Orchid in a green ridged pot',
       name: 'Orchid',
-      wateredOn: '2026-10-09',
+      wateredOn: '2026-10-24',
       needs: 'bright, indirect light; refill reservoir when empty, leaving a little behind',
       hotspotRegion: {left: 0.39, top: 0.50, width: 0.135, height: 0.42},
       liftAnchor: {centerX: 0.45, bottom: SILL_LINE, height: 0.32},
