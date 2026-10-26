@@ -141,14 +141,21 @@
       wateredOn: '2026-10-24', // same day as the large fiddle-leaf fig
       galleryOnly: true,
     },
-    smallFiddleFig: {
-      liftId: 'plantLiftSmallFiddleFig',
-      images: weatherImages('small-fiddle-fig'),
-      alt: 'Fiddle-leaf fig propagation in a terracotta pot',
-      name: 'Fiddle leaf propagation',
-      wateredOn: '2026-10-19',
-      galleryOnly: true,
-    },
+    // smallFiddleFig pulled from the carousel for now (2026-10-26, per
+    // Kelly) -- not deleted, just commented out, so it's a one-line
+    // uncomment to bring back. Its <img> tag in index.html and its
+    // aliases in water.py are left alone too; the webp assets are
+    // untouched on disk. GALLERY_ORDER below only includes keys that are
+    // still in this object, so removing it here is enough to drop it
+    // from the gallery -- nothing else needs to change.
+    // smallFiddleFig: {
+    //   liftId: 'plantLiftSmallFiddleFig',
+    //   images: weatherImages('small-fiddle-fig'),
+    //   alt: 'Fiddle-leaf fig propagation in a terracotta pot',
+    //   name: 'Fiddle leaf propagation',
+    //   wateredOn: '2026-10-19',
+    //   galleryOnly: true,
+    // },
     eucalyptus: {
       liftId: 'plantLiftEucalyptus',
       images: weatherImages('eucalyptus'),
