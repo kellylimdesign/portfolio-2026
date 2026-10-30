@@ -177,7 +177,7 @@
       images: weatherImages('cilantro'),
       alt: 'Cilantro in a glass pot',
       name: 'Cilantro',
-      wateredOn: '2026-10-19',
+      wateredOn: '2026-10-30',
       galleryOnly: true,
     },
   };
