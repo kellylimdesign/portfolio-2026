@@ -78,7 +78,7 @@
       images: weatherImages('violet'),
       alt: 'African violet in a terracotta pot',
       name: 'African violet',
-      wateredOn: '2026-10-24',
+      wateredOn: '2026-11-01',
       needs: 'bright, indirect light; keep soil lightly moist, avoid wetting the leaves',
       hotspotRegion: {left: 0.29, top: 0.68, width: 0.095, height: 0.24},
       liftAnchor: {centerX: 0.32, bottom: SILL_LINE, height: 0.13},
@@ -161,7 +161,7 @@
       images: weatherImages('eucalyptus'),
       alt: 'Eucalyptus in a beige pot',
       name: 'Eucalyptus',
-      wateredOn: '2026-10-24',
+      wateredOn: '2026-11-01',
       galleryOnly: true,
     },
     basil: {
@@ -169,7 +169,7 @@
       images: weatherImages('basil'),
       alt: 'Basil in a glass pot',
       name: 'Basil',
-      wateredOn: '2026-10-24',
+      wateredOn: '2026-11-01',
       galleryOnly: true,
     },
     cilantro: {
